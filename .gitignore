@@ -1,0 +1,22 @@
+# Dependencias
+node_modules
+
+# Builds
+dist
+dev-dist
+
+# Variables de entorno (claves de Supabase, etc.) — NUNCA subir
+.env
+.env.*
+!.env.example
+*.local
+
+# Config local de Claude Code (permisos, rutas absolutas)
+.claude/settings.local.json
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea

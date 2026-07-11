@@ -1,0 +1,264 @@
+@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+
+/*
+ * Tokens de diseño (spec §10): Tailwind referencia variables --t-* que cambian
+ * con [data-theme] y con el color de acento elegido (inyectado desde JS).
+ */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface-900: var(--t-surface-900);
+  --color-surface-800: var(--t-surface-800);
+  --color-surface-700: var(--t-surface-700);
+
+  --color-ink: var(--t-ink);
+  --color-ink-dim: var(--t-ink-dim);
+  --color-ink-muted: var(--t-ink-muted);
+  --color-ink-faint: var(--t-ink-faint);
+  --color-line: var(--t-line);
+  --color-on-accent: #ffffff;
+
+  --color-accent-300: var(--t-accent-300);
+  --color-accent-400: var(--t-accent-400);
+  --color-accent-500: var(--t-accent-500);
+  --color-accent-600: var(--t-accent-600);
+  --color-accent-700: var(--t-accent-700);
+
+  --color-warn: var(--t-warn);
+  --color-danger: var(--t-danger);
+  --color-ok: var(--t-ok);
+  --color-info: var(--t-info);
+}
+
+:root {
+  color-scheme: dark;
+  --t-surface-900: #0f1117;
+  --t-surface-800: #161a23;
+  --t-surface-700: #1f2430;
+  --t-ink: #ffffff;
+  --t-ink-dim: #cbd2dc;
+  --t-ink-muted: #9aa3b2;
+  --t-ink-faint: #6b7280;
+  --t-line: #ffffff;
+  --t-warn: #fbbf24;
+  --t-danger: #fb7185;
+  --t-ok: #34d399;
+  --t-info: #38bdf8;
+  /* Acento por defecto (violeta); JS lo sobreescribe con el elegido. */
+  --t-accent-300: #c4b5fd;
+  --t-accent-400: #a78bfa;
+  --t-accent-500: #8b5cf6;
+  --t-accent-600: #7c3aed;
+  --t-accent-700: #6d28d9;
+  /* Liquid Glass: el tinte se mezcla con la superficie base. JS lo sobreescribe. */
+  --t-glass-tint: var(--t-surface-800);
+  --t-glass: color-mix(in srgb, var(--t-glass-tint) 38%, var(--t-surface-800));
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --t-surface-900: #f6f7f9;
+  --t-surface-800: #ffffff;
+  --t-surface-700: #eef0f4;
+  --t-ink: #0b1220;
+  --t-ink-dim: #334155;
+  /* Oscurecidos para superar el contraste AA sobre superficies claras y cristal claro */
+  --t-ink-muted: #475569;
+  --t-ink-faint: #64748b;
+  --t-line: #0f1117;
+  --t-warn: #b45309;
+  --t-danger: #e11d48;
+  --t-ok: #047857;
+  --t-info: #0369a1;
+  --t-accent-300: #6d28d9;
+  --t-accent-400: #7c3aed;
+  --t-accent-500: #8b5cf6;
+  --t-accent-600: #7c3aed;
+  --t-accent-700: #5b21b6;
+}
+
+html {
+  font-family: var(--font-sans);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background-color: var(--t-surface-900);
+  color: var(--t-ink-dim);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease;
+  /* Sensación de app en móvil: sin rebote de scroll ni destello gris al tocar */
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Sin retardo de doble-tap en controles (iOS) */
+button,
+input,
+select,
+textarea,
+a {
+  touch-action: manipulation;
+}
+
+/* Barras de scroll finas y tematizadas (las nativas de Windows rompen la estética glass) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--t-ink) 18%, transparent) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--t-ink) 16%, transparent);
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--t-ink) 28%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/*
+ * iOS hace zoom automático si un input enfocado tiene fuente < 16px.
+ * En pantallas táctiles subimos los controles de formulario a 16px.
+ */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/*
+ * Liquid Glass (estética iOS): paneles translúcidos con blur y saturación,
+ * un brillo interior sutil arriba, y tinte configurable vía --t-glass.
+ */
+.glass-panel {
+  background-color: color-mix(in srgb, var(--t-glass) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
+}
+
+.glass-strong {
+  background-color: color-mix(in srgb, var(--t-glass) 90%, transparent);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
+}
+
+.glass-bar {
+  background-color: color-mix(in srgb, var(--t-glass) 45%, transparent);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+}
+
+/* Accesibilidad: foco visible por teclado, coherente con el acento. */
+:focus-visible {
+  outline: 2px solid var(--t-accent-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Animaciones del sistema RPG y micro-interacciones (Fases 3 y 10) */
+@keyframes levelup-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(10px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.03) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes levelup-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes glow-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  40% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+@keyframes xp-float {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(0.8);
+  }
+  55% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.check-pop {
+  animation: check-pop 0.25s ease-out;
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Respeta la preferencia de menos movimiento (spec §13: accesibilidad). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,41 +1,84 @@
-# Quest — Tareas RPG (PWA)
+# Quest — RPG Task Manager (PWA)
 
-Gestor de tareas con progresión tipo RPG, diseñado para personas con TDAH. Offline-first, instalable como app en Windows y móvil.
+A task manager with video-game-style RPG progression, designed with ADHD-friendly
+principles in mind. Offline-first and installable as an app on desktop and mobile.
 
-## Comandos
+> **About this project**
+> I'm building Quest as a **personal research and learning project**: an experiment
+> in creating a real, non-trivial application with the help of AI, while sharpening
+> my skills as a developer. It's a **long-term, evolving project** — I add features
+> and refine it as I keep learning about modern web development, product design, and
+> AI-assisted engineering. Feedback and ideas are welcome.
+
+## Features
+
+- **Tasks & lists** — Full CRUD with subtasks, colors, priorities, notes, comments,
+  image/file attachments, and reusable tags. Views: Today, Upcoming, All, by list, by tag.
+- **Calendar** — Continuous-scroll monthly calendar showing scheduled tasks; tap a day
+  to view or create tasks with a specific time.
+- **Smart quick-add** — Natural-language capture in Spanish: typing
+  _"Gym on Monday at 8pm every week #health"_ auto-detects the date, time, recurrence, and tag.
+- **RPG progression** — XP weighted by priority, rising level curve, per-list stats,
+  non-punitive streaks, level titles, synthesized ASMR sounds, and a level-up animation.
+- **Monthly Missions** — A "main quest" per month themed around a mythical creature
+  (Dragon, Phoenix, Kraken…), broken into weekly missions with steps and big XP rewards.
+- **Habits with COMBOS** — Turn a task into a recurring habit with scheduled days and an
+  end date; it becomes a progress bar whose streak ("combo") climbs the rainbow and
+  multiplies XP.
+- **Focus mode (Pomodoro)** — Adjustable timer with ambient sounds, real focus-minute
+  tracking via timestamps (accurate in the background), a minimizable floating timer, and XP.
+- **Reports** — Charts for productivity, completed tasks, focus time, XP, priorities,
+  tags, per-list attributes, and streaks, with week/month/year/custom ranges. All offline.
+- **Liquid Glass theming** — Light/dark/system, customizable accent color, translucent
+  "liquid glass" surfaces, and custom blurred backgrounds.
+- **Your data** — JSON backup export/import. No account required; everything lives locally
+  in IndexedDB (Dexie).
+
+## Tech stack
+
+Vite + React 19 + strict TypeScript · Tailwind CSS v4 · Dexie (IndexedDB) ·
+vite-plugin-pwa (Workbox) · Recharts · Web Audio API · Supabase (Auth + Postgres + Storage).
+
+Architecture: **local-first**. Dexie/IndexedDB is the immediate source of truth; the cloud
+is optional backup and multi-device sync (last-write-wins). Business logic is kept separate
+from the UI, and the notification layer is abstracted so it can move to native (Capacitor)
+without rewriting app logic.
+
+## Getting started
 
 ```bash
-npm install       # dependencias
-npm run dev       # servidor de desarrollo → http://localhost:5173
-npm run build     # build de producción (dist/)
-npm run preview   # sirve el build de producción
+npm install       # install dependencies
+npm run dev       # dev server → http://localhost:5173
+npm run dev:lan   # dev server reachable on your local network (for phone testing)
+npm run build     # production build (dist/)
+npm run preview   # serve the production build
 ```
 
-## Funcionalidades
+The app works fully **offline and without an account** — data is stored on-device.
 
-- **Tareas y listas**: CRUD completo, subtareas, colores, prioridades, notas, comentarios, adjuntos de imágenes/archivos y etiquetas reutilizables. Vistas: Hoy, Próximas, Todas, por lista y por etiqueta.
-- **Tiempo**: fecha y hora programadas, recurrencia (cada X días/semanas/meses/años con fin configurable) y recordatorios múltiples con repetición del aviso (in-app + notificaciones del sistema).
-- **RPG**: XP por prioridad, niveles con curva creciente, stats por lista, rachas no punitivas, sonidos ASMR sintetizados y animación de level-up.
-- **Modo estudio**: Pomodoro ajustable con sonidos ambientales (lluvia/ruido), registro de minutos de foco reales (timestamps, funciona en segundo plano) y XP por minuto.
-- **Reportes**: gráficas de tareas, foco, XP, prioridades, etiquetas, atributos por lista y rachas, con rangos semana/mes/año/personalizado. Todo offline.
-- **Temas**: claro/oscuro/sistema y color de acento personalizable al instante.
-- **Datos**: exportar/importar respaldo JSON. Sin cuenta, todo vive en IndexedDB (Dexie).
+## Optional cloud sync
 
-## Sincronización en la nube (opcional)
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In the **SQL Editor**, run [`supabase/schema.sql`](supabase/schema.sql).
+3. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and
+   `VITE_SUPABASE_ANON_KEY` (Dashboard → Settings → API).
+4. Restart `npm run dev` and sign up from Settings → Account & sync.
 
-1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
-2. En el **SQL Editor**, ejecuta [`supabase/schema.sql`](supabase/schema.sql).
-3. Copia `.env.example` a `.env.local` y rellena `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (Dashboard → Settings → API).
-4. Reinicia `npm run dev`. Crea tu cuenta desde Ajustes → Cuenta y sincronización.
+Sync is local-first: Dexie is the source of truth, the cloud is backup/multi-device,
+conflicts resolve by last-write-wins. Device settings (theme/sound) are not synced.
 
-La sincronización es local-first: Dexie es la fuente de verdad, la nube es respaldo/multi-dispositivo, conflictos por "última escritura gana". Los ajustes (tema/sonido) no se sincronizan: son por dispositivo.
+## Install as a PWA
 
-## Instalar como PWA
+- **Desktop (Edge/Chrome)** — open the app → install icon in the address bar → Install.
+- **Android (Chrome)** — menu ⋮ → "Add to Home screen".
+- **iPhone (Safari)** — Share → "Add to Home Screen".
 
-- **Windows (Edge/Chrome)**: abre la app → icono de instalación en la barra de direcciones → Instalar.
-- **Android (Chrome)**: menú ⋮ → "Añadir a pantalla de inicio".
-- **iPhone (Safari)**: Compartir → "Añadir a pantalla de inicio".
+## Roadmap
 
-## Stack
+This is an ongoing project. Ideas on the list: habit statistics, native packaging via
+Capacitor (with an eye on the App Store), richer animations, and more accessibility polish.
+Since it's a learning project, the roadmap evolves as I explore new topics.
 
-Vite + React 19 + TypeScript estricto · Tailwind CSS v4 · Dexie (IndexedDB) · vite-plugin-pwa (Workbox) · Recharts · Web Audio API · Supabase (auth + Postgres + Storage).
+## License
+
+MIT © 2026 Johnny E. Valverde Rodríguez — see [LICENSE](LICENSE).

@@ -336,11 +336,19 @@ export default function App() {
         {sidebar}
       </aside>
 
-      {/* Drawer móvil */}
+      {/* Drawer móvil: ocupa toda la pantalla para máxima accesibilidad */}
       {drawerOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] border-r border-line/5 glass-strong p-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-2xl">
+          <div className="absolute inset-0 h-dvh w-full glass-strong px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)]">
+            <button
+              onClick={() => setDrawerOpen(false)}
+              aria-label="Cerrar menú"
+              className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-10 flex size-11 items-center justify-center rounded-xl text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-6" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
             {sidebar}
           </div>
         </div>

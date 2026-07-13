@@ -35,24 +35,25 @@ function NavItem({
     <button
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+      className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-base font-medium transition-colors lg:gap-2.5 lg:py-2 lg:text-sm ${
         active ? 'bg-accent-500/15 text-accent-300' : 'text-ink-dim hover:bg-ink/5 hover:text-ink'
       }`}
     >
       {icon}
       <span className="min-w-0 flex-1 truncate text-left">{label}</span>
       {badge && (
-        <span className="rounded bg-accent-500/15 px-1 py-px text-[10px] font-bold text-accent-300">{badge}</span>
+        <span className="rounded bg-accent-500/15 px-1.5 py-px text-xs font-bold text-accent-300 lg:px-1 lg:text-[10px]">{badge}</span>
       )}
       {count !== undefined && count > 0 && (
-        <span className={`text-xs ${active ? 'text-accent-300/80' : 'text-ink-faint'}`}>{count}</span>
+        <span className={`text-sm lg:text-xs ${active ? 'text-accent-300/80' : 'text-ink-faint'}`}>{count}</span>
       )}
     </button>
   )
 }
 
+// Iconos más grandes en móvil (accesibilidad); tamaño compacto en escritorio.
 const icon = (path: ReactNode) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5 shrink-0" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6 shrink-0 lg:size-4.5" aria-hidden="true">
     {path}
   </svg>
 )
@@ -79,7 +80,7 @@ export function Sidebar({
             <path d="M5 20l7-7 7 7" />
           </svg>
         </div>
-        <span className="text-base font-bold text-ink">Quest</span>
+        <span className="text-lg font-bold text-ink lg:text-base">Quest</span>
       </div>
 
       <PlayerCard />
@@ -171,7 +172,7 @@ export function Sidebar({
       </nav>
 
       <div className="mt-5 mb-1 flex items-center justify-between px-3">
-        <span className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Listas</span>
+        <span className="text-sm font-semibold tracking-wide text-ink-faint uppercase lg:text-xs">Listas</span>
         <button
           onClick={onNewList}
           aria-label="Nueva lista"
@@ -223,7 +224,7 @@ export function Sidebar({
         {tags.length > 0 && (
           <>
             <div className="mt-4 mb-1 px-3">
-              <span className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Etiquetas</span>
+              <span className="text-sm font-semibold tracking-wide text-ink-faint uppercase lg:text-xs">Etiquetas</span>
             </div>
             {tags.map((tag) => (
               <div key={tag.id} className="group relative">

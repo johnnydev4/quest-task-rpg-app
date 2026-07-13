@@ -16,6 +16,16 @@ export function Modal({ title, onClose, children }: ModalProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // Bloquea el scroll de la página de fondo mientras el modal está abierto
+  // (en iOS, sin esto la interfaz de atrás "se mueve" al arrastrar la hoja).
+  useEffect(() => {
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [])
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden="true" />
@@ -23,7 +33,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-line/5 glass-strong shadow-2xl sm:rounded-2xl"
+        className="relative max-h-[85dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl sm:max-h-[90dvh] sm:rounded-2xl"
         style={{ animation: 'modal-in 0.22s ease-out both' }}
       >
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-strong px-5 py-4">

@@ -174,6 +174,18 @@ a {
   border-radius: 4px;
 }
 
+/* Campos de formulario: en vez del contorno duro, un resplandor sutil del acento. */
+input:focus-visible,
+input:focus,
+select:focus-visible,
+textarea:focus-visible,
+textarea:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--t-accent-500) 22%, transparent),
+    0 0 18px color-mix(in srgb, var(--t-accent-500) 22%, transparent);
+}
+
 /* Animaciones del sistema RPG y micro-interacciones (Fases 3 y 10) */
 @keyframes levelup-in {
   0% {

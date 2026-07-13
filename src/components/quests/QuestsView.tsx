@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent, type TouchEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Quest, QuestStep } from '../../db/types'
@@ -70,12 +70,38 @@ export function QuestsView() {
   // A partir de +2 el mes queda sellado (sin revelar criatura ni tema).
   const sealed = monthOffset >= 2
 
+  // Deslizar el banner (swipe) para cambiar de mes: izquierda = siguiente, derecha = anterior.
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  function onBannerTouchStart(e: TouchEvent) {
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY }
+  }
+  function onBannerTouchEnd(e: TouchEvent) {
+    const start = touchStart.current
+    touchStart.current = null
+    if (!start) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    // Solo cuenta como swipe si el gesto es claramente horizontal.
+    if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+    if (dx < 0) {
+      if (!sealed) setMonthOffset((o) => o + 1) // desde el sellado no se avanza más
+    } else {
+      setMonthOffset((o) => o - 1)
+    }
+  }
+
   if (sealed) {
     const sealedNav =
       'flex size-8 items-center justify-center rounded-lg border border-line/15 text-ink-dim transition-colors hover:bg-ink/5 disabled:opacity-40 disabled:hover:bg-transparent'
     return (
       <div className="space-y-5">
-        <section className="relative min-h-52 overflow-hidden rounded-3xl border border-line/10 glass-strong p-6 shadow-xl">
+        <section
+          className="relative min-h-52 touch-pan-y overflow-hidden rounded-3xl border border-line/10 glass-strong p-6 shadow-xl"
+          onTouchStart={onBannerTouchStart}
+          onTouchEnd={onBannerTouchEnd}
+        >
           <span className="pointer-events-none absolute -top-10 -right-3 text-[9rem] opacity-[0.08] select-none" aria-hidden="true">
             🔒
           </span>
@@ -120,8 +146,10 @@ export function QuestsView() {
     <div className="space-y-5">
       {/* Héroe del mes */}
       <section
-        className="relative min-h-44 overflow-hidden rounded-3xl border border-line/10 p-6 shadow-xl"
+        className="relative min-h-44 touch-pan-y overflow-hidden rounded-3xl border border-line/10 p-6 shadow-xl"
         style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
+        onTouchStart={onBannerTouchStart}
+        onTouchEnd={onBannerTouchEnd}
       >
         {theme.image ? (
           <>

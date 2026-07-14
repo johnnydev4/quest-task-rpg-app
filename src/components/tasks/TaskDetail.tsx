@@ -2,26 +2,39 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
-import type { Attachment, Comment, List, Reminder, Subtask, Tag, Task } from '../../db/types'
+import type {
+  Attachment,
+  Comment,
+  List,
+  Priority,
+  RecurrenceUnit,
+  Reminder,
+  Subtask,
+  Tag,
+  Task,
+} from '../../db/types'
 import { deleteTask, setTaskCompleted, updateTask } from '../../db/repo/tasks'
 import { createSubtask, deleteSubtask, setSubtaskCompleted, updateSubtask } from '../../db/repo/subtasks'
+import { createReminder, deleteReminder, updateReminder } from '../../db/repo/reminders'
 import {
   dateInputToMs,
+  dateTimeInputToMs,
   formatDateTime,
   formatDue,
   formatDueTime,
   msToDateInput,
+  msToDateTimeInput,
   startOfDayOffset,
   startOfToday,
 } from '../../lib/dates'
 import { describeRule } from '../../lib/recurrence'
-import { PRIORITIES, PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
+import { PRIORITIES, PRIORITY_CHIP_CLASS, PRIORITY_LABEL, PRIORITY_WEIGHT } from '../../lib/priority'
+import { notificationService } from '../../services/notifications'
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
 import { TagSection } from './detail/TagSection'
 import { CommentSection } from './detail/CommentSection'
 import { AttachmentSection } from './detail/AttachmentSection'
-import { ReminderSection } from './detail/ReminderSection'
 import { RecurrenceSection } from './detail/RecurrenceSection'
 import { ConvertToHabit } from '../habits/ConvertToHabit'
 
@@ -168,6 +181,267 @@ function SheetOption({
         </svg>
       )}
     </button>
+  )
+}
+
+/** Etiqueta corta de fecha+hora para las opciones rápidas (p. ej. "lun, 21:00"). */
+function shortWhen(ms: number): string {
+  return new Intl.DateTimeFormat('es', { weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(ms)
+}
+
+/**
+ * Hoja "Recordarme" (Aviso): opciones rápidas que crean el aviso de un toque,
+ * como Microsoft To Do. Debajo, la lista de avisos ya puestos para editar/borrar.
+ */
+function ReminderSheet({
+  taskId,
+  reminders,
+  onDone,
+}: {
+  taskId: string
+  reminders: Reminder[]
+  onDone: () => void
+}) {
+  const [permission, setPermission] = useState(notificationService.permission())
+
+  async function askPermission() {
+    await notificationService.requestPermission()
+    setPermission(notificationService.permission())
+  }
+
+  function addAt(ms: number) {
+    createReminder({ taskId, remindAt: ms })
+    onDone()
+  }
+
+  // Más tarde hoy: a las 21:00 si aún no ha pasado; si no, dentro de 2 horas.
+  const laterToday = (() => {
+    const d = new Date()
+    if (d.getHours() < 21) {
+      d.setHours(21, 0, 0, 0)
+      return d.getTime()
+    }
+    return Date.now() + 2 * 60 * 60_000
+  })()
+  const tomorrow9 = startOfDayOffset(1) + 9 * 60 * 60_000
+  const nextWeek9 = startOfDayOffset(7) + 9 * 60 * 60_000
+
+  return (
+    <div className="space-y-1">
+      <SheetOption
+        icon={
+          <RowIcon>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </RowIcon>
+        }
+        label="Más tarde hoy"
+        hint={new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(laterToday)}
+        onClick={() => addAt(laterToday)}
+      />
+      <SheetOption
+        icon={
+          <RowIcon>
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+            <path d="m9 16 2 2 4-4" />
+          </RowIcon>
+        }
+        label="Mañana"
+        hint={shortWhen(tomorrow9)}
+        onClick={() => addAt(tomorrow9)}
+      />
+      <SheetOption
+        icon={
+          <RowIcon>
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+            <path d="m8 16 3 3 5-6" />
+          </RowIcon>
+        }
+        label="Semana próxima"
+        hint={shortWhen(nextWeek9)}
+        onClick={() => addAt(nextWeek9)}
+      />
+      <label className="flex min-h-13 items-center gap-3.5 rounded-xl px-3">
+        <span className="text-ink-muted">
+          <RowIcon>
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+            <circle cx="16.5" cy="16.5" r="3.5" />
+            <path d="M16.5 15.2v1.3l.9.9" />
+          </RowIcon>
+        </span>
+        <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Elegir una fecha y una hora</span>
+        <input
+          type="datetime-local"
+          onChange={(e) => {
+            const ms = dateTimeInputToMs(e.target.value)
+            if (ms !== null) addAt(ms)
+          }}
+          aria-label="Fecha y hora del recordatorio"
+          className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+        />
+      </label>
+
+      {reminders.length > 0 && (
+        <>
+          <div className="my-2 border-t border-line/5" />
+          <p className="px-3 pb-1 text-xs font-medium text-ink-muted">Avisos programados</p>
+          {reminders.map((r) => (
+            <div key={r.id} className="flex items-center gap-2 px-3 py-1.5">
+              <input
+                type="datetime-local"
+                value={msToDateTimeInput(r.remindAt)}
+                onChange={(e) => {
+                  const ms = dateTimeInputToMs(e.target.value)
+                  if (ms !== null) updateReminder(r.id, { remindAt: ms, dismissed: false, firedCount: 0 })
+                }}
+                aria-label="Fecha y hora del recordatorio"
+                className="min-w-0 flex-1 rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+              />
+              <button
+                onClick={() => deleteReminder(r.id)}
+                aria-label="Eliminar recordatorio"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-ink/5 hover:text-danger"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </>
+      )}
+
+      {permission === 'default' && (
+        <button
+          type="button"
+          onClick={askPermission}
+          className="mt-2 w-full rounded-lg border border-line/10 px-3 py-2 text-sm text-ink-dim transition-colors hover:bg-ink/5"
+        >
+          Permitir notificaciones del sistema
+        </button>
+      )}
+      {permission === 'denied' && (
+        <p className="mt-2 px-3 text-[11px] text-ink-faint">
+          Notificaciones del sistema bloqueadas; los avisos saldrán dentro de la app.
+        </p>
+      )}
+    </div>
+  )
+}
+
+const REPEAT_PRESETS: { unit: RecurrenceUnit; label: string }[] = [
+  { unit: 'day', label: 'Diariamente' },
+  { unit: 'week', label: 'Semanalmente' },
+  { unit: 'month', label: 'Mensualmente' },
+  { unit: 'year', label: 'Anualmente' },
+]
+
+/**
+ * Hoja "Repetir": presets de un toque (Diariamente, Semanalmente…) como To Do,
+ * más "Personalizado" que revela el editor detallado (cada N · fin).
+ */
+function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
+  const rule = task.recurrenceRule
+  const isSimple = !!rule && rule.every === 1 && rule.end.type === 'never'
+  const isCustom = !!rule && !isSimple
+  const [showCustom, setShowCustom] = useState(isCustom)
+
+  return (
+    <div className="space-y-1">
+      <SheetOption
+        icon={
+          <RowIcon>
+            <path d="M18 6 6 18M6 6l12 12" />
+          </RowIcon>
+        }
+        label="No repetir"
+        selected={!rule}
+        onClick={() => {
+          updateTask(task.id, { recurrenceRule: null })
+          onDone()
+        }}
+      />
+      {REPEAT_PRESETS.map((p) => (
+        <SheetOption
+          key={p.unit}
+          icon={
+            <RowIcon>
+              <path d="m17 2 4 4-4 4" />
+              <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+              <path d="m7 22-4-4 4-4" />
+              <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+            </RowIcon>
+          }
+          label={p.label}
+          selected={isSimple && rule!.unit === p.unit}
+          onClick={() => {
+            updateTask(task.id, { recurrenceRule: { every: 1, unit: p.unit, end: { type: 'never' } } })
+            onDone()
+          }}
+        />
+      ))}
+      <SheetOption
+        icon={
+          <RowIcon>
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 3.6a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </RowIcon>
+        }
+        label="Personalizado"
+        selected={isCustom}
+        onClick={() => {
+          if (!rule) {
+            updateTask(task.id, { recurrenceRule: { every: 2, unit: 'day', end: { type: 'never' } } })
+          }
+          setShowCustom(true)
+        }}
+      />
+      {(showCustom || isCustom) && task.recurrenceRule && (
+        <div className="mt-2">
+          <RecurrenceSection task={task} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Slider de prioridad (Baja · Media · Alta) que se arrastra entre 3 posiciones. */
+function PrioritySlider({ value, onChange }: { value: Priority; onChange: (p: Priority) => void }) {
+  const idx = PRIORITY_WEIGHT[value]
+  return (
+    <div className="px-3 py-2">
+      <div className="mb-4 flex items-center justify-center">
+        <span className={`rounded-full border px-3 py-1 text-sm font-semibold ${PRIORITY_CHIP_CLASS[value]}`}>
+          {PRIORITY_LABEL[value]}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={2}
+        step={1}
+        value={idx}
+        onChange={(e) => onChange(PRIORITIES[Number(e.target.value)])}
+        aria-label="Prioridad"
+        aria-valuetext={PRIORITY_LABEL[value]}
+        className="w-full cursor-pointer accent-accent-500"
+      />
+      <div className="mt-1 flex justify-between text-xs">
+        {PRIORITIES.map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onChange(p)}
+            className={`rounded px-1 transition-colors ${value === p ? 'font-semibold text-accent-300' : 'text-ink-muted hover:text-ink-dim'}`}
+          >
+            {PRIORITY_LABEL[p]}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -611,11 +885,13 @@ function TaskForm({
             </div>
           )}
 
-          {sheet === 'recordar' && <ReminderSection taskId={task.id} reminders={reminders} />}
+          {sheet === 'recordar' && (
+            <ReminderSheet taskId={task.id} reminders={reminders} onDone={closeSheet} />
+          )}
 
-          {sheet === 'repetir' && <RecurrenceSection task={task} />}
+          {sheet === 'repetir' && <RepeatSheet task={task} onDone={closeSheet} />}
 
-          {sheet === 'habito' && <ConvertToHabit task={task} onClose={onClose} />}
+          {sheet === 'habito' && <ConvertToHabit task={task} onClose={onClose} autoOpen />}
 
           {sheet === 'lista' && (
             <div className="space-y-1">
@@ -652,36 +928,7 @@ function TaskForm({
           )}
 
           {sheet === 'prioridad' && (
-            <div className="space-y-1" role="radiogroup" aria-label="Prioridad">
-              {PRIORITIES.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  role="radio"
-                  aria-checked={task.priority === p}
-                  onClick={() => {
-                    updateTask(task.id, { priority: p })
-                    closeSheet()
-                  }}
-                  className={`flex min-h-13 w-full items-center gap-3.5 rounded-xl px-3 py-3 text-left text-[15px] font-medium transition-colors hover:bg-ink/5 lg:text-sm ${
-                    task.priority === p ? 'text-accent-300' : 'text-ink'
-                  }`}
-                >
-                  <span className={task.priority === p ? 'text-accent-300' : 'text-ink-muted'}>
-                    <RowIcon>
-                      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                      <path d="M4 22v-7" />
-                    </RowIcon>
-                  </span>
-                  <span className="flex-1">{PRIORITY_LABEL[p]}</span>
-                  {task.priority === p && (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="size-4.5 text-accent-300" aria-hidden="true">
-                      <path d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
+            <PrioritySlider value={task.priority} onChange={(p) => updateTask(task.id, { priority: p })} />
           )}
 
           {sheet === 'color' && (

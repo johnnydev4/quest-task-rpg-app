@@ -9,14 +9,16 @@ import { DayPicker } from './DayPicker'
 interface ConvertToHabitProps {
   task: Task
   onClose: () => void
+  /** Empieza ya expandido (p. ej. dentro de una hoja que abre la configuración directamente). */
+  autoOpen?: boolean
 }
 
 /**
  * Convierte una tarea en hábito: eliges los días y hasta cuándo; la tarea
  * desaparece de las listas y pasa a vivir en Hábitos como barra de progreso.
  */
-export function ConvertToHabit({ task, onClose }: ConvertToHabitProps) {
-  const [open, setOpen] = useState(false)
+export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHabitProps) {
+  const [open, setOpen] = useState(autoOpen)
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5])
   const [endDate, setEndDate] = useState(() => startOfDayOffset(30))
 
@@ -70,13 +72,15 @@ export function ConvertToHabit({ task, onClose }: ConvertToHabitProps) {
         >
           Convertir 🔁
         </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-lg border border-line/10 px-3 py-1.5 text-sm text-ink-muted transition-colors hover:bg-ink/5"
-        >
-          Cancelar
-        </button>
+        {!autoOpen && (
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-lg border border-line/10 px-3 py-1.5 text-sm text-ink-muted transition-colors hover:bg-ink/5"
+          >
+            Cancelar
+          </button>
+        )}
       </div>
     </div>
   )

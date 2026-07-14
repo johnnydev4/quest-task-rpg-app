@@ -27,7 +27,7 @@ import {
   startOfToday,
 } from '../../lib/dates'
 import { describeRule } from '../../lib/recurrence'
-import { PRIORITIES, PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
+import { PRIORITIES, PRIORITY_LABEL, PRIORITY_SELECTED_CLASS } from '../../lib/priority'
 import { notificationService } from '../../services/notifications'
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
@@ -81,6 +81,18 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
   )
 }
 
+/**
+ * Abre el selector nativo (calendario/hora) de un input. En iOS un input a
+ * opacidad 0 no lo abre solo al tocarlo, así que lo forzamos con showPicker().
+ */
+function openNativePicker(input: HTMLInputElement) {
+  try {
+    input.showPicker()
+  } catch {
+    input.focus()
+  }
+}
+
 /** Icono de fila con el trazo estándar de la app. */
 function RowIcon({ children }: { children: ReactNode }) {
   return (
@@ -120,18 +132,19 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
 
   // Portal a <body>: evita que un `transform` de un ancestro (la animación del
   // modal) convierta este `fixed` en relativo al panel y lo recorte.
+  // Móvil: hoja inferior. Escritorio (lg): panel anclado al sidebar izquierdo.
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center lg:items-stretch lg:justify-start">
       <div className="absolute inset-0 bg-black/55" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative max-h-[82dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl sm:rounded-2xl"
+        className="relative max-h-[82dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl lg:h-full lg:max-h-none lg:w-80 lg:max-w-none lg:rounded-none lg:border-y-0 lg:border-l-0"
         style={{ animation: 'modal-in 0.22s ease-out both' }}
       >
         <div className="sticky top-0 z-10 glass-strong">
-          <div className="flex justify-center pt-2.5 sm:hidden">
+          <div className="flex justify-center pt-2.5 lg:hidden">
             <span className="h-1 w-9 rounded-full bg-ink/25" aria-hidden="true" />
           </div>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3">
@@ -280,6 +293,7 @@ function ReminderSheet({
         </svg>
         <input
           type="datetime-local"
+          onClick={(e) => openNativePicker(e.currentTarget)}
           onChange={(e) => {
             const ms = dateTimeInputToMs(e.target.value)
             if (ms !== null) createReminder({ taskId, remindAt: ms })
@@ -308,6 +322,7 @@ function ReminderSheet({
                 <input
                   type="datetime-local"
                   value={msToDateTimeInput(r.remindAt)}
+                  onClick={(e) => openNativePicker(e.currentTarget)}
                   onChange={(e) => {
                     const ms = dateTimeInputToMs(e.target.value)
                     if (ms !== null) updateReminder(r.id, { remindAt: ms, dismissed: false, firedCount: 0 })
@@ -474,7 +489,6 @@ type SheetId =
   | 'repetir'
   | 'habito'
   | 'lista'
-  | 'prioridad'
   | 'color'
   | 'etiquetas'
   | 'archivos'
@@ -486,7 +500,6 @@ const SHEET_TITLE: Record<SheetId, string> = {
   repetir: 'Repetir',
   habito: 'Convertir en hábito',
   lista: 'Mover a una lista',
-  prioridad: 'Prioridad',
   color: 'Color',
   etiquetas: 'Etiquetas',
   archivos: 'Archivos',
@@ -682,21 +695,35 @@ function TaskForm({
           }
           onClick={() => setSheet('lista')}
         />
-        <Row
-          icon={
-            <RowIcon>
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-              <path d="M4 22v-7" />
-            </RowIcon>
-          }
-          label="Prioridad"
-          value={
-            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${PRIORITY_CHIP_CLASS[task.priority]}`}>
-              {PRIORITY_LABEL[task.priority]}
+        <div className="border-b border-line/5 px-4 py-3">
+          <div className="flex items-center gap-3.5">
+            <span className="text-ink-muted">
+              <RowIcon>
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                <path d="M4 22v-7" />
+              </RowIcon>
             </span>
-          }
-          onClick={() => setSheet('prioridad')}
-        />
+            <span className="text-[15px] text-ink-muted lg:text-sm">Prioridad</span>
+          </div>
+          <div className="mt-2.5 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Prioridad">
+            {PRIORITIES.map((p) => (
+              <button
+                key={p}
+                type="button"
+                role="radio"
+                aria-checked={task.priority === p}
+                onClick={() => updateTask(task.id, { priority: p })}
+                className={`rounded-xl border px-2 py-2 text-sm font-medium transition-colors ${
+                  task.priority === p
+                    ? PRIORITY_SELECTED_CLASS[p]
+                    : 'border-line/10 text-ink-muted hover:bg-ink/5'
+                }`}
+              >
+                {PRIORITY_LABEL[p]}
+              </button>
+            ))}
+          </div>
+        </div>
         <Row
           icon={
             <RowIcon>
@@ -826,6 +853,7 @@ function TaskForm({
                 <input
                   type="date"
                   value={msToDateInput(task.dueAt)}
+                  onClick={(e) => openNativePicker(e.currentTarget)}
                   onChange={(e) => {
                     const ms = dateInputToMs(e.target.value)
                     updateTask(task.id, { dueAt: ms, dueHasTime: ms === null ? false : task.dueHasTime })
@@ -853,6 +881,7 @@ function TaskForm({
                     <input
                       type="time"
                       value={timeValue}
+                      onClick={(e) => openNativePicker(e.currentTarget)}
                       onChange={(e) => setTime(e.target.value)}
                       aria-label="Hora programada"
                       className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -914,30 +943,6 @@ function TaskForm({
                     closeSheet()
                   }}
                 />
-              ))}
-            </div>
-          )}
-
-          {sheet === 'prioridad' && (
-            <div className="space-y-1" role="radiogroup" aria-label="Prioridad">
-              {PRIORITIES.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  role="radio"
-                  aria-checked={task.priority === p}
-                  onClick={() => {
-                    updateTask(task.id, { priority: p })
-                    closeSheet()
-                  }}
-                  className={`min-h-13 w-full rounded-xl px-3 py-3 text-left text-[15px] transition-colors lg:text-sm ${
-                    task.priority === p
-                      ? 'bg-accent-500/10 font-semibold text-accent-300'
-                      : 'text-ink hover:bg-ink/5'
-                  }`}
-                >
-                  {PRIORITY_LABEL[p]}
-                </button>
               ))}
             </div>
           )}

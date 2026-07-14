@@ -24,6 +24,7 @@ import { useBlurredBackground } from './lib/useBlurredBackground'
 import { ListModal } from './components/lists/ListModal'
 import { TagModal } from './components/tags/TagModal'
 import { LevelUpToast } from './components/rpg/LevelUpToast'
+import { LiquidSun } from './components/rpg/LiquidSun'
 import { SettingsModal } from './components/settings/SettingsModal'
 import { AccountModal } from './components/account/AccountModal'
 import { ToastStack } from './components/ui/ToastStack'
@@ -445,7 +446,11 @@ export default function App() {
               <HabitsToday onManage={() => setView({ kind: 'habits' })} />
               {isEmpty ? (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
-                  <div className="flex size-14 items-center justify-center rounded-2xl glass-panel text-3xl">☀️</div>
+                  {/* El sol flota sobre una base de cristal líquido */}
+                  <div className="relative grid place-items-center py-1">
+                    <div className="size-20 rounded-full glass-panel" />
+                    <LiquidSun className="absolute size-32 drop-shadow-[0_10px_20px_color-mix(in_srgb,#ff8400_35%,transparent)]" />
+                  </div>
                   <p className="font-medium text-ink-dim">Nada para hoy</p>
                   <p className="max-w-xs text-sm text-ink-faint">
                     Añade una tarea abajo y empieza a ganar terreno, una a la vez.

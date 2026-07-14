@@ -6,7 +6,6 @@ import type {
   Attachment,
   Comment,
   List,
-  Priority,
   RecurrenceUnit,
   Reminder,
   Subtask,
@@ -28,7 +27,7 @@ import {
   startOfToday,
 } from '../../lib/dates'
 import { describeRule } from '../../lib/recurrence'
-import { PRIORITIES, PRIORITY_CHIP_CLASS, PRIORITY_LABEL, PRIORITY_WEIGHT } from '../../lib/priority'
+import { PRIORITIES, PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
 import { notificationService } from '../../services/notifications'
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
@@ -263,7 +262,10 @@ function ReminderSheet({
         hint={shortWhen(nextWeek9)}
         onClick={() => addAt(nextWeek9)}
       />
-      <label className="flex min-h-13 items-center gap-3.5 rounded-xl px-3">
+      {/* Selector personalizado: el input va invisible sobre toda la fila,
+          así se abre el calendario nativo al tocar sin dejar una caja blanca
+          ni cerrar la hoja de golpe. */}
+      <label className="relative flex min-h-13 items-center gap-3.5 rounded-xl px-3 transition-colors hover:bg-ink/5">
         <span className="text-ink-muted">
           <RowIcon>
             <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -273,14 +275,17 @@ function ReminderSheet({
           </RowIcon>
         </span>
         <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Elegir una fecha y una hora</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-ink-faint" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
         <input
           type="datetime-local"
           onChange={(e) => {
             const ms = dateTimeInputToMs(e.target.value)
-            if (ms !== null) addAt(ms)
+            if (ms !== null) createReminder({ taskId, remindAt: ms })
           }}
           aria-label="Fecha y hora del recordatorio"
-          className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />
       </label>
 
@@ -289,21 +294,32 @@ function ReminderSheet({
           <div className="my-2 border-t border-line/5" />
           <p className="px-3 pb-1 text-xs font-medium text-ink-muted">Avisos programados</p>
           {reminders.map((r) => (
-            <div key={r.id} className="flex items-center gap-2 px-3 py-1.5">
-              <input
-                type="datetime-local"
-                value={msToDateTimeInput(r.remindAt)}
-                onChange={(e) => {
-                  const ms = dateTimeInputToMs(e.target.value)
-                  if (ms !== null) updateReminder(r.id, { remindAt: ms, dismissed: false, firedCount: 0 })
-                }}
-                aria-label="Fecha y hora del recordatorio"
-                className="min-w-0 flex-1 rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
-              />
+            <div key={r.id} className="flex items-center gap-1">
+              <label className="relative flex min-h-12 flex-1 items-center gap-3.5 rounded-xl px-3 transition-colors hover:bg-ink/5">
+                <span className="text-accent-300">
+                  <RowIcon>
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </RowIcon>
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[15px] text-ink lg:text-sm">
+                  {formatDateTime(r.remindAt)}
+                </span>
+                <input
+                  type="datetime-local"
+                  value={msToDateTimeInput(r.remindAt)}
+                  onChange={(e) => {
+                    const ms = dateTimeInputToMs(e.target.value)
+                    if (ms !== null) updateReminder(r.id, { remindAt: ms, dismissed: false, firedCount: 0 })
+                  }}
+                  aria-label="Editar fecha y hora del recordatorio"
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+              </label>
               <button
                 onClick={() => deleteReminder(r.id)}
                 aria-label="Eliminar recordatorio"
-                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-ink/5 hover:text-danger"
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-ink/5 hover:text-danger"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
                   <path d="M18 6 6 18M6 6l12 12" />
@@ -404,43 +420,6 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
           <RecurrenceSection task={task} />
         </div>
       )}
-    </div>
-  )
-}
-
-/** Slider de prioridad (Baja · Media · Alta) que se arrastra entre 3 posiciones. */
-function PrioritySlider({ value, onChange }: { value: Priority; onChange: (p: Priority) => void }) {
-  const idx = PRIORITY_WEIGHT[value]
-  return (
-    <div className="px-3 py-2">
-      <div className="mb-4 flex items-center justify-center">
-        <span className={`rounded-full border px-3 py-1 text-sm font-semibold ${PRIORITY_CHIP_CLASS[value]}`}>
-          {PRIORITY_LABEL[value]}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={2}
-        step={1}
-        value={idx}
-        onChange={(e) => onChange(PRIORITIES[Number(e.target.value)])}
-        aria-label="Prioridad"
-        aria-valuetext={PRIORITY_LABEL[value]}
-        className="w-full cursor-pointer accent-accent-500"
-      />
-      <div className="mt-1 flex justify-between text-xs">
-        {PRIORITIES.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => onChange(p)}
-            className={`rounded px-1 transition-colors ${value === p ? 'font-semibold text-accent-300' : 'text-ink-muted hover:text-ink-dim'}`}
-          >
-            {PRIORITY_LABEL[p]}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
@@ -830,7 +809,7 @@ function TaskForm({
                 onClick={() => updateTask(task.id, { dueAt: startOfDayOffset(7), dueHasTime: false })}
               />
               <div className="my-2 border-t border-line/5" />
-              <label className="flex min-h-13 items-center gap-3.5 rounded-xl px-3">
+              <label className="relative flex min-h-13 items-center gap-3.5 rounded-xl px-3 transition-colors hover:bg-ink/5">
                 <span className="text-ink-muted">
                   <RowIcon>
                     <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -838,6 +817,12 @@ function TaskForm({
                   </RowIcon>
                 </span>
                 <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Elegir una fecha</span>
+                {task.dueAt !== null && (
+                  <span className="shrink-0 text-sm text-ink-faint lg:text-xs">{formatDue(task.dueAt)}</span>
+                )}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-ink-faint" aria-hidden="true">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
                 <input
                   type="date"
                   value={msToDateInput(task.dueAt)}
@@ -846,12 +831,12 @@ function TaskForm({
                     updateTask(task.id, { dueAt: ms, dueHasTime: ms === null ? false : task.dueHasTime })
                   }}
                   aria-label="Fecha"
-                  className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
               </label>
               {task.dueAt !== null && (
                 <>
-                  <label className="flex min-h-13 items-center gap-3.5 rounded-xl px-3">
+                  <label className="relative flex min-h-13 items-center gap-3.5 rounded-xl px-3 transition-colors hover:bg-ink/5">
                     <span className="text-ink-muted">
                       <RowIcon>
                         <circle cx="12" cy="12" r="9" />
@@ -859,12 +844,18 @@ function TaskForm({
                       </RowIcon>
                     </span>
                     <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Hora</span>
+                    <span className="shrink-0 text-sm text-ink-faint lg:text-xs">
+                      {task.dueHasTime ? formatDueTime(task.dueAt) : 'Sin hora'}
+                    </span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-ink-faint" aria-hidden="true">
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
                     <input
                       type="time"
                       value={timeValue}
                       onChange={(e) => setTime(e.target.value)}
                       aria-label="Hora programada"
-                      className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                     />
                   </label>
                   <div className="my-2 border-t border-line/5" />
@@ -928,7 +919,27 @@ function TaskForm({
           )}
 
           {sheet === 'prioridad' && (
-            <PrioritySlider value={task.priority} onChange={(p) => updateTask(task.id, { priority: p })} />
+            <div className="space-y-1" role="radiogroup" aria-label="Prioridad">
+              {PRIORITIES.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  role="radio"
+                  aria-checked={task.priority === p}
+                  onClick={() => {
+                    updateTask(task.id, { priority: p })
+                    closeSheet()
+                  }}
+                  className={`min-h-13 w-full rounded-xl px-3 py-3 text-left text-[15px] transition-colors lg:text-sm ${
+                    task.priority === p
+                      ? 'bg-accent-500/10 font-semibold text-accent-300'
+                      : 'text-ink hover:bg-ink/5'
+                  }`}
+                >
+                  {PRIORITY_LABEL[p]}
+                </button>
+              ))}
+            </div>
           )}
 
           {sheet === 'color' && (

@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Attachment, Comment, List, Reminder, Subtask, Tag, Task } from '../../db/types'
@@ -14,7 +15,7 @@ import {
   startOfToday,
 } from '../../lib/dates'
 import { describeRule } from '../../lib/recurrence'
-import { PRIORITIES, PRIORITY_CHIP_CLASS, PRIORITY_LABEL, PRIORITY_SELECTED_CLASS } from '../../lib/priority'
+import { PRIORITIES, PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
 import { TagSection } from './detail/TagSection'
@@ -68,9 +69,6 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
   )
 }
 
-const inputClass =
-  'w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
-
 /** Icono de fila con el trazo estándar de la app. */
 function RowIcon({ children }: { children: ReactNode }) {
   return (
@@ -95,58 +93,129 @@ function Group({ children }: { children: ReactNode }) {
 }
 
 /**
- * Fila táctil (icono + etiqueta + valor) que se expande para editar,
- * inspirada en Microsoft To Do y adaptada al Liquid Glass.
+ * Hoja inferior (bottom sheet) estilo Microsoft To Do adaptada al Liquid Glass:
+ * sube desde abajo con un tirador, título y botón "Listo". Cierra con Escape,
+ * tocando fuera o el botón. Se dibuja por encima del detalle (z alto).
+ */
+function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  // Portal a <body>: evita que un `transform` de un ancestro (la animación del
+  // modal) convierta este `fixed` en relativo al panel y lo recorte.
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4">
+      <div className="absolute inset-0 bg-black/55" onClick={onClose} aria-hidden="true" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="relative max-h-[82dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl sm:rounded-2xl"
+        style={{ animation: 'modal-in 0.22s ease-out both' }}
+      >
+        <div className="sticky top-0 z-10 glass-strong">
+          <div className="flex justify-center pt-2.5 sm:hidden">
+            <span className="h-1 w-9 rounded-full bg-ink/25" aria-hidden="true" />
+          </div>
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3">
+            <span aria-hidden="true" />
+            <h3 className="text-center text-base font-semibold text-ink">{title}</h3>
+            <button onClick={onClose} className="justify-self-end text-[15px] font-semibold text-accent-400">
+              Listo
+            </button>
+          </div>
+        </div>
+        <div className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1">{children}</div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+/** Opción de una hoja (fila táctil grande estilo To Do). */
+function SheetOption({
+  icon,
+  label,
+  hint,
+  selected,
+  onClick,
+}: {
+  icon: ReactNode
+  label: string
+  hint?: string
+  selected?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-h-13 w-full items-center gap-3.5 rounded-xl px-3 py-3 text-left transition-colors hover:bg-ink/5 ${
+        selected ? 'text-accent-300' : 'text-ink'
+      }`}
+    >
+      <span className={selected ? 'text-accent-300' : 'text-ink-muted'}>{icon}</span>
+      <span className="min-w-0 flex-1 truncate text-[15px] lg:text-sm">{label}</span>
+      {hint && <span className="shrink-0 text-sm text-ink-faint lg:text-xs">{hint}</span>}
+      {selected && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="size-4.5 shrink-0 text-accent-300" aria-hidden="true">
+          <path d="M5 13l4 4L19 7" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
+/**
+ * Fila de opción de la tarea. Al tocarla NO se despliega en el sitio:
+ * abre una hoja inferior con su configuración (como To Do).
  */
 function Row({
   icon,
   label,
   value,
-  open,
-  onToggle,
-  children,
+  onClick,
 }: {
   icon: ReactNode
   label: string
   value?: ReactNode
-  open: boolean
-  onToggle: () => void
-  children: ReactNode
+  onClick: () => void
 }) {
   return (
-    <div className="border-b border-line/5 last:border-b-0">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="flex min-h-13 w-full items-center gap-3.5 px-4 py-3 text-left transition-colors hover:bg-ink/5"
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-13 w-full items-center gap-3.5 border-b border-line/5 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-ink/5"
+    >
+      <span className={value ? 'text-accent-300' : 'text-ink-muted'}>{icon}</span>
+      <span className={`min-w-0 flex-1 truncate text-[15px] lg:text-sm ${value ? 'text-ink' : 'text-ink-muted'}`}>
+        {label}
+      </span>
+      {value != null && (
+        <span className="max-w-[45%] shrink-0 truncate text-sm text-ink-faint lg:text-xs">{value}</span>
+      )}
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="size-4 shrink-0 text-ink-faint"
+        aria-hidden="true"
       >
-        <span className={value ? 'text-accent-300' : 'text-ink-muted'}>{icon}</span>
-        <span className={`min-w-0 flex-1 truncate text-[15px] lg:text-sm ${value ? 'text-ink' : 'text-ink-muted'}`}>
-          {label}
-        </span>
-        {value != null && (
-          <span className="max-w-[45%] shrink-0 truncate text-sm text-ink-faint lg:text-xs">{value}</span>
-        )}
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`size-4 shrink-0 text-ink-faint transition-transform ${open ? 'rotate-90' : ''}`}
-          aria-hidden="true"
-        >
-          <path d="M9 6l6 6-6 6" />
-        </svg>
-      </button>
-      {open && <div className="px-4 pt-1 pb-4">{children}</div>}
-    </div>
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </button>
   )
 }
 
-type RowId =
+type SheetId =
   | 'fecha'
   | 'recordar'
   | 'repetir'
@@ -157,6 +226,19 @@ type RowId =
   | 'etiquetas'
   | 'archivos'
   | 'comentarios'
+
+const SHEET_TITLE: Record<SheetId, string> = {
+  fecha: 'Vencimiento',
+  recordar: 'Recordarme',
+  repetir: 'Repetir',
+  habito: 'Convertir en hábito',
+  lista: 'Mover a una lista',
+  prioridad: 'Prioridad',
+  color: 'Color',
+  etiquetas: 'Etiquetas',
+  archivos: 'Archivos',
+  comentarios: 'Comentarios',
+}
 
 function TaskForm({
   task,
@@ -180,9 +262,9 @@ function TaskForm({
   const [title, setTitle] = useState(task.title)
   const [notes, setNotes] = useState(task.notes)
   const [newSubtask, setNewSubtask] = useState('')
-  const [openRow, setOpenRow] = useState<RowId | null>(null)
+  const [sheet, setSheet] = useState<SheetId | null>(null)
 
-  const toggle = (row: RowId) => setOpenRow((current) => (current === row ? null : row))
+  const closeSheet = () => setSheet(null)
 
   function saveTitle() {
     const t = title.trim()
@@ -225,6 +307,13 @@ function TaskForm({
       : null
   const currentList = task.listId ? lists.find((l) => l.id === task.listId) : undefined
   const taskTags = tags.filter((t) => task.tagIds.includes(t.id))
+
+  const calIcon = (
+    <RowIcon>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </RowIcon>
+  )
 
   return (
     <div className="space-y-4">
@@ -281,55 +370,11 @@ function TaskForm({
       {/* Tiempo: fecha, recordatorio, repetición, hábito */}
       <Group>
         <Row
-          icon={
-            <RowIcon>
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <path d="M16 2v4M8 2v4M3 10h18" />
-            </RowIcon>
-          }
+          icon={calIcon}
           label={dueValue ? 'Fecha de vencimiento' : 'Añadir fecha de vencimiento'}
           value={dueValue}
-          open={openRow === 'fecha'}
-          onToggle={() => toggle('fecha')}
-        >
-          <div className="space-y-3">
-            <input
-              type="date"
-              value={msToDateInput(task.dueAt)}
-              onChange={(e) => {
-                const ms = dateInputToMs(e.target.value)
-                updateTask(task.id, { dueAt: ms, dueHasTime: ms === null ? false : task.dueHasTime })
-              }}
-              aria-label="Fecha"
-              className={inputClass}
-            />
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <button type="button" onClick={() => updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false })} className="rounded-full border border-line/10 px-3 py-1.5 text-ink-dim transition-colors hover:bg-ink/5">
-                Hoy
-              </button>
-              <button type="button" onClick={() => updateTask(task.id, { dueAt: startOfDayOffset(1), dueHasTime: false })} className="rounded-full border border-line/10 px-3 py-1.5 text-ink-dim transition-colors hover:bg-ink/5">
-                Mañana
-              </button>
-              {task.dueAt !== null && (
-                <>
-                  <label className="flex items-center gap-1.5 text-ink-muted">
-                    Hora:
-                    <input
-                      type="time"
-                      value={timeValue}
-                      onChange={(e) => setTime(e.target.value)}
-                      aria-label="Hora programada"
-                      className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-xs text-ink outline-none focus:border-accent-500/60"
-                    />
-                  </label>
-                  <button type="button" onClick={() => updateTask(task.id, { dueAt: null, dueHasTime: false })} className="rounded-full border border-line/10 px-3 py-1.5 text-ink-muted transition-colors hover:bg-ink/5">
-                    Sin fecha
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </Row>
+          onClick={() => setSheet('fecha')}
+        />
         <Row
           icon={
             <RowIcon>
@@ -339,11 +384,8 @@ function TaskForm({
           }
           label={reminders.length > 0 ? 'Recordarme' : 'Añadir recordatorio'}
           value={reminders.length > 0 ? `${reminders.length}` : null}
-          open={openRow === 'recordar'}
-          onToggle={() => toggle('recordar')}
-        >
-          <ReminderSection taskId={task.id} reminders={reminders} />
-        </Row>
+          onClick={() => setSheet('recordar')}
+        />
         <Row
           icon={
             <RowIcon>
@@ -355,11 +397,8 @@ function TaskForm({
           }
           label="Repetir"
           value={task.recurrenceRule ? describeRule(task.recurrenceRule) : null}
-          open={openRow === 'repetir'}
-          onToggle={() => toggle('repetir')}
-        >
-          <RecurrenceSection task={task} />
-        </Row>
+          onClick={() => setSheet('repetir')}
+        />
         <Row
           icon={
             <RowIcon>
@@ -367,11 +406,8 @@ function TaskForm({
             </RowIcon>
           }
           label="Convertir en hábito"
-          open={openRow === 'habito'}
-          onToggle={() => toggle('habito')}
-        >
-          <ConvertToHabit task={task} onClose={onClose} />
-        </Row>
+          onClick={() => setSheet('habito')}
+        />
       </Group>
 
       {/* Organización: lista, prioridad, color, etiquetas */}
@@ -391,23 +427,8 @@ function TaskForm({
               </span>
             ) : null
           }
-          open={openRow === 'lista'}
-          onToggle={() => toggle('lista')}
-        >
-          <select
-            value={task.listId ?? ''}
-            onChange={(e) => updateTask(task.id, { listId: e.target.value || null })}
-            aria-label="Lista"
-            className={inputClass}
-          >
-            <option value="">Sin lista</option>
-            {lists.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-        </Row>
+          onClick={() => setSheet('lista')}
+        />
         <Row
           icon={
             <RowIcon>
@@ -421,26 +442,8 @@ function TaskForm({
               {PRIORITY_LABEL[task.priority]}
             </span>
           }
-          open={openRow === 'prioridad'}
-          onToggle={() => toggle('prioridad')}
-        >
-          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Prioridad">
-            {PRIORITIES.map((p) => (
-              <button
-                key={p}
-                type="button"
-                role="radio"
-                aria-checked={task.priority === p}
-                onClick={() => updateTask(task.id, { priority: p })}
-                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                  task.priority === p ? PRIORITY_SELECTED_CLASS[p] : 'border-line/10 text-ink-muted hover:bg-ink/5'
-                }`}
-              >
-                {PRIORITY_LABEL[p]}
-              </button>
-            ))}
-          </div>
-        </Row>
+          onClick={() => setSheet('prioridad')}
+        />
         <Row
           icon={
             <RowIcon>
@@ -453,11 +456,8 @@ function TaskForm({
               <span className="inline-block size-4 rounded-full border border-line/15" style={{ backgroundColor: task.color }} aria-hidden="true" />
             ) : null
           }
-          open={openRow === 'color'}
-          onToggle={() => toggle('color')}
-        >
-          <ColorPicker value={task.color} onChange={(c) => updateTask(task.id, { color: c })} allowNone />
-        </Row>
+          onClick={() => setSheet('color')}
+        />
         <Row
           icon={
             <RowIcon>
@@ -467,11 +467,8 @@ function TaskForm({
           }
           label={taskTags.length > 0 ? 'Etiquetas' : 'Añadir etiquetas'}
           value={taskTags.length > 0 ? taskTags.map((t) => t.name).join(', ') : null}
-          open={openRow === 'etiquetas'}
-          onToggle={() => toggle('etiquetas')}
-        >
-          <TagSection task={task} tags={tags} />
-        </Row>
+          onClick={() => setSheet('etiquetas')}
+        />
       </Group>
 
       {/* Contenido: archivos y comentarios */}
@@ -484,11 +481,8 @@ function TaskForm({
           }
           label={attachments.length > 0 ? 'Archivos' : 'Añadir archivo'}
           value={attachments.length > 0 ? `${attachments.length}` : null}
-          open={openRow === 'archivos'}
-          onToggle={() => toggle('archivos')}
-        >
-          <AttachmentSection taskId={task.id} attachments={attachments} />
-        </Row>
+          onClick={() => setSheet('archivos')}
+        />
         <Row
           icon={
             <RowIcon>
@@ -497,11 +491,8 @@ function TaskForm({
           }
           label={comments.length > 0 ? 'Comentarios' : 'Añadir comentario'}
           value={comments.length > 0 ? `${comments.length}` : null}
-          open={openRow === 'comentarios'}
-          onToggle={() => toggle('comentarios')}
-        >
-          <CommentSection taskId={task.id} comments={comments} />
-        </Row>
+          onClick={() => setSheet('comentarios')}
+        />
       </Group>
 
       {/* Nota, sin bordes (como To Do) */}
@@ -529,6 +520,181 @@ function TaskForm({
           }}
         />
       </div>
+
+      {/* Hojas inferiores (una a la vez): abren la configuración directamente */}
+      {sheet && (
+        <Sheet title={SHEET_TITLE[sheet]} onClose={closeSheet}>
+          {sheet === 'fecha' && (
+            <div className="space-y-1">
+              <SheetOption
+                icon={calIcon}
+                label="Hoy"
+                selected={task.dueAt !== null && msToDateInput(task.dueAt) === msToDateInput(startOfToday())}
+                onClick={() => updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false })}
+              />
+              <SheetOption
+                icon={
+                  <RowIcon>
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                    <path d="m9 16 2 2 4-4" />
+                  </RowIcon>
+                }
+                label="Mañana"
+                selected={task.dueAt !== null && msToDateInput(task.dueAt) === msToDateInput(startOfDayOffset(1))}
+                onClick={() => updateTask(task.id, { dueAt: startOfDayOffset(1), dueHasTime: false })}
+              />
+              <SheetOption
+                icon={
+                  <RowIcon>
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                    <path d="m8 16 3 3 5-6" />
+                  </RowIcon>
+                }
+                label="En una semana"
+                onClick={() => updateTask(task.id, { dueAt: startOfDayOffset(7), dueHasTime: false })}
+              />
+              <div className="my-2 border-t border-line/5" />
+              <label className="flex min-h-13 items-center gap-3.5 rounded-xl px-3">
+                <span className="text-ink-muted">
+                  <RowIcon>
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                  </RowIcon>
+                </span>
+                <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Elegir una fecha</span>
+                <input
+                  type="date"
+                  value={msToDateInput(task.dueAt)}
+                  onChange={(e) => {
+                    const ms = dateInputToMs(e.target.value)
+                    updateTask(task.id, { dueAt: ms, dueHasTime: ms === null ? false : task.dueHasTime })
+                  }}
+                  aria-label="Fecha"
+                  className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+                />
+              </label>
+              {task.dueAt !== null && (
+                <>
+                  <label className="flex min-h-13 items-center gap-3.5 rounded-xl px-3">
+                    <span className="text-ink-muted">
+                      <RowIcon>
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                      </RowIcon>
+                    </span>
+                    <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Hora</span>
+                    <input
+                      type="time"
+                      value={timeValue}
+                      onChange={(e) => setTime(e.target.value)}
+                      aria-label="Hora programada"
+                      className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+                    />
+                  </label>
+                  <div className="my-2 border-t border-line/5" />
+                  <SheetOption
+                    icon={
+                      <RowIcon>
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </RowIcon>
+                    }
+                    label="Quitar fecha"
+                    onClick={() => {
+                      updateTask(task.id, { dueAt: null, dueHasTime: false })
+                      closeSheet()
+                    }}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {sheet === 'recordar' && <ReminderSection taskId={task.id} reminders={reminders} />}
+
+          {sheet === 'repetir' && <RecurrenceSection task={task} />}
+
+          {sheet === 'habito' && <ConvertToHabit task={task} onClose={onClose} />}
+
+          {sheet === 'lista' && (
+            <div className="space-y-1">
+              <SheetOption
+                icon={
+                  <RowIcon>
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </RowIcon>
+                }
+                label="Sin lista"
+                selected={!task.listId}
+                onClick={() => {
+                  updateTask(task.id, { listId: null })
+                  closeSheet()
+                }}
+              />
+              {lists.map((l) => (
+                <SheetOption
+                  key={l.id}
+                  icon={
+                    <span className="flex size-5.5 items-center justify-center lg:size-5">
+                      <span className="size-3 rounded-full" style={{ backgroundColor: l.color }} aria-hidden="true" />
+                    </span>
+                  }
+                  label={l.name}
+                  selected={task.listId === l.id}
+                  onClick={() => {
+                    updateTask(task.id, { listId: l.id })
+                    closeSheet()
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {sheet === 'prioridad' && (
+            <div className="space-y-1" role="radiogroup" aria-label="Prioridad">
+              {PRIORITIES.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  role="radio"
+                  aria-checked={task.priority === p}
+                  onClick={() => {
+                    updateTask(task.id, { priority: p })
+                    closeSheet()
+                  }}
+                  className={`flex min-h-13 w-full items-center gap-3.5 rounded-xl px-3 py-3 text-left text-[15px] font-medium transition-colors hover:bg-ink/5 lg:text-sm ${
+                    task.priority === p ? 'text-accent-300' : 'text-ink'
+                  }`}
+                >
+                  <span className={task.priority === p ? 'text-accent-300' : 'text-ink-muted'}>
+                    <RowIcon>
+                      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                      <path d="M4 22v-7" />
+                    </RowIcon>
+                  </span>
+                  <span className="flex-1">{PRIORITY_LABEL[p]}</span>
+                  {task.priority === p && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="size-4.5 text-accent-300" aria-hidden="true">
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {sheet === 'color' && (
+            <ColorPicker value={task.color} onChange={(c) => updateTask(task.id, { color: c })} allowNone />
+          )}
+
+          {sheet === 'etiquetas' && <TagSection task={task} tags={tags} />}
+
+          {sheet === 'archivos' && <AttachmentSection taskId={task.id} attachments={attachments} />}
+
+          {sheet === 'comentarios' && <CommentSection taskId={task.id} comments={comments} />}
+        </Sheet>
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * Pre-difumina la imagen de fondo UNA vez en un canvas y devuelve una URL
@@ -30,34 +30,56 @@ async function makeBlurred(blob: Blob, blurPx: number): Promise<string> {
 
 export function useBlurredBackground(blob: Blob | null, blurPx: number): string | null {
   const [url, setUrl] = useState<string | null>(null)
+  // URL que se está mostrando ahora mismo; la conservamos hasta tener el reemplazo.
+  const currentUrl = useRef<string | null>(null)
 
   useEffect(() => {
     if (!blob) {
       setUrl(null)
+      if (currentUrl.current) {
+        URL.revokeObjectURL(currentUrl.current)
+        currentUrl.current = null
+      }
       return
     }
     let cancelled = false
-    let objectUrl: string | null = null
     // Pequeño debounce: el slider de difusión no regenera en cada pixel.
     const timer = setTimeout(async () => {
+      let objectUrl: string
       try {
         objectUrl = await makeBlurred(blob, blurPx)
       } catch {
         objectUrl = URL.createObjectURL(blob)
       }
       if (cancelled) {
+        // Esta difusión ya no interesa y su bitmap nunca se mostró: se descarta.
         URL.revokeObjectURL(objectUrl)
-      } else {
-        setUrl(objectUrl)
+        return
       }
+      // Reemplazo atómico: recién ahora que la nueva imagen está lista revocamos
+      // la anterior. Así NUNCA hay un instante con la URL mostrada ya revocada
+      // (en iOS Safari eso hacía desaparecer el fondo al mover la difusión).
+      const previous = currentUrl.current
+      currentUrl.current = objectUrl
+      setUrl(objectUrl)
+      if (previous) URL.revokeObjectURL(previous)
     }, 150)
+    // La limpieza solo cancela el trabajo pendiente; no toca la URL visible.
     return () => {
       cancelled = true
       clearTimeout(timer)
-      // Revocar tras reemplazo es seguro: la imagen ya mostrada no se descarga.
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
   }, [blob, blurPx])
+
+  // Al desmontar, libera la última URL (evita fuga de memoria).
+  useEffect(() => {
+    return () => {
+      if (currentUrl.current) {
+        URL.revokeObjectURL(currentUrl.current)
+        currentUrl.current = null
+      }
+    }
+  }, [])
 
   return url
 }

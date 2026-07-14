@@ -146,12 +146,28 @@ export function QuestsView() {
     <div className="space-y-5">
       {/* Héroe del mes */}
       <section
-        className="relative min-h-44 touch-pan-y overflow-hidden rounded-3xl border border-line/10 p-6 shadow-xl"
+        className={`relative touch-pan-y overflow-hidden rounded-3xl border border-line/10 p-6 shadow-xl ${
+          theme.bannerImage ? 'min-h-56' : 'min-h-44'
+        }`}
         style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
         onTouchStart={onBannerTouchStart}
         onTouchEnd={onBannerTouchEnd}
       >
-        {theme.image ? (
+        {theme.bannerImage ? (
+          <>
+            {/* Paisaje a sangre completa; velo lateral para que el texto respire */}
+            <img
+              src={theme.bannerImage}
+              alt={theme.creature}
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center select-none"
+            />
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ background: 'linear-gradient(90deg, rgba(10,4,12,0.62), rgba(10,4,12,0.18) 55%, transparent 80%)' }}
+              aria-hidden="true"
+            />
+          </>
+        ) : theme.image ? (
           <>
             <img
               src={theme.image}

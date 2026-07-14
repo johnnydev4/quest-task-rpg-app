@@ -15,6 +15,8 @@ export interface MonthTheme {
   colorB: string
   /** Ilustración opcional de la criatura (archivo en public/); si falta, se usa el emoji. */
   image?: string
+  /** Paisaje opcional que cubre TODO el banner del mes (con velo para el texto). */
+  bannerImage?: string
 }
 
 export const MONTH_THEMES: MonthTheme[] = [
@@ -74,6 +76,7 @@ export const MONTH_THEMES: MonthTheme[] = [
     colorA: '#dc2626',
     colorB: '#f59e0b',
     image: '/creatures/dragon.svg',
+    bannerImage: '/creatures/dragon-banner.png',
   },
   {
     creature: 'Mantícora',

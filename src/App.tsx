@@ -25,6 +25,7 @@ import { ListModal } from './components/lists/ListModal'
 import { TagModal } from './components/tags/TagModal'
 import { LevelUpToast } from './components/rpg/LevelUpToast'
 import { LiquidSun } from './components/rpg/LiquidSun'
+import { useXpGain } from './components/rpg/PlayerCard'
 import { SettingsModal } from './components/settings/SettingsModal'
 import { AccountModal } from './components/account/AccountModal'
 import { ToastStack } from './components/ui/ToastStack'
@@ -55,6 +56,10 @@ export default function App() {
   const settings = useSettings()
   const { level, intoLevel, needed, streak } = useProfile()
   const isDesktop = useIsDesktop()
+  // Destello del XP recién ganado en la mini-barra del encabezado (móvil).
+  const xpGain = useXpGain()
+  const headerPct = Math.min(100, Math.round((intoLevel / needed) * 100))
+  const headerGainPct = xpGain ? Math.min(headerPct, Math.round((xpGain.xp / needed) * 100)) : 0
 
   // Servicios de fondo: recordatorios y sincronización (si está configurada).
   useEffect(() => {
@@ -403,7 +408,7 @@ export default function App() {
                 Nv {level}
               </span>
               <div
-                className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-ink/5"
+                className="relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-ink/5"
                 role="progressbar"
                 aria-valuenow={intoLevel}
                 aria-valuemax={needed}
@@ -411,9 +416,26 @@ export default function App() {
               >
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-accent-400 to-accent-600 transition-all duration-500"
-                  style={{ width: `${Math.min(100, Math.round((intoLevel / needed) * 100))}%` }}
+                  style={{ width: `${headerPct}%` }}
                 />
+                {xpGain && headerGainPct > 0 && (
+                  <div
+                    key={xpGain.key}
+                    className="absolute top-0 h-full rounded-full bg-white/80"
+                    style={{
+                      left: `${headerPct - headerGainPct}%`,
+                      width: `${headerGainPct}%`,
+                      animation: 'gain-flash 1.4s ease-out both',
+                    }}
+                    aria-hidden="true"
+                  />
+                )}
               </div>
+              {xpGain && (
+                <span key={xpGain.key} className="text-[11px] font-bold text-accent-300" style={{ animation: 'xp-float 1.4s ease-out both' }}>
+                  +{xpGain.xp}
+                </span>
+              )}
               {streak > 0 && <span className="text-[11px] font-medium text-warn">🔥 {streak}</span>}
             </div>
           </div>
@@ -446,10 +468,23 @@ export default function App() {
               <HabitsToday onManage={() => setView({ kind: 'habits' })} />
               {isEmpty ? (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
-                  {/* El sol flota sobre una base de cristal líquido */}
+                  {/* El sol flota sobre una base de cristal líquido. El resplandor es un
+                      gradiente radial (iOS rasteriza mal drop-shadow sobre SVG animado). */}
                   <div className="relative grid place-items-center py-1">
-                    <div className="size-20 rounded-full glass-panel" />
-                    <LiquidSun className="absolute size-32 drop-shadow-[0_10px_20px_color-mix(in_srgb,#ff8400_35%,transparent)]" />
+                    <div
+                      className="absolute size-36 rounded-full"
+                      style={{ background: 'radial-gradient(circle, rgba(255,132,0,0.30), transparent 65%)' }}
+                      aria-hidden="true"
+                    />
+                    {/* Translucidez simple (sin backdrop-filter: en iOS lo pinta cuadrado) */}
+                    <div
+                      className="size-20 rounded-full"
+                      style={{
+                        backgroundColor: 'color-mix(in srgb, var(--t-glass) 60%, transparent)',
+                        boxShadow: 'inset 0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent)',
+                      }}
+                    />
+                    <LiquidSun className="absolute size-32" />
                   </div>
                   <p className="font-medium text-ink-dim">Nada para hoy</p>
                   <p className="max-w-xs text-sm text-ink-faint">

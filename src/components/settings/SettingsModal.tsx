@@ -23,9 +23,6 @@ const THEME_MODES: { id: ThemeMode; label: string }[] = [
   { id: 'system', label: 'Sistema' },
 ]
 
-const numClass =
-  'w-16 rounded-lg border border-line/10 bg-surface-700 px-2 py-1.5 text-center text-sm text-ink outline-none focus:border-accent-500/60'
-
 export function SettingsModal({
   onClose,
   onOpenAccount,
@@ -301,37 +298,6 @@ export function SettingsModal({
               />
             </label>
           </div>
-        </Section>
-
-        <Section title="Pomodoro (minutos)">
-          <div className="grid grid-cols-2 gap-3 text-sm text-ink-dim sm:grid-cols-4">
-            {(
-              [
-                ['Foco', 'pomodoroFocusMin', 120],
-                ['Descanso', 'pomodoroShortBreakMin', 60],
-                ['D. largo', 'pomodoroLongBreakMin', 90],
-                ['Cada', 'pomodoroLongBreakEvery', 12],
-              ] as const
-            ).map(([label, key, max]) => (
-              <label key={key} className="space-y-1 text-center">
-                <span className="block text-xs text-ink-faint">{label}</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={max}
-                  value={settings[key]}
-                  onChange={(e) =>
-                    updateSettings({ [key]: Math.max(1, Math.min(max, Number(e.target.value) || 1)) })
-                  }
-                  aria-label={label}
-                  className={numClass}
-                />
-              </label>
-            ))}
-          </div>
-          <p className="text-[11px] text-ink-faint">
-            "Cada" = número de focos antes de un descanso largo. Los cambios aplican en la próxima fase.
-          </p>
         </Section>
 
         <Section title="Datos">

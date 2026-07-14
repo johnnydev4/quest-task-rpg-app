@@ -32,7 +32,9 @@ export function LiquidSun({ className }: { className?: string }) {
           <stop offset="52.4%" stopColor="#ff8400" />
           <stop offset="100%" stopColor="#ff0d00" />
         </linearGradient>
-        <filter id="sun-glow" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+        {/* Región en coordenadas absolutas: con porcentajes + userSpaceOnUse,
+            iOS Safari recortaba el desenfoque en un borde cuadrado. */}
+        <filter id="sun-glow" filterUnits="userSpaceOnUse" x="-400" y="-400" width="1200" height="1200">
           <feGaussianBlur stdDeviation="15" in="SourceGraphic" />
         </filter>
         <filter id="sun-invert">

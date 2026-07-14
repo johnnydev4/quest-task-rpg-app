@@ -168,8 +168,8 @@ export interface Habit {
   daysOfWeek: number[]
   /** Medianoche local del día de inicio. */
   startDate: number
-  /** Medianoche local del último día. */
-  endDate: number
+  /** Medianoche local del último día; null = hábito indefinido (sin fecha límite). */
+  endDate: number | null
   createdAt: number
   updatedAt: number
   syncStatus: SyncStatus

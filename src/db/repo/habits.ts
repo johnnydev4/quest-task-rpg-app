@@ -11,7 +11,8 @@ export interface NewHabitInput {
   title: string
   daysOfWeek: number[]
   startDate: number
-  endDate: number
+  /** null = hábito indefinido (sin fecha límite). */
+  endDate: number | null
 }
 
 export async function createHabit(input: NewHabitInput): Promise<string> {

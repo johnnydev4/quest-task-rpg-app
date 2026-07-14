@@ -41,7 +41,7 @@ export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHab
     if (days.length === 0) return
     await createHabit({ title: task.title, daysOfWeek: days, startDate: startOfToday(), endDate })
     await deleteTask(task.id)
-    emitToast({ title: 'Hábito creado 🔁', body: `${task.title} · empieza tu primer COMBO ⚡` })
+    emitToast({ title: 'Hábito creado 🔁', body: `${task.title} · empieza tu primer COMBO` })
     onClose()
   }
 

@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import { createHabit } from '../../db/repo/habits'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
-import { COMBO_TIERS, habitEnded } from '../../lib/habits'
+import { COMBO_TIERS, habitEnded, RAINBOW_GRADIENT } from '../../lib/habits'
 import { DayPicker } from './DayPicker'
 import { HabitCard } from './HabitCard'
 
@@ -15,15 +15,21 @@ export function HabitsView() {
   const [title, setTitle] = useState('')
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5])
   const [endDate, setEndDate] = useState(() => startOfDayOffset(30))
+  const [indefinite, setIndefinite] = useState(false)
 
   const active = habits.filter((h) => !habitEnded(h)).sort((a, b) => a.createdAt - b.createdAt)
-  const finished = habits.filter((h) => habitEnded(h)).sort((a, b) => b.endDate - a.endDate)
+  const finished = habits.filter((h) => habitEnded(h)).sort((a, b) => (b.endDate ?? 0) - (a.endDate ?? 0))
 
   function submit(e: FormEvent) {
     e.preventDefault()
     const t = title.trim()
     if (!t || days.length === 0) return
-    void createHabit({ title: t, daysOfWeek: days, startDate: startOfToday(), endDate })
+    void createHabit({
+      title: t,
+      daysOfWeek: days,
+      startDate: startOfToday(),
+      endDate: indefinite ? null : endDate,
+    })
     setTitle('')
   }
 
@@ -44,20 +50,33 @@ export function HabitsView() {
             <span className="block text-[11px] text-ink-faint">Días a cumplir</span>
             <DayPicker value={days} onChange={setDays} />
           </div>
-          <label className="space-y-1.5">
+          <div className="space-y-1.5">
             <span className="block text-[11px] text-ink-faint">Hasta</span>
-            <input
-              type="date"
-              value={msToDateInput(endDate)}
-              min={msToDateInput(startOfToday())}
-              onChange={(e) => {
-                const ms = dateInputToMs(e.target.value)
-                if (ms !== null) setEndDate(ms)
-              }}
-              aria-label="Fecha límite del hábito"
-              className="rounded-lg border border-line/10 bg-surface-700 px-3 py-1.5 text-sm text-ink outline-none focus:border-accent-500/60"
-            />
-          </label>
+            <div className="flex items-center gap-2.5">
+              <input
+                type="date"
+                value={msToDateInput(endDate)}
+                min={msToDateInput(startOfToday())}
+                disabled={indefinite}
+                onChange={(e) => {
+                  const ms = dateInputToMs(e.target.value)
+                  if (ms !== null) setEndDate(ms)
+                }}
+                aria-label="Fecha límite del hábito"
+                className="rounded-lg border border-line/10 bg-surface-700 px-3 py-1.5 text-sm text-ink outline-none focus:border-accent-500/60 disabled:opacity-40"
+              />
+              <label className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-dim">
+                <input
+                  type="checkbox"
+                  checked={indefinite}
+                  onChange={(e) => setIndefinite(e.target.checked)}
+                  aria-label="Hábito indefinido"
+                  className="size-4 accent-accent-500"
+                />
+                Indefinido
+              </label>
+            </div>
+          </div>
           <button
             type="submit"
             disabled={!title.trim() || days.length === 0}
@@ -75,7 +94,7 @@ export function HabitsView() {
           <p className="font-medium text-ink-dim">Aún no tienes hábitos</p>
           <p className="max-w-sm text-sm text-ink-faint">
             Crea uno arriba y cúmplelo en sus días: cada racha es un <strong>COMBO</strong> que sube de color
-            por el arcoíris y multiplica tu XP. ⚡
+            por el arcoíris y multiplica tu XP.
           </p>
         </div>
       ) : (
@@ -97,19 +116,19 @@ export function HabitsView() {
         </div>
       )}
 
-      {/* Leyenda del arcoíris de combos */}
+      {/* Leyenda de la escalera de combos */}
       <div className="rounded-2xl border border-line/5 glass-panel p-4">
         <p className="mb-2 text-xs font-semibold tracking-wide text-ink-faint uppercase">
-          Escalera de combos ⚡ (más combo → más color → más XP)
+          Escalera de combos (cada cumplimiento sube el color y el XP)
         </p>
         <div className="flex flex-wrap gap-1.5">
-          {[...COMBO_TIERS].reverse().map((tier) => (
+          {COMBO_TIERS.map((tier) => (
             <span
-              key={tier.min}
+              key={tier.combo}
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold text-white"
-              style={{ backgroundColor: tier.color }}
+              style={{ background: tier.name === 'arcoíris' ? RAINBOW_GRADIENT : tier.color }}
             >
-              ×{tier.min}+ {tier.name}
+              {tier.combo === 7 ? '7+' : tier.combo} · ×{tier.mult} XP {tier.name}
             </span>
           ))}
         </div>

@@ -3,9 +3,8 @@ import { onCompletion } from '../../lib/events'
 import { useProfile } from '../../lib/useProfile'
 import { titleForLevel } from '../../lib/titles'
 
-/** Tarjeta del jugador en la sidebar: nivel, título, barra de XP y racha. */
-export function PlayerCard() {
-  const { level, intoLevel, needed, streak } = useProfile()
+/** XP recién ganado (se limpia solo tras ~1.4 s); para el destello de las barras. */
+export function useXpGain(): { xp: number; key: number } | null {
   const [gain, setGain] = useState<{ xp: number; key: number } | null>(null)
 
   useEffect(
@@ -22,7 +21,17 @@ export function PlayerCard() {
     return () => clearTimeout(t)
   }, [gain])
 
+  return gain
+}
+
+/** Tarjeta del jugador en la sidebar: nivel, título, barra de XP y racha. */
+export function PlayerCard() {
+  const { level, intoLevel, needed, streak } = useProfile()
+  const gain = useXpGain()
+
   const pct = Math.min(100, Math.round((intoLevel / needed) * 100))
+  // Porción de la barra que representa el XP recién ganado (destello temporal).
+  const gainPct = gain ? Math.min(pct, Math.round((gain.xp / needed) * 100)) : 0
 
   return (
     <div className="mb-4 rounded-xl border border-line/5 glass-panel p-3">
@@ -47,7 +56,7 @@ export function PlayerCard() {
         )}
       </div>
       <div
-        className="mt-2.5 h-2 overflow-hidden rounded-full bg-ink/5"
+        className="relative mt-2.5 h-2 overflow-hidden rounded-full bg-ink/5"
         role="progressbar"
         aria-valuenow={intoLevel}
         aria-valuemax={needed}
@@ -57,6 +66,19 @@ export function PlayerCard() {
           className="h-full rounded-full bg-gradient-to-r from-accent-400 to-accent-600 transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
+        {/* Destello: el tramo final de la barra que corresponde al XP recién ganado */}
+        {gain && gainPct > 0 && (
+          <div
+            key={gain.key}
+            className="absolute top-0 h-full rounded-full bg-white/80"
+            style={{
+              left: `${pct - gainPct}%`,
+              width: `${gainPct}%`,
+              animation: 'gain-flash 1.4s ease-out both',
+            }}
+            aria-hidden="true"
+          />
+        )}
       </div>
       <div className="mt-1.5 flex items-center justify-between text-[11px] text-ink-faint">
         <span>

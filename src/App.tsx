@@ -465,7 +465,7 @@ export default function App() {
               {/* La misión de la semana destaca sobre las side quests (tareas normales) */}
               <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />
               {/* Hábitos que tocan hoy, con su barra de progreso y COMBO */}
-              <HabitsToday onManage={() => setView({ kind: 'habits' })} />
+              <HabitsToday section="pending" onManage={() => setView({ kind: 'habits' })} />
               {isEmpty ? (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
                   {/* El sol flota sobre una base de cristal líquido. El resplandor es un
@@ -505,6 +505,8 @@ export default function App() {
                   />
                 ))
               )}
+              {/* Los hábitos ya cumplidos bajan al fondo de la pestaña */}
+              <HabitsToday section="completed" onManage={() => setView({ kind: 'habits' })} />
             </>
           ) : isEmpty ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center">

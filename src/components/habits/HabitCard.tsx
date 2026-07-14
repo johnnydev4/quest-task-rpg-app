@@ -31,7 +31,9 @@ interface HabitCardProps {
  * La palabra "Combo" solo aparece unos segundos al completar, con animación.
  */
 export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) {
-  const logs = useLiveQuery(() => db.habitLogs.where('habitId').equals(habit.id).toArray(), [habit.id]) ?? []
+  const logsRaw = useLiveQuery(() => db.habitLogs.where('habitId').equals(habit.id).toArray(), [habit.id])
+  const logsLoaded = logsRaw !== undefined
+  const logs = logsRaw ?? []
   const doneKeys = useMemo(() => new Set(logs.map((l) => l.dateKey)), [logs])
 
   const todayDone = doneKeys.has(localDateKey())
@@ -57,19 +59,24 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
       : new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(habit.endDate)
 
   // La insignia "Combo ×n" aparece solo al completar, unos segundos, y se va.
+  // prevDone parte en null: el primer valor CARGADO fija la línea base, así un
+  // remontaje de la tarjeta (p. ej. al moverse a Completados) no re-dispara la animación.
   const [showCombo, setShowCombo] = useState(false)
-  const prevDone = useRef(todayDone)
+  const prevDone = useRef<boolean | null>(null)
   useEffect(() => {
+    if (!logsLoaded) return
+    if (prevDone.current === null) {
+      prevDone.current = todayDone
+      return
+    }
     if (todayDone && !prevDone.current) {
+      prevDone.current = todayDone
       setShowCombo(true)
       const t = setTimeout(() => setShowCombo(false), 2400)
       return () => clearTimeout(t)
     }
     prevDone.current = todayDone
-  }, [todayDone])
-  useEffect(() => {
-    prevDone.current = todayDone
-  })
+  }, [todayDone, logsLoaded])
 
   return (
     <div

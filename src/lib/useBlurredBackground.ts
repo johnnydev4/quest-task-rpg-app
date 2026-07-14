@@ -7,9 +7,11 @@ import { useEffect, useRef, useState } from 'react'
  * compositor (texto que desaparece, capturas colgadas); un bitmap plano es gratis.
  */
 /**
- * Difumina sin ctx.filter (iOS Safari no lo soporta): reduce la imagen en
- * pasos a la mitad y la vuelve a ampliar; el suavizado bilineal de cada paso
- * acumula un desenfoque muy parecido a un blur gaussiano.
+ * Difumina sin ctx.filter (iOS Safari no lo soporta): reduce la imagen a la
+ * mitad varias veces y la vuelve a ampliar TAMBIÉN por pasos; el suavizado
+ * bilineal acumulado en cada paso aproxima un blur gaussiano.
+ * Usa dos canvas alternados: dibujar un canvas sobre sí mismo con regiones
+ * solapadas produce artefactos (pixelado/basura) en iOS Safari.
  */
 function blurByRescale(
   bitmap: ImageBitmap,
@@ -19,28 +21,52 @@ function blurByRescale(
 ) {
   // Nº de mitades ≈ log2 del radio: blur 4px→2 pasos, 12px→3-4, 30px→5.
   const steps = Math.max(1, Math.min(5, Math.round(Math.log2(Math.max(2, blurPx)))))
-  const tmp = document.createElement('canvas')
-  tmp.width = canvas.width
-  tmp.height = canvas.height
-  const tctx = tmp.getContext('2d')!
-  tctx.imageSmoothingEnabled = true
-  // Primera bajada: el bitmap completo a la mitad del canvas.
-  let w = Math.max(8, Math.round(canvas.width / 2))
-  let h = Math.max(8, Math.round(canvas.height / 2))
-  tctx.drawImage(bitmap, 0, 0, w, h)
-  // Mitades sucesivas dentro del mismo canvas temporal.
-  for (let i = 1; i < steps; i++) {
-    const nw = Math.max(8, Math.round(w / 2))
-    const nh = Math.max(8, Math.round(h / 2))
-    tctx.drawImage(tmp, 0, 0, w, h, 0, 0, nw, nh)
-    w = nw
-    h = nh
+  const makeCanvas = (w: number, h: number) => {
+    const c = document.createElement('canvas')
+    c.width = w
+    c.height = h
+    return c
   }
-  // Subida final con suavizado (el sangrado evita bordes desvanecidos)
+  // Base: el bitmap pasa una vez a canvas; desde ahí todo es canvas→canvas
+  // (drawImage de ImageBitmap con recorte también da problemas en iOS).
+  const base = makeCanvas(canvas.width, canvas.height)
+  const bctx = base.getContext('2d')!
+  bctx.imageSmoothingEnabled = true
+  bctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  // Bajada: cada mitad se dibuja en un canvas NUEVO del tamaño justo.
+  let src: CanvasImageSource = base
+  let sw = base.width
+  let sh = base.height
+  const halves: HTMLCanvasElement[] = []
+  let w = canvas.width
+  let h = canvas.height
+  for (let i = 0; i < steps; i++) {
+    w = Math.max(8, Math.round(w / 2))
+    h = Math.max(8, Math.round(h / 2))
+    const c = makeCanvas(w, h)
+    const cctx = c.getContext('2d')!
+    cctx.imageSmoothingEnabled = true
+    cctx.drawImage(src, 0, 0, sw, sh, 0, 0, w, h)
+    halves.push(c)
+    src = c
+    sw = w
+    sh = h
+  }
+  // Subida: deshace las mitades paso a paso (cada paso vuelve a suavizar).
+  for (let i = steps - 2; i >= 0; i--) {
+    const target = halves[i]
+    const tctx = target.getContext('2d')!
+    tctx.imageSmoothingEnabled = true
+    tctx.clearRect(0, 0, target.width, target.height)
+    tctx.drawImage(src, 0, 0, sw, sh, 0, 0, target.width, target.height)
+    src = target
+    sw = target.width
+    sh = target.height
+  }
+  // Paso final al canvas de salida (el sangrado evita bordes desvanecidos).
   ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = 'high'
   const bleed = blurPx
-  ctx.drawImage(tmp, 0, 0, w, h, -bleed, -bleed, canvas.width + bleed * 2, canvas.height + bleed * 2)
+  ctx.drawImage(src, 0, 0, sw, sh, -bleed, -bleed, canvas.width + bleed * 2, canvas.height + bleed * 2)
 }
 
 async function makeBlurred(blob: Blob, blurPx: number): Promise<string> {

@@ -17,12 +17,10 @@ import { createSubtask, deleteSubtask, setSubtaskCompleted, updateSubtask } from
 import { createReminder, deleteReminder, updateReminder } from '../../db/repo/reminders'
 import {
   dateInputToMs,
-  dateTimeInputToMs,
   formatDateTime,
   formatDue,
   formatDueTime,
   msToDateInput,
-  msToDateTimeInput,
   startOfDayOffset,
   startOfToday,
 } from '../../lib/dates'
@@ -31,6 +29,7 @@ import { PRIORITIES, PRIORITY_LABEL, PRIORITY_SELECTED_CLASS } from '../../lib/p
 import { notificationService } from '../../services/notifications'
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
+import { MiniCalendar } from '../ui/MiniCalendar'
 import { TagSection } from './detail/TagSection'
 import { CommentSection } from './detail/CommentSection'
 import { AttachmentSection } from './detail/AttachmentSection'
@@ -81,16 +80,96 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
   )
 }
 
+/** Opciones de hora cada 30 min (00:00 … 23:30) para el selector de hora. */
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, '0')
+  return `${h}:${i % 2 === 0 ? '00' : '30'}`
+})
+
 /**
- * Abre el selector nativo (calendario/hora) de un input. En iOS un input a
- * opacidad 0 no lo abre solo al tocarlo, así que lo forzamos con showPicker().
+ * Selector de hora con <select>: en iOS abre la rueda nativa sin teclado y sin
+ * el bug del input de hora que se auto-rellena con la hora actual al abrirse.
  */
-function openNativePicker(input: HTMLInputElement) {
-  try {
-    input.showPicker()
-  } catch {
-    input.focus()
-  }
+function TimeSelect({
+  value,
+  onChange,
+  noneLabel,
+  ariaLabel,
+}: {
+  value: string
+  onChange: (v: string) => void
+  /** Si se define, incluye una opción vacía con este texto (p. ej. "Sin hora"). */
+  noneLabel?: string
+  ariaLabel: string
+}) {
+  // Una hora fuera de la rejilla de 30 min (p. ej. 21:47) se añade como opción.
+  const options = value && !TIME_OPTIONS.includes(value) ? [value, ...TIME_OPTIONS] : TIME_OPTIONS
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label={ariaLabel}
+      className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+    >
+      {noneLabel !== undefined && <option value="">{noneLabel}</option>}
+      {options.map((t) => (
+        <option key={t} value={t}>
+          {t}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+/**
+ * Panel de fecha + hora con calendario propio y botón explícito de aplicar:
+ * nada se guarda hasta confirmar (el picker nativo de iOS marcaba "hoy"
+ * con solo abrirse, aunque se cancelara).
+ */
+function DateTimePanel({
+  initialMs,
+  applyLabel,
+  onApply,
+}: {
+  initialMs: number | null
+  applyLabel: string
+  onApply: (ms: number) => void
+}) {
+  const init = initialMs !== null ? new Date(initialMs) : null
+  const [day, setDay] = useState<number | null>(
+    init ? new Date(init.getFullYear(), init.getMonth(), init.getDate()).getTime() : null,
+  )
+  const [time, setTime] = useState(
+    init
+      ? `${String(init.getHours()).padStart(2, '0')}:${String(init.getMinutes()).padStart(2, '0')}`
+      : '09:00',
+  )
+
+  return (
+    <div className="space-y-2.5 pt-1">
+      <MiniCalendar value={day} onSelect={setDay} />
+      <div className="flex items-center justify-between gap-2 px-1">
+        <label className="flex items-center gap-2 text-sm text-ink-dim">
+          Hora
+          <TimeSelect value={time} onChange={setTime} ariaLabel="Hora del aviso" />
+        </label>
+        <button
+          type="button"
+          disabled={day === null}
+          onClick={() => {
+            if (day === null) return
+            const [h, m] = time.split(':').map(Number)
+            const d = new Date(day)
+            d.setHours(h, m, 0, 0)
+            onApply(d.getTime())
+          }}
+          className="rounded-lg bg-accent-600 px-3.5 py-1.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500 disabled:opacity-40"
+        >
+          {applyLabel}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 /** Icono de fila con el trazo estándar de la app. */
@@ -215,6 +294,9 @@ function ReminderSheet({
   onDone: () => void
 }) {
   const [permission, setPermission] = useState(notificationService.permission())
+  // Panel "Elegir una fecha y una hora" (crear) y aviso en edición (uno a la vez).
+  const [customOpen, setCustomOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   async function askPermission() {
     await notificationService.requestPermission()
@@ -275,10 +357,14 @@ function ReminderSheet({
         hint={shortWhen(nextWeek9)}
         onClick={() => addAt(nextWeek9)}
       />
-      {/* Selector personalizado: el input va invisible sobre toda la fila,
-          así se abre el calendario nativo al tocar sin dejar una caja blanca
-          ni cerrar la hoja de golpe. */}
-      <label className="relative flex min-h-13 items-center gap-3.5 rounded-xl px-3 transition-colors hover:bg-ink/5">
+      {/* Selector propio con confirmación explícita (el nativo de iOS se
+          auto-rellenaba y hasta creaba avisos con solo abrirse) */}
+      <button
+        type="button"
+        onClick={() => setCustomOpen((v) => !v)}
+        aria-expanded={customOpen}
+        className="flex min-h-13 w-full items-center gap-3.5 rounded-xl px-3 text-left transition-colors hover:bg-ink/5"
+      >
         <span className="text-ink-muted">
           <RowIcon>
             <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -288,58 +374,64 @@ function ReminderSheet({
           </RowIcon>
         </span>
         <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Elegir una fecha y una hora</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-ink-faint" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`size-4 shrink-0 text-ink-faint transition-transform ${customOpen ? 'rotate-90' : ''}`} aria-hidden="true">
           <path d="M9 6l6 6-6 6" />
         </svg>
-        <input
-          type="datetime-local"
-          onClick={(e) => openNativePicker(e.currentTarget)}
-          onChange={(e) => {
-            const ms = dateTimeInputToMs(e.target.value)
-            if (ms !== null) createReminder({ taskId, remindAt: ms })
+      </button>
+      {customOpen && (
+        <DateTimePanel
+          initialMs={null}
+          applyLabel="Añadir aviso"
+          onApply={(ms) => {
+            createReminder({ taskId, remindAt: ms })
+            setCustomOpen(false)
           }}
-          aria-label="Fecha y hora del recordatorio"
-          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />
-      </label>
+      )}
 
       {reminders.length > 0 && (
         <>
           <div className="my-2 border-t border-line/5" />
           <p className="px-3 pb-1 text-xs font-medium text-ink-muted">Avisos programados</p>
           {reminders.map((r) => (
-            <div key={r.id} className="flex items-center gap-1">
-              <label className="relative flex min-h-12 flex-1 items-center gap-3.5 rounded-xl px-3 transition-colors hover:bg-ink/5">
-                <span className="text-accent-300">
-                  <RowIcon>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5l3 2" />
-                  </RowIcon>
-                </span>
-                <span className="min-w-0 flex-1 truncate text-[15px] text-ink lg:text-sm">
-                  {formatDateTime(r.remindAt)}
-                </span>
-                <input
-                  type="datetime-local"
-                  value={msToDateTimeInput(r.remindAt)}
-                  onClick={(e) => openNativePicker(e.currentTarget)}
-                  onChange={(e) => {
-                    const ms = dateTimeInputToMs(e.target.value)
-                    if (ms !== null) updateReminder(r.id, { remindAt: ms, dismissed: false, firedCount: 0 })
+            <div key={r.id}>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setEditingId((id) => (id === r.id ? null : r.id))}
+                  aria-expanded={editingId === r.id}
+                  className="flex min-h-12 flex-1 items-center gap-3.5 rounded-xl px-3 text-left transition-colors hover:bg-ink/5"
+                >
+                  <span className="text-accent-300">
+                    <RowIcon>
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 2" />
+                    </RowIcon>
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[15px] text-ink lg:text-sm">
+                    {formatDateTime(r.remindAt)}
+                  </span>
+                </button>
+                <button
+                  onClick={() => deleteReminder(r.id)}
+                  aria-label="Eliminar recordatorio"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-ink/5 hover:text-danger"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {editingId === r.id && (
+                <DateTimePanel
+                  initialMs={r.remindAt}
+                  applyLabel="Guardar"
+                  onApply={(ms) => {
+                    updateReminder(r.id, { remindAt: ms, dismissed: false, firedCount: 0 })
+                    setEditingId(null)
                   }}
-                  aria-label="Editar fecha y hora del recordatorio"
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
-              </label>
-              <button
-                onClick={() => deleteReminder(r.id)}
-                aria-label="Eliminar recordatorio"
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-ink/5 hover:text-danger"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
+              )}
             </div>
           ))}
         </>
@@ -529,8 +621,13 @@ function TaskForm({
   const [notes, setNotes] = useState(task.notes)
   const [newSubtask, setNewSubtask] = useState('')
   const [sheet, setSheet] = useState<SheetId | null>(null)
+  // Calendario desplegable dentro de la hoja de Vencimiento.
+  const [pickerOpen, setPickerOpen] = useState(false)
 
-  const closeSheet = () => setSheet(null)
+  const closeSheet = () => {
+    setSheet(null)
+    setPickerOpen(false)
+  }
 
   function saveTitle() {
     const t = title.trim()
@@ -836,7 +933,14 @@ function TaskForm({
                 onClick={() => updateTask(task.id, { dueAt: startOfDayOffset(7), dueHasTime: false })}
               />
               <div className="my-2 border-t border-line/5" />
-              <label className="relative flex min-h-13 items-center gap-3.5 rounded-xl px-3 transition-colors hover:bg-ink/5">
+              {/* Calendario propio: el <input type="date"> de iOS marcaba "hoy"
+                  con solo abrirse aunque se cancelara sin elegir nada. */}
+              <button
+                type="button"
+                onClick={() => setPickerOpen((v) => !v)}
+                aria-expanded={pickerOpen}
+                className="flex min-h-13 w-full items-center gap-3.5 rounded-xl px-3 text-left transition-colors hover:bg-ink/5"
+              >
                 <span className="text-ink-muted">
                   <RowIcon>
                     <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -847,24 +951,29 @@ function TaskForm({
                 {task.dueAt !== null && (
                   <span className="shrink-0 text-sm text-ink-faint lg:text-xs">{formatDue(task.dueAt)}</span>
                 )}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-ink-faint" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`size-4 shrink-0 text-ink-faint transition-transform ${pickerOpen ? 'rotate-90' : ''}`} aria-hidden="true">
                   <path d="M9 6l6 6-6 6" />
                 </svg>
-                <input
-                  type="date"
-                  value={msToDateInput(task.dueAt)}
-                  onClick={(e) => openNativePicker(e.currentTarget)}
-                  onChange={(e) => {
-                    const ms = dateInputToMs(e.target.value)
-                    updateTask(task.id, { dueAt: ms, dueHasTime: ms === null ? false : task.dueHasTime })
+              </button>
+              {pickerOpen && (
+                <MiniCalendar
+                  value={task.dueAt !== null ? dateInputToMs(msToDateInput(task.dueAt)) : null}
+                  onSelect={(dayMs) => {
+                    // Conserva la hora elegida si la había.
+                    if (task.dueAt !== null && task.dueHasTime) {
+                      const prev = new Date(task.dueAt)
+                      const d = new Date(dayMs)
+                      d.setHours(prev.getHours(), prev.getMinutes())
+                      updateTask(task.id, { dueAt: d.getTime(), dueHasTime: true })
+                    } else {
+                      updateTask(task.id, { dueAt: dayMs, dueHasTime: false })
+                    }
                   }}
-                  aria-label="Fecha"
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
-              </label>
+              )}
               {task.dueAt !== null && (
                 <>
-                  <label className="relative flex min-h-13 items-center gap-3.5 rounded-xl px-3 transition-colors hover:bg-ink/5">
+                  <label className="flex min-h-13 items-center gap-3.5 rounded-xl px-3 transition-colors hover:bg-ink/5">
                     <span className="text-ink-muted">
                       <RowIcon>
                         <circle cx="12" cy="12" r="9" />
@@ -872,19 +981,11 @@ function TaskForm({
                       </RowIcon>
                     </span>
                     <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Hora</span>
-                    <span className="shrink-0 text-sm text-ink-faint lg:text-xs">
-                      {task.dueHasTime ? formatDueTime(task.dueAt) : 'Sin hora'}
-                    </span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-ink-faint" aria-hidden="true">
-                      <path d="M9 6l6 6-6 6" />
-                    </svg>
-                    <input
-                      type="time"
+                    <TimeSelect
                       value={timeValue}
-                      onClick={(e) => openNativePicker(e.currentTarget)}
-                      onChange={(e) => setTime(e.target.value)}
-                      aria-label="Hora programada"
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      onChange={setTime}
+                      noneLabel="Sin hora"
+                      ariaLabel="Hora programada"
                     />
                   </label>
                   <div className="my-2 border-t border-line/5" />

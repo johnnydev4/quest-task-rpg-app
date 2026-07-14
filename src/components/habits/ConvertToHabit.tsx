@@ -70,7 +70,7 @@ export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHab
           disabled={days.length === 0}
           className="rounded-lg bg-accent-600 px-3 py-1.5 text-sm font-medium text-on-accent transition-colors hover:bg-accent-500 disabled:opacity-40"
         >
-          Convertir 🔁
+          Convertir
         </button>
         {!autoOpen && (
           <button

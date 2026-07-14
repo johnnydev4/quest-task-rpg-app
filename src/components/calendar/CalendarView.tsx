@@ -297,7 +297,8 @@ function DayModal({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Nueva tarea para este día…"
             aria-label="Nueva tarea para este día"
-            autoFocus
+            // Solo autoenfocar con ratón: en táctil abre el teclado y tapa la pantalla.
+            autoFocus={!window.matchMedia('(pointer: coarse)').matches}
             className="min-w-0 flex-1 rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
           />
           <input

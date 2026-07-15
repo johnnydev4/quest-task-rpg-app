@@ -5,6 +5,7 @@ import type { Habit } from '../../db/types'
 import { localDateKey } from '../../lib/dates'
 import { habitEnded, isScheduledToday } from '../../lib/habits'
 import { HabitCard } from './HabitCard'
+import { HabitDetailSheet } from './HabitDetailSheet'
 
 /**
  * Hábitos que tocan hoy, partidos en pendientes y completados. Al completar,
@@ -51,25 +52,29 @@ export function useTodayHabits(): { pendingHabits: Habit[]; completedHabits: Hab
 }
 
 interface HabitsTodayProps {
-  onManage: () => void
   /** 'pending': solo las tarjetas, para incrustar dentro de la sección "Hoy".
       'completed': sección plegable (plegada por defecto) al fondo de la pestaña. */
   section?: 'pending' | 'completed'
 }
 
 /** Hábitos que tocan hoy, integrados con las tareas de la pestaña Hoy. */
-export function HabitsToday({ onManage, section = 'pending' }: HabitsTodayProps) {
+export function HabitsToday({ section = 'pending' }: HabitsTodayProps) {
   const { pendingHabits, completedHabits } = useTodayHabits()
   // Plegable de completados (plegado por defecto, como "Completadas hoy").
   const [open, setOpen] = useState(false)
+  // Tocar un hábito abre su hoja de ajustes (como el menú de una tarea).
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  const sheet = editingId && <HabitDetailSheet habitId={editingId} onClose={() => setEditingId(null)} />
 
   if (section === 'pending') {
     if (pendingHabits.length === 0) return null
     return (
       <>
         {pendingHabits.map((h) => (
-          <HabitCard key={h.id} habit={h} compact onManage={onManage} />
+          <HabitCard key={h.id} habit={h} compact onManage={() => setEditingId(h.id)} />
         ))}
+        {sheet}
       </>
     )
   }
@@ -99,10 +104,11 @@ export function HabitsToday({ onManage, section = 'pending' }: HabitsTodayProps)
       {open && (
         <div className="space-y-2 opacity-75">
           {completedHabits.map((h) => (
-            <HabitCard key={h.id} habit={h} compact onManage={onManage} />
+            <HabitCard key={h.id} habit={h} compact onManage={() => setEditingId(h.id)} />
           ))}
         </div>
       )}
+      {sheet}
     </section>
   )
 }

@@ -14,11 +14,20 @@ interface TaskItemProps {
   onOpen: (id: string) => void
   /** Muestra el botón "Hoy" para reprogramar tareas vencidas sin fricción (spec §2: no punitivo). */
   showMoveToToday?: boolean
+  /** En la pestaña Hoy la etiqueta "Hoy" es redundante: se omite (queda solo la hora si tiene). */
+  hideTodayChip?: boolean
 }
 
 const chipBase = 'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium'
 
-export function TaskItem({ task, list, tagsById, onOpen, showMoveToToday = false }: TaskItemProps) {
+export function TaskItem({
+  task,
+  list,
+  tagsById,
+  onOpen,
+  showMoveToToday = false,
+  hideTodayChip = false,
+}: TaskItemProps) {
   const settings = useSettings()
   const subtasks = useLiveQuery(() => db.subtasks.where('taskId').equals(task.id).toArray(), [task.id])
   const commentCount = useLiveQuery(() => db.comments.where('taskId').equals(task.id).count(), [task.id]) ?? 0
@@ -66,12 +75,18 @@ export function TaskItem({ task, list, tagsById, onOpen, showMoveToToday = false
         </p>
         {!task.completed && (
           <span className="mt-1 flex flex-wrap items-center gap-1.5">
-            {task.dueAt !== null && (
-              <span className={`${chipBase} ${overdue ? 'border-warn/30 bg-warn/10 text-warn' : 'border-line/10 text-ink-muted'}`}>
-                {formatDue(task.dueAt)}
-                {task.dueHasTime && ` · ${formatDueTime(task.dueAt)}`}
-              </span>
-            )}
+            {task.dueAt !== null &&
+              (hideTodayChip && formatDue(task.dueAt) === 'Hoy' ? (
+                // En la pestaña Hoy: sin etiqueta redundante; solo la hora si la tiene.
+                task.dueHasTime && (
+                  <span className={`${chipBase} border-line/10 text-ink-muted`}>{formatDueTime(task.dueAt)}</span>
+                )
+              ) : (
+                <span className={`${chipBase} ${overdue ? 'border-warn/30 bg-warn/10 text-warn' : 'border-line/10 text-ink-muted'}`}>
+                  {formatDue(task.dueAt)}
+                  {task.dueHasTime && ` · ${formatDueTime(task.dueAt)}`}
+                </span>
+              ))}
             {task.recurrenceRule && (
               <span className={`${chipBase} border-line/10 text-ink-muted`} aria-label="Se repite">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
@@ -86,6 +101,7 @@ export function TaskItem({ task, list, tagsById, onOpen, showMoveToToday = false
               <span className={`${chipBase} border-line/10 text-ink-muted`}>
                 <span className="size-1.5 rounded-full" style={{ backgroundColor: list.color }} aria-hidden="true" />
                 {list.name}
+                {list.emoji && ` ${list.emoji}`}
               </span>
             )}
             {taskTags.map((tag) => (

@@ -12,6 +12,8 @@ interface TaskSectionProps {
   showMoveToToday?: boolean
   /** Contenido extra al inicio de la lista (p. ej. los hábitos de hoy). */
   leading?: ReactNode
+  /** Omite la etiqueta "Hoy" en cada tarea (redundante en la pestaña Hoy). */
+  hideTodayChip?: boolean
 }
 
 export function TaskSection({
@@ -23,6 +25,7 @@ export function TaskSection({
   collapsible = false,
   showMoveToToday = false,
   leading,
+  hideTodayChip = false,
 }: TaskSectionProps) {
   const [open, setOpen] = useState(!collapsible)
 
@@ -68,6 +71,7 @@ export function TaskSection({
               tagsById={tagsById}
               onOpen={onOpen}
               showMoveToToday={showMoveToToday}
+              hideTodayChip={hideTodayChip}
             />
           ))}
         </div>

@@ -20,6 +20,8 @@ export interface List {
   id: string
   name: string
   color: string
+  /** Emoji decorativo mostrado a la derecha del nombre; null/ausente = sin emoji. */
+  emoji?: string | null
   order: number
   /** Nivel/XP del "atributo" RPG de esta categoría. */
   statLevel: number

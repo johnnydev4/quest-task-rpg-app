@@ -150,6 +150,17 @@ export function StudyView() {
     async () => (timer.linkTaskId ? await db.tasks.get(timer.linkTaskId) : undefined),
     [timer.linkTaskId],
   )
+  const linkedHabit = useLiveQuery(
+    async () => (timer.linkHabitId ? await db.habits.get(timer.linkHabitId) : undefined),
+    [timer.linkHabitId],
+  )
+  const activeHabits =
+    useLiveQuery(async () => {
+      const all = await db.habits.toArray()
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      return all.filter((h) => h.endDate === null || h.endDate >= today.getTime())
+    }, []) ?? []
 
   const progress = timer.totalMs > 0 ? 1 - timer.remainingMs / timer.totalMs : 0
   const running = timer.status !== 'idle'
@@ -183,6 +194,60 @@ export function StudyView() {
     setSoundPaused(!soundPaused)
   }
 
+  // Selectores de vínculo (tarea/hábito/lista): disponibles antes de la sesión
+  // y también durante la sesión minimizada (vincular en caliente ajusta el tiempo).
+  const linkSelectors = (
+    <div className="grid w-full gap-4 sm:grid-cols-3">
+      <label className="space-y-1.5">
+        <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Vincular a tarea</span>
+        <select
+          value={timer.linkTaskId ?? ''}
+          onChange={(e) => void pomodoro.setLink({ taskId: e.target.value || null })}
+          className={selectClass}
+        >
+          <option value="">Sin tarea</option>
+          {pendingTasks.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.title}
+              {t.pomodoroMinutes != null ? ` · ${t.pomodoroMinutes} min` : ''}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="space-y-1.5">
+        <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Vincular a hábito</span>
+        <select
+          value={timer.linkHabitId ?? ''}
+          onChange={(e) => void pomodoro.setLink({ habitId: e.target.value || null })}
+          className={selectClass}
+        >
+          <option value="">Sin hábito</option>
+          {activeHabits.map((h) => (
+            <option key={h.id} value={h.id}>
+              {h.title}
+              {h.pomodoroMinutes != null ? ` · ${h.pomodoroMinutes} min` : ''}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="space-y-1.5">
+        <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Vincular a lista</span>
+        <select
+          value={timer.linkListId ?? ''}
+          onChange={(e) => void pomodoro.setLink({ listId: e.target.value || null })}
+          className={selectClass}
+        >
+          <option value="">Sin lista</option>
+          {lists.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  )
+
   // Modo foco: sesión activa → pantalla limpia sin distracciones (spec §8).
   // Minimizada: tarjeta normal aquí + mini-temporizador flotante en el resto de la app.
   if (running) {
@@ -201,7 +266,7 @@ export function StudyView() {
         <Ring
           progress={progress}
           label={mmss(timer.remainingMs)}
-          sub={linkedTask ? linkedTask.title : 'Sesión de estudio'}
+          sub={linkedTask?.title ?? linkedHabit?.title ?? 'Sesión de estudio'}
         />
         <div className="flex items-center gap-1.5" aria-label={`${timer.pomodorosDone} pomodoros completados`}>
           {Array.from({ length: Math.max(4, timer.pomodorosDone) }).map((_, i) => (
@@ -256,6 +321,7 @@ export function StudyView() {
       return (
         <div className="flex flex-col items-center gap-8 rounded-2xl border border-line/5 glass-panel px-6 py-8">
           {sessionContent}
+          {linkSelectors}
           <button
             onClick={() => pomodoro.setMinimized(false)}
             className="flex items-center gap-1.5 rounded-xl border border-line/10 px-4 py-2 text-sm font-medium text-ink-dim transition-colors hover:bg-ink/5"
@@ -334,38 +400,11 @@ export function StudyView() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="space-y-1.5">
-          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Vincular a tarea</span>
-          <select
-            value={timer.linkTaskId ?? ''}
-            onChange={(e) => pomodoro.setLink({ taskId: e.target.value || null })}
-            className={selectClass}
-          >
-            <option value="">Sin tarea</option>
-            {pendingTasks.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="space-y-1.5">
-          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Vincular a lista</span>
-          <select
-            value={timer.linkListId ?? ''}
-            onChange={(e) => pomodoro.setLink({ listId: e.target.value || null })}
-            className={selectClass}
-          >
-            <option value="">Sin lista</option>
-            {lists.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      {linkSelectors}
+      <p className="text-[11px] text-ink-faint">
+        Si la tarea o el hábito vinculado tiene un pomodoro asignado, el temporizador pasa a ese tiempo
+        restando lo ya transcurrido.
+      </p>
 
       <div className="space-y-1.5">
         <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">

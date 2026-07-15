@@ -20,6 +20,7 @@ export interface PomodoroSnapshot {
   pomodorosDone: number
   linkTaskId: string | null
   linkListId: string | null
+  linkHabitId: string | null
   /** Sesión minimizada: se navega por la app con el mini-temporizador flotante. */
   minimized: boolean
 }
@@ -50,6 +51,7 @@ function fresh(totalMs: number): PersistedState {
     pomodorosDone: 0,
     linkTaskId: null,
     linkListId: null,
+    linkHabitId: null,
     minimized: false,
     endsAt: 0,
     focusStartedAt: null,
@@ -87,9 +89,9 @@ class PomodoroEngine {
   getSnapshot = (): PomodoroSnapshot => this.snapshot
 
   private toSnapshot(): PomodoroSnapshot {
-    const { phase, status, remainingMs, totalMs, pomodorosDone, linkTaskId, linkListId, minimized } =
+    const { phase, status, remainingMs, totalMs, pomodorosDone, linkTaskId, linkListId, linkHabitId, minimized } =
       this.state
-    return { phase, status, remainingMs, totalMs, pomodorosDone, linkTaskId, linkListId, minimized }
+    return { phase, status, remainingMs, totalMs, pomodorosDone, linkTaskId, linkListId, linkHabitId, minimized }
   }
 
   private publish(): void {
@@ -135,7 +137,7 @@ class PomodoroEngine {
   }
 
   async start(
-    link?: { taskId?: string | null; listId?: string | null },
+    link?: { taskId?: string | null; listId?: string | null; habitId?: string | null },
     opts?: { focusMinutes?: number | null },
   ): Promise<void> {
     const customFocusMin = opts?.focusMinutes ?? null
@@ -153,6 +155,7 @@ class PomodoroEngine {
       focusStartedAt: Date.now(),
       linkTaskId: link?.taskId ?? null,
       linkListId: link?.listId ?? null,
+      linkHabitId: link?.habitId ?? null,
       customFocusMin,
       pomodorosDone: this.state.status === 'idle' ? this.state.pomodorosDone : 0,
     }
@@ -167,10 +170,41 @@ class PomodoroEngine {
     this.publish()
   }
 
-  /** Cambia el vínculo tarea/lista de la sesión (también en caliente). */
-  setLink(link: { taskId?: string | null; listId?: string | null }): void {
+  /**
+   * Cambia el vínculo tarea/lista/hábito de la sesión (también en caliente).
+   * Dinámica: si la tarea/hábito vinculado tiene un pomodoro asignado, la fase
+   * de foco pasa a durar ese tiempo, restando lo YA transcurrido en la sesión.
+   */
+  async setLink(link: {
+    taskId?: string | null
+    listId?: string | null
+    habitId?: string | null
+  }): Promise<void> {
     if (link.taskId !== undefined) this.state.linkTaskId = link.taskId
     if (link.listId !== undefined) this.state.linkListId = link.listId
+    if (link.habitId !== undefined) this.state.linkHabitId = link.habitId
+
+    let assigned: number | null = null
+    if (link.taskId) assigned = (await db.tasks.get(link.taskId))?.pomodoroMinutes ?? null
+    else if (link.habitId) assigned = (await db.habits.get(link.habitId))?.pomodoroMinutes ?? null
+
+    if (assigned !== null && this.state.phase === 'focus') {
+      const newTotal = Math.max(1, assigned) * 60_000
+      const elapsed =
+        this.state.status === 'idle' ? 0 : Math.max(0, this.state.totalMs - this.state.remainingMs)
+      const remaining = Math.max(0, newTotal - elapsed)
+      this.state.customFocusMin = assigned
+      this.state.totalMs = newTotal
+      this.state.remainingMs = remaining
+      if (this.state.status === 'running') {
+        this.state.endsAt = Date.now() + remaining
+        if (remaining <= 0) {
+          this.publish()
+          void this.completePhase(true)
+          return
+        }
+      }
+    }
     this.publish()
   }
 

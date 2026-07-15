@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type {
@@ -35,6 +34,7 @@ import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
 import { MiniCalendar } from '../ui/MiniCalendar'
 import { TimeSelect } from '../ui/TimeSelect'
+import { Sheet } from '../ui/Sheet'
 import { TagSection } from './detail/TagSection'
 import { CommentSection } from './detail/CommentSection'
 import { AttachmentSection } from './detail/AttachmentSection'
@@ -157,52 +157,6 @@ function RowIcon({ children }: { children: ReactNode }) {
 /** Grupo de filas estilo iOS sobre cristal líquido. */
 function Group({ children }: { children: ReactNode }) {
   return <div className="overflow-hidden rounded-2xl border border-line/5 glass-panel">{children}</div>
-}
-
-/**
- * Hoja inferior (bottom sheet) estilo Microsoft To Do adaptada al Liquid Glass:
- * sube desde abajo con un tirador, título y botón "Listo". Cierra con Escape,
- * tocando fuera o el botón. Se dibuja por encima del detalle (z alto).
- */
-function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  // Portal a <body>: evita que un `transform` de un ancestro (la animación del
-  // modal) convierta este `fixed` en relativo al panel y lo recorte.
-  // Hoja inferior en todos los tamaños: sube desde abajo (animación modal-in).
-  return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/55" onClick={onClose} aria-hidden="true" />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="relative max-h-[82dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl"
-        style={{ animation: 'sheet-up 0.26s ease-out both' }}
-      >
-        <div className="sticky top-0 z-10 glass-strong">
-          <div className="flex justify-center pt-2.5">
-            <span className="h-1 w-9 rounded-full bg-ink/25" aria-hidden="true" />
-          </div>
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3">
-            <span aria-hidden="true" />
-            <h3 className="text-center text-base font-semibold text-ink">{title}</h3>
-            <button onClick={onClose} className="justify-self-end text-[15px] font-semibold text-accent-400">
-              Listo
-            </button>
-          </div>
-        </div>
-        <div className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1">{children}</div>
-      </div>
-    </div>,
-    document.body,
-  )
 }
 
 /** Opción de una hoja (fila táctil grande estilo To Do). */
@@ -1010,6 +964,10 @@ function TaskForm({
                   onClick={() => updateTask(task.id, { pomodoroMinutes: min })}
                 />
               ))}
+              <CustomMinutesInput
+                current={POMODORO_PRESETS.includes(task.pomodoroMinutes ?? -1) ? null : (task.pomodoroMinutes ?? null)}
+                onApply={(min) => updateTask(task.id, { pomodoroMinutes: min })}
+              />
               {task.pomodoroMinutes != null && (
                 <>
                   <div className="my-2 border-t border-line/5" />
@@ -1069,7 +1027,7 @@ function TaskForm({
                       <span className="size-3 rounded-full" style={{ backgroundColor: l.color }} aria-hidden="true" />
                     </span>
                   }
-                  label={l.name}
+                  label={l.emoji ? `${l.name} ${l.emoji}` : l.name}
                   selected={task.listId === l.id}
                   onClick={() => {
                     updateTask(task.id, { listId: l.id })
@@ -1099,6 +1057,45 @@ function TaskForm({
           {sheet === 'comentarios' && <CommentSection taskId={task.id} comments={comments} />}
         </Sheet>
       )}
+    </div>
+  )
+}
+
+/** Minutos de pomodoro personalizados (1–180) con confirmación explícita. */
+export function CustomMinutesInput({
+  current,
+  onApply,
+}: {
+  current: number | null
+  onApply: (min: number) => void
+}) {
+  const [value, setValue] = useState(current !== null ? String(current) : '')
+  const parsed = Math.round(Number(value))
+  const valid = value !== '' && Number.isFinite(parsed) && parsed >= 1 && parsed <= 180
+
+  return (
+    <div className={`flex min-h-13 items-center gap-3 rounded-xl px-3 ${current !== null ? 'text-accent-300' : ''}`}>
+      <span className={`min-w-0 flex-1 text-[15px] lg:text-sm ${current !== null ? 'text-accent-300' : 'text-ink'}`}>
+        Personalizado{current !== null ? ` · ${current} min` : ''}
+      </span>
+      <input
+        type="number"
+        min={1}
+        max={180}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="min"
+        aria-label="Minutos personalizados de pomodoro"
+        className="w-20 rounded-md border border-line/10 bg-surface-700 px-2 py-1.5 text-center text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/60"
+      />
+      <button
+        type="button"
+        disabled={!valid}
+        onClick={() => valid && onApply(parsed)}
+        className="rounded-lg border border-line/10 px-3 py-1.5 text-sm font-medium text-ink-dim transition-colors hover:bg-ink/5 disabled:opacity-40"
+      >
+        OK
+      </button>
     </div>
   )
 }

@@ -70,9 +70,11 @@ export default function App() {
     startAutoSync()
   }, [])
 
-  // Al cambiar de pestaña, volver al inicio (no quedar a media página, sobre todo en móvil).
+  // Al cambiar de pestaña: volver al inicio y cerrar el detalle de tarea que
+  // hubiera quedado abierto (en escritorio persistía entre pestañas).
   useEffect(() => {
     window.scrollTo(0, 0)
+    setDetailId(null)
   }, [view])
 
   // Tema, acento y tinte del cristal globales e instantáneos (spec §10).
@@ -194,6 +196,7 @@ export default function App() {
     tasks: ReturnType<typeof sortPending>
     collapsible?: boolean
     showMoveToToday?: boolean
+    hideTodayChip?: boolean
   }[] = []
 
   // Una tarea completada que aún "lingerea" no cuenta como completada en pantalla.
@@ -211,6 +214,7 @@ export default function App() {
         key: 'today',
         title: 'Hoy',
         tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= sod && t.dueAt < tomorrow)),
+        hideTodayChip: true,
       },
       {
         key: 'done',
@@ -529,17 +533,16 @@ export default function App() {
                     onOpen={setDetailId}
                     collapsible={s.collapsible}
                     showMoveToToday={s.showMoveToToday}
+                    hideTodayChip={s.hideTodayChip}
                     // Los hábitos de hoy viven dentro de la propia sección "Hoy"
                     leading={
-                      s.key === 'today' && pendingHabits > 0 ? (
-                        <HabitsToday section="pending" onManage={() => setView({ kind: 'habits' })} />
-                      ) : undefined
+                      s.key === 'today' && pendingHabits > 0 ? <HabitsToday section="pending" /> : undefined
                     }
                   />
                 ))
               )}
               {/* Los hábitos ya cumplidos bajan al fondo de la pestaña */}
-              <HabitsToday section="completed" onManage={() => setView({ kind: 'habits' })} />
+              <HabitsToday section="completed" />
             </>
           ) : isEmpty ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center">

@@ -7,6 +7,7 @@ import { COMBO_TIERS, habitEnded, RAINBOW_GRADIENT } from '../../lib/habits'
 import { TimeSelect } from '../ui/TimeSelect'
 import { DayPicker } from './DayPicker'
 import { HabitCard } from './HabitCard'
+import { HabitDetailSheet } from './HabitDetailSheet'
 
 const inputClass =
   'w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
@@ -19,6 +20,8 @@ export function HabitsView() {
   const [indefinite, setIndefinite] = useState(false)
   const [reminderTime, setReminderTime] = useState('')
   const [pomodoroMin, setPomodoroMin] = useState('')
+  // Tocar un hábito abre su hoja de ajustes.
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const active = habits.filter((h) => !habitEnded(h)).sort((a, b) => a.createdAt - b.createdAt)
   const finished = habits.filter((h) => habitEnded(h)).sort((a, b) => (b.endDate ?? 0) - (a.endDate ?? 0))
@@ -127,7 +130,7 @@ export function HabitsView() {
       ) : (
         <div className="space-y-3">
           {active.map((h) => (
-            <HabitCard key={h.id} habit={h} />
+            <HabitCard key={h.id} habit={h} onManage={() => setEditingId(h.id)} />
           ))}
         </div>
       )}
@@ -138,10 +141,12 @@ export function HabitsView() {
             Finalizados <span className="text-xs font-normal text-ink-faint">{finished.length}</span>
           </h2>
           {finished.map((h) => (
-            <HabitCard key={h.id} habit={h} />
+            <HabitCard key={h.id} habit={h} onManage={() => setEditingId(h.id)} />
           ))}
         </div>
       )}
+
+      {editingId && <HabitDetailSheet habitId={editingId} onClose={() => setEditingId(null)} />}
 
       {/* Leyenda de la escalera de combos */}
       <div className="rounded-2xl border border-line/5 glass-panel p-4">

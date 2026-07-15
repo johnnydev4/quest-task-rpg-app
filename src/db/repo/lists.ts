@@ -3,13 +3,14 @@ import { db } from '../db'
 import type { List } from '../types'
 import { recordDeletion } from './tombstones'
 
-export async function createList(name: string, color: string): Promise<string> {
+export async function createList(name: string, color: string, emoji?: string | null): Promise<string> {
   const now = Date.now()
   const last = await db.lists.orderBy('order').last()
   const list: List = {
     id: uid(),
     name: name.trim(),
     color,
+    emoji: emoji ?? null,
     order: (last?.order ?? 0) + 1,
     statLevel: 1,
     statXp: 0,

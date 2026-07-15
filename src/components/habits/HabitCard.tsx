@@ -2,10 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Habit } from '../../db/types'
-import { deleteHabit, toggleHabitToday, updateHabit } from '../../db/repo/habits'
+import { deleteHabit, toggleHabitToday } from '../../db/repo/habits'
 import { pomodoro } from '../../services/pomodoro'
 import { emitToast } from '../../lib/events'
-import { TimeSelect } from '../ui/TimeSelect'
 import { localDateKey } from '../../lib/dates'
 import {
   comboBackground,
@@ -160,7 +159,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             onClick={() => {
               // Esperar el start: es async y reinicia el estado (pisaría el minimized).
               void pomodoro
-                .start({}, { focusMinutes: habit.pomodoroMinutes })
+                .start({ habitId: habit.id }, { focusMinutes: habit.pomodoroMinutes })
                 .then(() => pomodoro.setMinimized(true))
               emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · ${habit.pomodoroMinutes} min` })
             }}
@@ -201,36 +200,6 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
               confirmLabel="¿Seguro?"
               onConfirm={() => void deleteHabit(habit.id)}
             />
-          </div>
-          {/* Aviso y pomodoro del hábito, editables aquí */}
-          <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-ink-faint">
-            <label className="flex items-center gap-1.5">
-              Aviso
-              <TimeSelect
-                value={habit.reminderTime ?? ''}
-                onChange={(v) => void updateHabit(habit.id, { reminderTime: v || null })}
-                noneLabel="Sin aviso"
-                ariaLabel={`Hora del aviso de ${habit.title}`}
-              />
-            </label>
-            <label className="flex items-center gap-1.5">
-              Pomodoro
-              <select
-                value={habit.pomodoroMinutes ?? ''}
-                onChange={(e) =>
-                  void updateHabit(habit.id, { pomodoroMinutes: e.target.value ? Number(e.target.value) : null })
-                }
-                aria-label={`Minutos de pomodoro de ${habit.title}`}
-                className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
-              >
-                <option value="">Sin pomodoro</option>
-                {[10, 15, 25, 45, 60, 90].map((m) => (
-                  <option key={m} value={m}>
-                    {m} min
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
         </>
       )}

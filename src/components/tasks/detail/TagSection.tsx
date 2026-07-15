@@ -60,7 +60,7 @@ export function TagSection({ task, tags }: TagSectionProps) {
           onChange={(e) => setNewName(e.target.value)}
           placeholder="Nueva etiqueta…"
           aria-label="Nueva etiqueta"
-          className="w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-1.5 text-xs text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
+          className="w-full rounded-lg border border-line/10 glass-input px-3 py-1.5 text-xs text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
         />
       </form>
     </div>

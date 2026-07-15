@@ -38,7 +38,7 @@ export function MiniCalendar({ value, onSelect }: MiniCalendarProps) {
     'flex size-7 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink'
 
   return (
-    <div className="rounded-xl border border-line/10 bg-surface-700/60 p-2.5">
+    <div className="rounded-xl border border-line/10 glass-input p-2.5">
       <div className="mb-1.5 flex items-center justify-between px-1">
         <button type="button" onClick={() => shift(-1)} aria-label="Mes anterior" className={navBtn}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">

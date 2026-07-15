@@ -1,7 +1,7 @@
 import { uid } from '../../lib/uid'
 import { db } from '../db'
 import type { Priority, Task } from '../types'
-import { XP_BY_PRIORITY } from '../../lib/xp'
+import { xpForPriority } from '../../lib/xp'
 import { emitCompletion } from '../../lib/events'
 import { allowsNext, nextOccurrence, ruleForNext } from '../../lib/recurrence'
 import { startOfToday } from '../../lib/dates'
@@ -13,14 +13,15 @@ export interface NewTaskInput {
   listId?: string | null
   dueAt?: number | null
   dueHasTime?: boolean
-  priority?: Priority
+  priority?: Priority | null
   tagIds?: string[]
   recurrenceRule?: Task['recurrenceRule']
 }
 
 export async function createTask(input: NewTaskInput): Promise<string> {
   const now = Date.now()
-  const priority = input.priority ?? 'medium'
+  // Sin prioridad por defecto: el usuario la asigna si quiere.
+  const priority = input.priority ?? null
   const task: Task = {
     id: uid(),
     listId: input.listId ?? null,
@@ -34,7 +35,7 @@ export async function createTask(input: NewTaskInput): Promise<string> {
     completedAt: null,
     recurrenceRule: input.recurrenceRule ?? null,
     tagIds: input.tagIds ?? [],
-    xpValue: XP_BY_PRIORITY[priority],
+    xpValue: xpForPriority(priority),
     createdAt: now,
     updatedAt: now,
     syncStatus: 'pending',
@@ -48,8 +49,8 @@ export async function updateTask(
   patch: Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>>,
 ): Promise<void> {
   const full: Partial<Task> = { ...patch }
-  // El XP siempre refleja la prioridad vigente.
-  if (patch.priority) full.xpValue = XP_BY_PRIORITY[patch.priority]
+  // El XP siempre refleja la prioridad vigente (incluido quitarla → XP base).
+  if (patch.priority !== undefined) full.xpValue = xpForPriority(patch.priority)
   await db.tasks.update(id, { ...full, updatedAt: Date.now(), syncStatus: 'pending' })
 }
 

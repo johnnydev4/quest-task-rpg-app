@@ -31,7 +31,7 @@ export function TagModal({ tag, onClose }: TagModalProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             aria-label="Nombre de la etiqueta"
-            className="w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
+            className="w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
           />
         </div>
         <div className="space-y-1.5">

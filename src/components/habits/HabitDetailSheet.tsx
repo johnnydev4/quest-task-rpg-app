@@ -40,7 +40,7 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
   const sectionLabel = 'block text-xs font-semibold tracking-wide text-ink-faint uppercase'
 
   return (
-    <Sheet title="Ajustar hábito" onClose={onClose}>
+    <Sheet title="Ajustar hábito" onClose={onClose} sideOnDesktop>
       <div className="space-y-5 pb-2">
         {/* Título */}
         <input

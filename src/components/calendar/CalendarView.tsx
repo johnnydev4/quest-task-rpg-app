@@ -299,7 +299,7 @@ function DayModal({
             aria-label="Nueva tarea para este día"
             // Solo autoenfocar con ratón: en táctil abre el teclado y tapa la pantalla.
             autoFocus={!window.matchMedia('(pointer: coarse)').matches}
-            className="min-w-0 flex-1 rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
+            className="min-w-0 flex-1 rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
           />
           <input
             type="time"
@@ -307,7 +307,7 @@ function DayModal({
             onChange={(e) => setTime(e.target.value)}
             aria-label="Hora (opcional)"
             title="Hora (opcional)"
-            className="rounded-lg border border-line/10 bg-surface-700 px-2 py-2 text-sm text-ink outline-none focus:border-accent-500/60"
+            className="rounded-lg border border-line/10 glass-input px-2 py-2 text-sm text-ink outline-none focus:border-accent-500/60"
           />
           <button
             type="submit"
@@ -325,7 +325,7 @@ function DayModal({
               <button
                 key={t.id}
                 onClick={() => onOpenTask(t.id)}
-                className="flex w-full items-center gap-2.5 rounded-lg border border-line/5 bg-surface-700/50 px-3 py-2 text-left transition-colors hover:border-line/15"
+                className="flex w-full items-center gap-2.5 rounded-lg border border-line/5 glass-input px-3 py-2 text-left transition-colors hover:border-line/15"
               >
                 <span
                   className={`size-2 shrink-0 rounded-full ${t.color ? '' : 'bg-accent-500'}`}

@@ -37,7 +37,8 @@ export interface Task {
   title: string
   notes: string
   color: string | null
-  priority: Priority
+  /** Prioridad opcional; null = sin prioridad (no se muestra chip y da XP base). */
+  priority: Priority | null
   /** Fecha programada en ms. Si dueHasTime es false, es medianoche local (solo fecha). */
   dueAt: number | null
   dueHasTime: boolean

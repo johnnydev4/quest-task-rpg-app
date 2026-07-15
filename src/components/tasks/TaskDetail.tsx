@@ -419,7 +419,11 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
           label={p.label}
           selected={isSimple && rule!.unit === p.unit}
           onClick={() => {
-            updateTask(task.id, { recurrenceRule: { every: 1, unit: p.unit, end: { type: 'never' } } })
+            updateTask(task.id, {
+              recurrenceRule: { every: 1, unit: p.unit, end: { type: 'never' } },
+              // Una repetición necesita fecha ancla; sin ella, la tarea no saldría en Hoy.
+              ...(task.dueAt === null ? { dueAt: startOfToday(), dueHasTime: false } : {}),
+            })
             onDone()
           }}
         />
@@ -435,7 +439,10 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
         selected={isCustom}
         onClick={() => {
           if (!rule) {
-            updateTask(task.id, { recurrenceRule: { every: 2, unit: 'day', end: { type: 'never' } } })
+            updateTask(task.id, {
+              recurrenceRule: { every: 2, unit: 'day', end: { type: 'never' } },
+              ...(task.dueAt === null ? { dueAt: startOfToday(), dueHasTime: false } : {}),
+            })
           }
           setShowCustom(true)
         }}
@@ -744,7 +751,8 @@ function TaskForm({
                 type="button"
                 role="radio"
                 aria-checked={task.priority === p}
-                onClick={() => updateTask(task.id, { priority: p })}
+                // Tocar la prioridad ya elegida la desactiva (queda sin prioridad).
+                onClick={() => updateTask(task.id, { priority: task.priority === p ? null : p })}
                 className={`rounded-xl border px-2 py-2 text-sm font-medium transition-colors ${
                   task.priority === p
                     ? PRIORITY_SELECTED_CLASS[p]
@@ -1086,7 +1094,7 @@ export function CustomMinutesInput({
         onChange={(e) => setValue(e.target.value)}
         placeholder="min"
         aria-label="Minutos personalizados de pomodoro"
-        className="w-20 rounded-md border border-line/10 bg-surface-700 px-2 py-1.5 text-center text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/60"
+        className="w-20 rounded-md border border-line/10 glass-input px-2 py-1.5 text-center text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/60"
       />
       <button
         type="button"
@@ -1114,7 +1122,7 @@ function CreateListInline({ onCreated }: { onCreated: (id: string) => void }) {
   }
 
   return (
-    <div className="space-y-2.5 rounded-xl border border-line/10 bg-surface-700/40 p-3">
+    <div className="space-y-2.5 rounded-xl border border-line/10 glass-input p-3">
       <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Nueva lista</p>
       <input
         value={name}
@@ -1122,7 +1130,7 @@ function CreateListInline({ onCreated }: { onCreated: (id: string) => void }) {
         onKeyDown={(e) => e.key === 'Enter' && void create()}
         placeholder="Ej. Hogar, Trabajo…"
         aria-label="Nombre de la lista nueva"
-        className="w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
+        className="w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
       />
       <ColorPicker value={color} onChange={(c) => c && setColor(c)} allowCustom />
       <button

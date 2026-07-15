@@ -167,6 +167,16 @@ a {
   -webkit-backdrop-filter: blur(22px) saturate(150%);
 }
 
+/*
+ * Controles de formulario (inputs, selects) en cristal: translúcidos con brillo
+ * superior. Sin backdrop-filter a propósito: anidado dentro de un panel que ya
+ * lo usa, iOS Safari lo ignora y el control se ve opaco/plano.
+ */
+.glass-input {
+  background-color: color-mix(in srgb, var(--t-glass) 45%, transparent);
+  box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 6%, transparent);
+}
+
 /* Accesibilidad: foco visible por teclado, coherente con el acento. */
 :focus-visible {
   outline: 2px solid var(--t-accent-500);

@@ -10,7 +10,7 @@ import { HabitCard } from './HabitCard'
 import { HabitDetailSheet } from './HabitDetailSheet'
 
 const inputClass =
-  'w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
+  'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
 
 export function HabitsView() {
   const habits = useLiveQuery(() => db.habits.toArray(), []) ?? []
@@ -73,7 +73,7 @@ export function HabitsView() {
                   if (ms !== null) setEndDate(ms)
                 }}
                 aria-label="Fecha límite del hábito"
-                className="rounded-lg border border-line/10 bg-surface-700 px-3 py-1.5 text-sm text-ink outline-none focus:border-accent-500/60 disabled:opacity-40"
+                className="rounded-lg border border-line/10 glass-input px-3 py-1.5 text-sm text-ink outline-none focus:border-accent-500/60 disabled:opacity-40"
               />
               <label className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-dim">
                 <input
@@ -97,7 +97,7 @@ export function HabitsView() {
               value={pomodoroMin}
               onChange={(e) => setPomodoroMin(e.target.value)}
               aria-label="Minutos de pomodoro del hábito"
-              className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+              className="rounded-md border border-line/10 glass-input px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
             >
               <option value="">Sin pomodoro</option>
               {[10, 15, 25, 45, 60, 90].map((m) => (

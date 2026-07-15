@@ -6,7 +6,7 @@ import { formatDateTime } from '../../lib/dates'
 import { Modal } from '../ui/Modal'
 
 const inputClass =
-  'w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
+  'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
 const btnClass =
   'rounded-lg border border-line/10 px-3 py-2 text-sm font-medium text-ink-dim transition-colors hover:bg-ink/5'
 
@@ -47,11 +47,11 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               Crea un proyecto en <span className="text-accent-300">supabase.com</span>.
             </li>
             <li>
-              En el editor SQL, ejecuta el contenido de <code className="rounded bg-surface-700 px-1.5 py-0.5 text-xs">supabase/schema.sql</code> (está en la carpeta del proyecto).
+              En el editor SQL, ejecuta el contenido de <code className="rounded glass-input px-1.5 py-0.5 text-xs">supabase/schema.sql</code> (está en la carpeta del proyecto).
             </li>
             <li>
-              Crea un archivo <code className="rounded bg-surface-700 px-1.5 py-0.5 text-xs">.env.local</code> en la raíz con:
-              <pre className="mt-1.5 overflow-x-auto rounded-lg bg-surface-700 p-3 text-xs text-ink-dim">{`VITE_SUPABASE_URL=https://TU-PROYECTO.supabase.co
+              Crea un archivo <code className="rounded glass-input px-1.5 py-0.5 text-xs">.env.local</code> en la raíz con:
+              <pre className="mt-1.5 overflow-x-auto rounded-lg glass-input p-3 text-xs text-ink-dim">{`VITE_SUPABASE_URL=https://TU-PROYECTO.supabase.co
 VITE_SUPABASE_ANON_KEY=TU_CLAVE_ANON`}</pre>
             </li>
             <li>Reinicia el servidor de desarrollo.</li>
@@ -89,7 +89,7 @@ VITE_SUPABASE_ANON_KEY=TU_CLAVE_ANON`}</pre>
     <Modal title="Cuenta y sincronización" onClose={onClose}>
       {session ? (
         <div className="space-y-5">
-          <div className="rounded-xl border border-line/5 bg-surface-700/60 px-4 py-3">
+          <div className="rounded-xl border border-line/5 glass-input px-4 py-3">
             <p className="text-sm font-medium text-ink">{session.user.email}</p>
             <p className="mt-1 text-xs text-ink-faint">
               {syncState === 'syncing'
@@ -131,7 +131,7 @@ VITE_SUPABASE_ANON_KEY=TU_CLAVE_ANON`}</pre>
           <button
             type="button"
             onClick={signInWithGoogle}
-            className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-line/15 bg-surface-700 px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-ink/5"
+            className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-line/15 glass-input px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-ink/5"
           >
             <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

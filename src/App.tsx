@@ -183,8 +183,15 @@ export default function App() {
       title: parsed.title,
       listId: view.kind === 'list' ? view.listId : null,
       tagIds: [...new Set(tagIds)],
-      // Lo detectado en el texto manda; si no hay nada, aplica el default de la vista.
-      dueAt: parsed.dueAt ?? (view.kind === 'today' ? sod : view.kind === 'upcoming' ? tomorrow : null),
+      // Lo detectado en el texto manda; si no hay nada, aplica el default de la
+      // vista. Una tarea recurrente sin fecha no aparecería nunca en Hoy: se ancla a hoy.
+      dueAt:
+        parsed.dueAt ??
+        (view.kind === 'today' || parsed.recurrenceRule !== null
+          ? sod
+          : view.kind === 'upcoming'
+            ? tomorrow
+            : null),
       dueHasTime: parsed.dueHasTime,
       recurrenceRule: parsed.recurrenceRule,
     })

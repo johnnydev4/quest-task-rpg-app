@@ -124,8 +124,10 @@ export function TaskItem({
             {attachmentCount > 0 && (
               <span className={`${chipBase} border-line/10 text-ink-muted`}>📎 {attachmentCount}</span>
             )}
-            {/* La prioridad se muestra siempre (baja, media o alta) */}
-            <span className={`${chipBase} ${PRIORITY_CHIP_CLASS[task.priority]}`}>{PRIORITY_LABEL[task.priority]}</span>
+            {/* La prioridad solo se muestra si está asignada */}
+            {task.priority && (
+              <span className={`${chipBase} ${PRIORITY_CHIP_CLASS[task.priority]}`}>{PRIORITY_LABEL[task.priority]}</span>
+            )}
           </span>
         )}
       </button>

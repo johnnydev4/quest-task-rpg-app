@@ -10,7 +10,7 @@ interface ReminderSectionProps {
 }
 
 const selectClass =
-  'rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-xs text-ink outline-none focus:border-accent-500/60'
+  'rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink outline-none focus:border-accent-500/60'
 
 export function ReminderSection({ taskId, reminders }: ReminderSectionProps) {
   const [permission, setPermission] = useState(notificationService.permission())
@@ -28,7 +28,7 @@ export function ReminderSection({ taskId, reminders }: ReminderSectionProps) {
   return (
     <div className="space-y-2">
       {reminders.map((r) => (
-        <div key={r.id} className="group space-y-1.5 rounded-lg border border-line/5 bg-surface-700/60 px-3 py-2">
+        <div key={r.id} className="group space-y-1.5 rounded-lg border border-line/5 glass-input px-3 py-2">
           <div className="flex items-center justify-between gap-2">
             <input
               type="datetime-local"

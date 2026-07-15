@@ -120,7 +120,7 @@ export default function StatsView() {
                 if (ms !== null) setCustomFrom(ms)
               }}
               aria-label="Desde"
-              className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-xs text-ink"
+              className="rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink"
             />
             →
             <input
@@ -131,7 +131,7 @@ export default function StatsView() {
                 if (ms !== null) setCustomTo(ms)
               }}
               aria-label="Hasta"
-              className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-xs text-ink"
+              className="rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink"
             />
           </span>
         )}

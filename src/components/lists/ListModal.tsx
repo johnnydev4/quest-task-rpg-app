@@ -38,7 +38,7 @@ export function ListModal({ list, onClose }: ListModalProps) {
             placeholder="Ej. Hogar, Finanzas, Trabajo…"
             aria-label="Nombre de la lista"
             autoFocus
-            className="w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
+            className="w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
           />
         </div>
 
@@ -72,7 +72,7 @@ export function ListModal({ list, onClose }: ListModalProps) {
               placeholder="Otro…"
               maxLength={4}
               aria-label="Emoji personalizado de la lista"
-              className="w-20 rounded-lg border border-line/10 bg-surface-700 px-2 py-2 text-center text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/60"
+              className="w-20 rounded-lg border border-line/10 glass-input px-2 py-2 text-center text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/60"
             />
           </div>
         </div>

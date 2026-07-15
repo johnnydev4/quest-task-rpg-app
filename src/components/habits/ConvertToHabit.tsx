@@ -46,7 +46,7 @@ export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHab
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-line/5 bg-surface-700/60 px-3 py-3">
+    <div className="space-y-3 rounded-lg border border-line/5 glass-input px-3 py-3">
       <p className="text-xs text-ink-muted">
         La tarea pasará a <strong className="text-ink-dim">Hábitos</strong> como barra de progreso con
         COMBOS. Elige los días y hasta cuándo:
@@ -62,7 +62,7 @@ export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHab
             if (ms !== null) setEndDate(ms)
           }}
           aria-label="Fecha límite del hábito"
-          className="rounded-lg border border-line/10 bg-surface-700 px-3 py-1.5 text-sm text-ink outline-none focus:border-accent-500/60"
+          className="rounded-lg border border-line/10 glass-input px-3 py-1.5 text-sm text-ink outline-none focus:border-accent-500/60"
         />
         <button
           type="button"

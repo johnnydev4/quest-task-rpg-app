@@ -18,7 +18,7 @@ function AttachmentThumb({ attachment }: { attachment: Attachment }) {
         href={url}
         target="_blank"
         rel="noreferrer"
-        className="block overflow-hidden rounded-lg border border-line/10 bg-surface-700"
+        className="block overflow-hidden rounded-lg border border-line/10 glass-input"
         aria-label={`Abrir ${attachment.name}`}
       >
         {isImage ? (

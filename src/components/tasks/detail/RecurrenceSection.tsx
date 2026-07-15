@@ -8,7 +8,7 @@ interface RecurrenceSectionProps {
 }
 
 const selectClass =
-  'rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-xs text-ink outline-none focus:border-accent-500/60'
+  'rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink outline-none focus:border-accent-500/60'
 
 export function RecurrenceSection({ task }: RecurrenceSectionProps) {
   const rule = task.recurrenceRule
@@ -44,7 +44,7 @@ export function RecurrenceSection({ task }: RecurrenceSectionProps) {
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-line/5 bg-surface-700/60 px-3 py-2.5">
+    <div className="space-y-2 rounded-lg border border-line/5 glass-input px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-1.5 text-xs text-ink-dim">
         <span>Cada</span>
         <input

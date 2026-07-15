@@ -20,7 +20,7 @@ function mmss(ms: number): string {
 }
 
 const selectClass =
-  'w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink outline-none focus:border-accent-500/60'
+  'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink outline-none focus:border-accent-500/60'
 
 function Ring({ progress, label, sub }: { progress: number; label: string; sub: string }) {
   const r = 110
@@ -79,11 +79,13 @@ function DurationStepper({
   max: number
 }) {
   const clamp = (v: number) => Math.max(min, Math.min(max, v))
-  // Botones grandes (44px táctiles) sobre cristal líquido: fáciles de acertar.
+  // Cristal SIN backdrop-filter (glass-input): anidado dentro del panel, iOS lo
+  // pintaba opaco. Botones grandes táctiles (40px móvil / 44px escritorio).
   const stepBtn =
-    'flex size-11 items-center justify-center rounded-xl border border-line/10 text-xl font-bold text-ink-dim transition-all hover:bg-ink/10 hover:text-ink active:scale-95'
+    'flex size-10 shrink-0 items-center justify-center rounded-xl border border-line/10 glass-input text-xl font-bold text-ink-dim transition-all hover:bg-ink/10 hover:text-ink active:scale-95 lg:size-11'
   return (
-    <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-line/10 glass-panel px-4 py-3">
+    // Móvil: fila compacta a lo ancho (etiqueta ↔ controles). Escritorio: tarjeta en columna.
+    <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line/10 glass-input px-3.5 py-2 lg:w-auto lg:flex-col lg:justify-center lg:gap-1.5 lg:px-4 lg:py-3">
       <span className="text-xs font-semibold tracking-wide text-ink-muted uppercase">{label}</span>
       <div className="flex items-center gap-1.5">
         <button type="button" onClick={() => adjustDuration(settingKey, -step, min, max)} aria-label={`Reducir ${label}`} className={stepBtn}>
@@ -96,13 +98,13 @@ function DurationStepper({
           max={max}
           onChange={(e) => updateSettings({ [settingKey]: clamp(Number(e.target.value) || min) })}
           aria-label={`Minutos de ${label}`}
-          className="w-14 [appearance:textfield] border-none bg-transparent text-center text-2xl font-bold text-ink outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className="w-12 [appearance:textfield] border-none bg-transparent text-center text-xl font-bold text-ink outline-none lg:w-14 lg:text-2xl [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
         <button type="button" onClick={() => adjustDuration(settingKey, step, min, max)} aria-label={`Aumentar ${label}`} className={stepBtn}>
           +
         </button>
+        <span className="pl-0.5 text-[11px] text-ink-faint">min</span>
       </div>
-      <span className="text-[11px] text-ink-faint">minutos</span>
     </div>
   )
 }
@@ -369,7 +371,7 @@ export function StudyView() {
           Iniciar foco
         </button>
         {/* Duraciones de la sesión de hoy, editables aquí mismo (también viven en Ajustes) */}
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className="flex w-full max-w-sm flex-col gap-2 lg:w-auto lg:max-w-none lg:flex-row lg:items-stretch lg:justify-center">
           <DurationStepper
             label="Foco"
             settingKey="pomodoroFocusMin"

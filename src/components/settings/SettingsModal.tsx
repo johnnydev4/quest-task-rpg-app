@@ -131,7 +131,7 @@ export function SettingsModal({
                 aria-label="Cristal neutro"
                 aria-pressed={settings.glassTint === null}
                 title="Neutro"
-                className={`flex size-8 items-center justify-center rounded-full border-2 bg-surface-700 text-ink-faint transition-all ${
+                className={`flex size-8 items-center justify-center rounded-full border-2 glass-input text-ink-faint transition-all ${
                   settings.glassTint === null ? 'scale-110 border-ink' : 'border-line/15 hover:scale-105'
                 }`}
               >

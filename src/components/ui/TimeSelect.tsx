@@ -27,7 +27,7 @@ export function TimeSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={ariaLabel}
-      className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+      className="rounded-md border border-line/10 glass-input px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
     >
       {noneLabel !== undefined && <option value="">{noneLabel}</option>}
       {options.map((t) => (

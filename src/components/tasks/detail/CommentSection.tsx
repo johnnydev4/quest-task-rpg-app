@@ -22,7 +22,7 @@ export function CommentSection({ taskId, comments }: CommentSectionProps) {
   return (
     <div className="space-y-2">
       {comments.map((c) => (
-        <div key={c.id} className="group rounded-lg border border-line/5 bg-surface-700/60 px-3 py-2">
+        <div key={c.id} className="group rounded-lg border border-line/5 glass-input px-3 py-2">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] text-ink-faint">{formatDateTime(c.createdAt)}</span>
             <button
@@ -44,7 +44,7 @@ export function CommentSection({ taskId, comments }: CommentSectionProps) {
           onChange={(e) => setText(e.target.value)}
           placeholder="Añadir comentario…"
           aria-label="Añadir comentario"
-          className="w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
+          className="w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
         />
       </form>
     </div>

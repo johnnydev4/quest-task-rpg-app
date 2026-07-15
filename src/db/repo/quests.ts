@@ -72,6 +72,13 @@ export async function createQuestStep(questId: string, title: string): Promise<s
   return step.id
 }
 
+export async function updateQuestStep(
+  id: string,
+  patch: Partial<Omit<QuestStep, 'id' | 'questId' | 'createdAt' | 'updatedAt' | 'syncStatus'>>,
+): Promise<void> {
+  await db.questSteps.update(id, { ...patch, updatedAt: Date.now(), syncStatus: 'pending' })
+}
+
 export async function setQuestStepCompleted(id: string, completed: boolean): Promise<void> {
   const step = await db.questSteps.get(id)
   if (!step || step.completed === completed) return

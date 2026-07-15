@@ -29,15 +29,8 @@ export function TaskItem({ task, list, tagsById, onOpen, showMoveToToday = false
 
   const overdue = task.dueAt !== null && !task.completed && isOverdue(task.dueAt)
   const taskTags = (tagsById ? task.tagIds.map((id) => tagsById.get(id)).filter(Boolean) : []) as Tag[]
-  const hasChips =
-    task.dueAt !== null ||
-    list !== undefined ||
-    subTotal > 0 ||
-    task.priority !== 'low' ||
-    taskTags.length > 0 ||
-    commentCount > 0 ||
-    attachmentCount > 0 ||
-    task.recurrenceRule !== null
+  // Color efectivo: el propio de la tarea manda; si no tiene, hereda el de su lista.
+  const barColor = task.color ?? list?.color ?? null
 
   return (
     <div
@@ -49,8 +42,8 @@ export function TaskItem({ task, list, tagsById, onOpen, showMoveToToday = false
         }
       }}
     >
-      {task.color && (
-        <span className="w-1 self-stretch rounded-full" style={{ backgroundColor: task.color }} aria-hidden="true" />
+      {barColor && (
+        <span className="w-1 self-stretch rounded-full" style={{ backgroundColor: barColor }} aria-hidden="true" />
       )}
       <button
         onClick={() => setTaskCompleted(task.id, !task.completed)}
@@ -71,7 +64,7 @@ export function TaskItem({ task, list, tagsById, onOpen, showMoveToToday = false
         <p className={`truncate text-sm font-medium transition-colors ${task.completed ? 'text-ink-faint line-through' : 'text-ink'}`}>
           {task.title}
         </p>
-        {hasChips && !task.completed && (
+        {!task.completed && (
           <span className="mt-1 flex flex-wrap items-center gap-1.5">
             {task.dueAt !== null && (
               <span className={`${chipBase} ${overdue ? 'border-warn/30 bg-warn/10 text-warn' : 'border-line/10 text-ink-muted'}`}>
@@ -115,9 +108,8 @@ export function TaskItem({ task, list, tagsById, onOpen, showMoveToToday = false
             {attachmentCount > 0 && (
               <span className={`${chipBase} border-line/10 text-ink-muted`}>📎 {attachmentCount}</span>
             )}
-            {task.priority !== 'low' && (
-              <span className={`${chipBase} ${PRIORITY_CHIP_CLASS[task.priority]}`}>{PRIORITY_LABEL[task.priority]}</span>
-            )}
+            {/* La prioridad se muestra siempre (baja, media o alta) */}
+            <span className={`${chipBase} ${PRIORITY_CHIP_CLASS[task.priority]}`}>{PRIORITY_LABEL[task.priority]}</span>
           </span>
         )}
       </button>

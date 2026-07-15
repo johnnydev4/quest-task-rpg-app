@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Habit } from '../../db/types'
-import { deleteHabit, toggleHabitToday } from '../../db/repo/habits'
+import { deleteHabit, toggleHabitToday, updateHabit } from '../../db/repo/habits'
+import { pomodoro } from '../../services/pomodoro'
+import { emitToast } from '../../lib/events'
+import { TimeSelect } from '../ui/TimeSelect'
 import { localDateKey } from '../../lib/dates'
 import {
   comboBackground,
@@ -150,33 +153,86 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             {ended && <span>Finalizado</span>}
           </div>
         </button>
+
+        {/* Pomodoro vinculado: arranca un foco con los minutos del hábito */}
+        {habit.pomodoroMinutes != null && scheduledToday && !ended && !todayDone && (
+          <button
+            onClick={() => {
+              // Esperar el start: es async y reinicia el estado (pisaría el minimized).
+              void pomodoro
+                .start({}, { focusMinutes: habit.pomodoroMinutes })
+                .then(() => pomodoro.setMinimized(true))
+              emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · ${habit.pomodoroMinutes} min` })
+            }}
+            aria-label={`Empezar pomodoro de ${habit.pomodoroMinutes} minutos`}
+            title={`Pomodoro · ${habit.pomodoroMinutes} min`}
+            className="flex shrink-0 items-center gap-1 rounded-lg border border-line/10 px-2 py-1.5 text-[11px] font-semibold text-ink-dim transition-colors hover:bg-ink/5"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3" aria-hidden="true">
+              <path d="M8 5.14v13.72L19 12z" />
+            </svg>
+            {habit.pomodoroMinutes}m
+          </button>
+        )}
       </div>
 
       {/* Extras solo en la vista Hábitos */}
       {!compact && (
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-line/5 pt-2.5">
-          <div className="flex gap-1" aria-label="Días programados">
-            {WEEKDAY_ORDER.map((day) => {
-              const active = habit.daysOfWeek.includes(day)
-              return (
-                <span
-                  key={day}
-                  className={`flex size-6 items-center justify-center rounded-full text-[10px] font-bold ${
-                    active ? 'text-white' : 'text-ink-faint opacity-50'
-                  }`}
-                  style={active ? { backgroundColor: `${color}cc` } : undefined}
-                >
-                  {WEEKDAY_SHORT[day]}
-                </span>
-              )
-            })}
+        <>
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-line/5 pt-2.5">
+            <div className="flex gap-1" aria-label="Días programados">
+              {WEEKDAY_ORDER.map((day) => {
+                const active = habit.daysOfWeek.includes(day)
+                return (
+                  <span
+                    key={day}
+                    className={`flex size-6 items-center justify-center rounded-full text-[10px] font-bold ${
+                      active ? 'text-white' : 'text-ink-faint opacity-50'
+                    }`}
+                    style={active ? { backgroundColor: `${color}cc` } : undefined}
+                  >
+                    {WEEKDAY_SHORT[day]}
+                  </span>
+                )
+              })}
+            </div>
+            <ConfirmButton
+              label="Eliminar"
+              confirmLabel="¿Seguro?"
+              onConfirm={() => void deleteHabit(habit.id)}
+            />
           </div>
-          <ConfirmButton
-            label="Eliminar"
-            confirmLabel="¿Seguro?"
-            onConfirm={() => void deleteHabit(habit.id)}
-          />
-        </div>
+          {/* Aviso y pomodoro del hábito, editables aquí */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-ink-faint">
+            <label className="flex items-center gap-1.5">
+              Aviso
+              <TimeSelect
+                value={habit.reminderTime ?? ''}
+                onChange={(v) => void updateHabit(habit.id, { reminderTime: v || null })}
+                noneLabel="Sin aviso"
+                ariaLabel={`Hora del aviso de ${habit.title}`}
+              />
+            </label>
+            <label className="flex items-center gap-1.5">
+              Pomodoro
+              <select
+                value={habit.pomodoroMinutes ?? ''}
+                onChange={(e) =>
+                  void updateHabit(habit.id, { pomodoroMinutes: e.target.value ? Number(e.target.value) : null })
+                }
+                aria-label={`Minutos de pomodoro de ${habit.title}`}
+                className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+              >
+                <option value="">Sin pomodoro</option>
+                {[10, 15, 25, 45, 60, 90].map((m) => (
+                  <option key={m} value={m}>
+                    {m} min
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </>
       )}
     </div>
   )

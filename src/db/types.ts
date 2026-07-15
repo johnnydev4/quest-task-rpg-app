@@ -43,6 +43,8 @@ export interface Task {
   completedAt: number | null
   recurrenceRule: RecurrenceRule | null
   tagIds: string[]
+  /** Minutos de pomodoro asignados a la tarea; null/ausente = sin pomodoro. */
+  pomodoroMinutes?: number | null
   xpValue: number
   createdAt: number
   updatedAt: number
@@ -170,6 +172,10 @@ export interface Habit {
   startDate: number
   /** Medianoche local del último día; null = hábito indefinido (sin fecha límite). */
   endDate: number | null
+  /** Hora del aviso diario 'HH:MM' (solo días programados sin cumplir); null/ausente = sin aviso. */
+  reminderTime?: string | null
+  /** Minutos de pomodoro vinculados al hábito; null/ausente = sin pomodoro. */
+  pomodoroMinutes?: number | null
   createdAt: number
   updatedAt: number
   syncStatus: SyncStatus

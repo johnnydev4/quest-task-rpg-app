@@ -79,27 +79,30 @@ function DurationStepper({
   max: number
 }) {
   const clamp = (v: number) => Math.max(min, Math.min(max, v))
+  // Botones grandes (44px táctiles) sobre cristal líquido: fáciles de acertar.
   const stepBtn =
-    'flex size-6 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-ink/10 hover:text-ink'
+    'flex size-11 items-center justify-center rounded-xl border border-line/10 text-xl font-bold text-ink-dim transition-all hover:bg-ink/10 hover:text-ink active:scale-95'
   return (
-    <div className="flex items-center gap-0.5 rounded-xl border border-line/10 bg-surface-700/60 px-2 py-1.5">
-      <span className="px-1 text-xs text-ink-faint">{label}</span>
-      <button type="button" onClick={() => adjustDuration(settingKey, -step, min, max)} aria-label={`Reducir ${label}`} className={stepBtn}>
-        −
-      </button>
-      <input
-        type="number"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(e) => updateSettings({ [settingKey]: clamp(Number(e.target.value) || min) })}
-        aria-label={`Minutos de ${label}`}
-        className="w-9 [appearance:textfield] border-none bg-transparent text-center text-sm font-semibold text-ink outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-      />
-      <button type="button" onClick={() => adjustDuration(settingKey, step, min, max)} aria-label={`Aumentar ${label}`} className={stepBtn}>
-        +
-      </button>
-      <span className="pr-1 text-[11px] text-ink-faint">min</span>
+    <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-line/10 glass-panel px-4 py-3">
+      <span className="text-xs font-semibold tracking-wide text-ink-muted uppercase">{label}</span>
+      <div className="flex items-center gap-1.5">
+        <button type="button" onClick={() => adjustDuration(settingKey, -step, min, max)} aria-label={`Reducir ${label}`} className={stepBtn}>
+          −
+        </button>
+        <input
+          type="number"
+          value={value}
+          min={min}
+          max={max}
+          onChange={(e) => updateSettings({ [settingKey]: clamp(Number(e.target.value) || min) })}
+          aria-label={`Minutos de ${label}`}
+          className="w-14 [appearance:textfield] border-none bg-transparent text-center text-2xl font-bold text-ink outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+        <button type="button" onClick={() => adjustDuration(settingKey, step, min, max)} aria-label={`Aumentar ${label}`} className={stepBtn}>
+          +
+        </button>
+      </div>
+      <span className="text-[11px] text-ink-faint">minutos</span>
     </div>
   )
 }

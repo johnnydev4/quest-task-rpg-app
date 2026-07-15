@@ -15,6 +15,8 @@ import type {
 import { deleteTask, setTaskCompleted, updateTask } from '../../db/repo/tasks'
 import { createSubtask, deleteSubtask, setSubtaskCompleted, updateSubtask } from '../../db/repo/subtasks'
 import { createReminder, deleteReminder, updateReminder } from '../../db/repo/reminders'
+import { createList } from '../../db/repo/lists'
+import { DEFAULT_LIST_COLOR } from '../../lib/colors'
 import {
   dateInputToMs,
   formatDateTime,
@@ -27,9 +29,12 @@ import {
 import { describeRule } from '../../lib/recurrence'
 import { PRIORITIES, PRIORITY_LABEL, PRIORITY_SELECTED_CLASS } from '../../lib/priority'
 import { notificationService } from '../../services/notifications'
+import { pomodoro } from '../../services/pomodoro'
+import { emitToast } from '../../lib/events'
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
 import { MiniCalendar } from '../ui/MiniCalendar'
+import { TimeSelect } from '../ui/TimeSelect'
 import { TagSection } from './detail/TagSection'
 import { CommentSection } from './detail/CommentSection'
 import { AttachmentSection } from './detail/AttachmentSection'
@@ -77,47 +82,6 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
     <Modal title="Editar tarea" onClose={onClose}>
       <TaskDetailContent taskId={taskId} onClose={onClose} />
     </Modal>
-  )
-}
-
-/** Opciones de hora cada 30 min (00:00 … 23:30) para el selector de hora. */
-const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
-  const h = String(Math.floor(i / 2)).padStart(2, '0')
-  return `${h}:${i % 2 === 0 ? '00' : '30'}`
-})
-
-/**
- * Selector de hora con <select>: en iOS abre la rueda nativa sin teclado y sin
- * el bug del input de hora que se auto-rellena con la hora actual al abrirse.
- */
-function TimeSelect({
-  value,
-  onChange,
-  noneLabel,
-  ariaLabel,
-}: {
-  value: string
-  onChange: (v: string) => void
-  /** Si se define, incluye una opción vacía con este texto (p. ej. "Sin hora"). */
-  noneLabel?: string
-  ariaLabel: string
-}) {
-  // Una hora fuera de la rejilla de 30 min (p. ej. 21:47) se añade como opción.
-  const options = value && !TIME_OPTIONS.includes(value) ? [value, ...TIME_OPTIONS] : TIME_OPTIONS
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      aria-label={ariaLabel}
-      className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
-    >
-      {noneLabel !== undefined && <option value="">{noneLabel}</option>}
-      {options.map((t) => (
-        <option key={t} value={t}>
-          {t}
-        </option>
-      ))}
-    </select>
   )
 }
 
@@ -579,6 +543,7 @@ type SheetId =
   | 'fecha'
   | 'recordar'
   | 'repetir'
+  | 'pomodoro'
   | 'habito'
   | 'lista'
   | 'color'
@@ -590,6 +555,7 @@ const SHEET_TITLE: Record<SheetId, string> = {
   fecha: 'Vencimiento',
   recordar: 'Recordarme',
   repetir: 'Repetir',
+  pomodoro: 'Pomodoro',
   habito: 'Convertir en hábito',
   lista: 'Mover a una lista',
   color: 'Color',
@@ -597,6 +563,9 @@ const SHEET_TITLE: Record<SheetId, string> = {
   archivos: 'Archivos',
   comentarios: 'Comentarios',
 }
+
+/** Duraciones de pomodoro ofrecidas para tareas y hábitos. */
+const POMODORO_PRESETS = [10, 15, 25, 45, 60, 90]
 
 function TaskForm({
   task,
@@ -761,6 +730,18 @@ function TaskForm({
           label="Repetir"
           value={task.recurrenceRule ? describeRule(task.recurrenceRule) : null}
           onClick={() => setSheet('repetir')}
+        />
+        <Row
+          icon={
+            <RowIcon>
+              <circle cx="12" cy="13" r="8" />
+              <path d="M12 9v4l2.5 2.5" />
+              <path d="M9 2h6" />
+            </RowIcon>
+          }
+          label={task.pomodoroMinutes != null ? 'Pomodoro' : 'Añadir pomodoro'}
+          value={task.pomodoroMinutes != null ? `${task.pomodoroMinutes} min` : null}
+          onClick={() => setSheet('pomodoro')}
         />
         <Row
           icon={
@@ -1012,6 +993,57 @@ function TaskForm({
 
           {sheet === 'repetir' && <RepeatSheet task={task} onDone={closeSheet} />}
 
+          {sheet === 'pomodoro' && (
+            <div className="space-y-1">
+              {POMODORO_PRESETS.map((min) => (
+                <SheetOption
+                  key={min}
+                  icon={
+                    <RowIcon>
+                      <circle cx="12" cy="13" r="8" />
+                      <path d="M12 9v4l2.5 2.5" />
+                      <path d="M9 2h6" />
+                    </RowIcon>
+                  }
+                  label={`${min} minutos`}
+                  selected={task.pomodoroMinutes === min}
+                  onClick={() => updateTask(task.id, { pomodoroMinutes: min })}
+                />
+              ))}
+              {task.pomodoroMinutes != null && (
+                <>
+                  <div className="my-2 border-t border-line/5" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Esperar el start: es async y reinicia el estado (pisaría el minimized).
+                      void pomodoro
+                        .start({ taskId: task.id }, { focusMinutes: task.pomodoroMinutes })
+                        .then(() => pomodoro.setMinimized(true))
+                      emitToast({ title: '🍅 Pomodoro iniciado', body: `${task.title} · ${task.pomodoroMinutes} min` })
+                      closeSheet()
+                    }}
+                    className="w-full rounded-xl bg-accent-600 px-4 py-2.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500"
+                  >
+                    ▶ Empezar ahora · {task.pomodoroMinutes} min
+                  </button>
+                  <SheetOption
+                    icon={
+                      <RowIcon>
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </RowIcon>
+                    }
+                    label="Quitar pomodoro"
+                    onClick={() => {
+                      updateTask(task.id, { pomodoroMinutes: null })
+                      closeSheet()
+                    }}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
           {sheet === 'habito' && <ConvertToHabit task={task} onClose={onClose} autoOpen />}
 
           {sheet === 'lista' && (
@@ -1045,6 +1077,14 @@ function TaskForm({
                   }}
                 />
               ))}
+              <div className="my-2 border-t border-line/5" />
+              {/* Crear una lista aquí mismo (con color) y asignarla a la tarea */}
+              <CreateListInline
+                onCreated={(id) => {
+                  updateTask(task.id, { listId: id })
+                  closeSheet()
+                }}
+              />
             </div>
           )}
 
@@ -1059,6 +1099,43 @@ function TaskForm({
           {sheet === 'comentarios' && <CommentSection taskId={task.id} comments={comments} />}
         </Sheet>
       )}
+    </div>
+  )
+}
+
+/** Formulario compacto para crear una lista (nombre + color) sin salir de la hoja. */
+function CreateListInline({ onCreated }: { onCreated: (id: string) => void }) {
+  const [name, setName] = useState('')
+  const [color, setColor] = useState(DEFAULT_LIST_COLOR)
+
+  async function create() {
+    const n = name.trim()
+    if (!n) return
+    const id = await createList(n, color)
+    setName('')
+    onCreated(id)
+  }
+
+  return (
+    <div className="space-y-2.5 rounded-xl border border-line/10 bg-surface-700/40 p-3">
+      <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Nueva lista</p>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && void create()}
+        placeholder="Ej. Hogar, Trabajo…"
+        aria-label="Nombre de la lista nueva"
+        className="w-full rounded-lg border border-line/10 bg-surface-700 px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
+      />
+      <ColorPicker value={color} onChange={(c) => c && setColor(c)} allowCustom />
+      <button
+        type="button"
+        disabled={!name.trim()}
+        onClick={() => void create()}
+        className="w-full rounded-lg bg-accent-600 px-3 py-2 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500 disabled:opacity-40"
+      >
+        Crear y asignar
+      </button>
     </div>
   )
 }

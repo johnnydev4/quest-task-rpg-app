@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent, type TouchEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type TouchEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Quest, QuestStep } from '../../db/types'
@@ -11,6 +11,7 @@ import {
   setQuestCompleted,
   setQuestStepCompleted,
   updateQuest,
+  updateQuestStep,
   WEEKLY_QUEST_XP,
 } from '../../db/repo/quests'
 import {
@@ -69,6 +70,27 @@ export function QuestsView() {
   // Solo se pueden mirar: meses pasados, el actual y uno por delante.
   // A partir de +2 el mes queda sellado (sin revelar criatura ni tema).
   const sealed = monthOffset >= 2
+
+  // Cierre del mes anterior: la main quest solo se completa cuando el mes acaba,
+  // así que al entrar al mes nuevo se pregunta si la del mes pasado se cumplió.
+  const prevMonthKey = useMemo(() => {
+    const d = new Date()
+    d.setDate(1)
+    d.setMonth(d.getMonth() - 1)
+    return monthKeyOf(d)
+  }, [])
+  const prevQuests = useLiveQuery(() => db.quests.where('monthKey').equals(prevMonthKey).toArray(), [prevMonthKey])
+  const prevMonthly = prevQuests?.find((q) => q.week === 0)
+  const resolveKey = `quest-main-resuelta-${prevMonthKey}`
+  const [prevResolved, setPrevResolved] = useState(() => localStorage.getItem(resolveKey) === '1')
+  function resolvePrev(conquered: boolean) {
+    if (conquered && prevMonthly) void setQuestCompleted(prevMonthly.id, true)
+    localStorage.setItem(resolveKey, '1')
+    setPrevResolved(true)
+  }
+  const prevTheme = themeForMonthKey(prevMonthKey)
+  const showClosingPrompt =
+    monthOffset === 0 && !!prevMonthly && !prevMonthly.completed && !prevResolved
 
   // Deslizar el banner (swipe) para cambiar de mes: izquierda = siguiente, derecha = anterior.
   const touchStart = useRef<{ x: number; y: number } | null>(null)
@@ -144,6 +166,40 @@ export function QuestsView() {
 
   return (
     <div className="space-y-5">
+      {/* Cierre del mes anterior: ¿se conquistó la main quest? */}
+      {showClosingPrompt && prevMonthly && (
+        <section
+          className="space-y-3 rounded-2xl border p-4 glass-strong"
+          style={{
+            borderColor: `${prevTheme.colorA}55`,
+            background: `linear-gradient(125deg, ${prevTheme.colorA}2e, ${prevTheme.colorB}18 70%)`,
+          }}
+        >
+          <p className="text-xs font-semibold tracking-wide uppercase" style={{ color: prevTheme.colorA }}>
+            {prevTheme.emoji} {monthLabelOf(prevMonthKey)} terminó
+          </p>
+          <p className="text-sm text-ink-dim">
+            ¿Conquistaste tu gran misión{' '}
+            <span className="font-bold text-ink">"{prevMonthly.title}"</span>?
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => resolvePrev(true)}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90"
+              style={{ background: `linear-gradient(135deg, ${prevTheme.colorA}, ${prevTheme.colorB})` }}
+            >
+              👑 Sí, conquistada · +{MONTHLY_QUEST_XP} XP
+            </button>
+            <button
+              onClick={() => resolvePrev(false)}
+              className="rounded-lg border border-line/15 px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-ink/5"
+            >
+              No esta vez
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* Héroe del mes */}
       <section
         className={`relative touch-pan-y overflow-hidden rounded-3xl border border-line/10 p-6 shadow-xl ${
@@ -230,7 +286,7 @@ export function QuestsView() {
         </div>
       </section>
 
-      {/* Main quest del mes */}
+      {/* Main quest del mes: se forja ahora, pero solo se completa al acabar el mes */}
       <QuestCard
         quest={monthly}
         steps={monthlySteps}
@@ -240,6 +296,8 @@ export function QuestsView() {
         placeholder={`¿Cuál es tu gran gesta del mes? (p. ej. "Terminar el curso de…")`}
         locked={!isCurrentMonth}
         lockedReason={monthLockReason}
+        completeLocked={isCurrentMonth || monthOffset > 0}
+        completeLockedReason="Se completa cuando termine el mes"
         onCreate={(title) => void createQuest(monthKey, 0, title)}
       />
 
@@ -289,6 +347,8 @@ function QuestCard({
   highlight = false,
   locked = false,
   lockedReason = null,
+  completeLocked = false,
+  completeLockedReason = null,
   onCreate,
 }: {
   quest: Quest | undefined
@@ -300,6 +360,9 @@ function QuestCard({
   highlight?: boolean
   locked?: boolean
   lockedReason?: string | null
+  /** La misión existe pero aún no puede marcarse completa (main quest en el mes en curso). */
+  completeLocked?: boolean
+  completeLockedReason?: string | null
   onCreate: (title: string) => void
 }) {
   const [newTitle, setNewTitle] = useState('')
@@ -399,13 +462,11 @@ function QuestCard({
                       </svg>
                     )}
                   </button>
-                  <span className={`min-w-0 flex-1 truncate text-sm ${s.completed ? 'text-ink-faint line-through' : 'text-ink-dim'}`}>
-                    {s.title}
-                  </span>
+                  <EditableStep step={s} />
                   <button
                     onClick={() => void deleteQuestStep(s.id)}
                     aria-label="Eliminar paso"
-                    className="flex size-5 shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger focus:opacity-100"
+                    className="flex size-6 shrink-0 items-center justify-center rounded text-ink-faint transition-colors hover:text-danger"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-3.5" aria-hidden="true">
                       <path d="M18 6 6 18M6 6l12 12" />
@@ -436,21 +497,31 @@ function QuestCard({
             ) : (
               <span />
             )}
-            <button
-              onClick={() => void setQuestCompleted(quest.id, !quest.completed)}
-              className={`rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all ${
-                quest.completed ? 'border border-line/15 text-ink-muted hover:bg-ink/5' : 'text-white shadow-md hover:opacity-90 active:scale-95'
-              }`}
-              style={
-                quest.completed
-                  ? undefined
-                  : { background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }
-              }
-            >
-              {quest.completed
-                ? '✓ Conquistada · desmarcar'
-                : `${big ? '👑' : '⚔'} Completar +${quest.xpValue} XP`}
-            </button>
+            {!quest.completed && completeLocked ? (
+              <span className="flex items-center gap-1.5 rounded-lg border border-dashed border-line/15 px-3 py-1.5 text-xs text-ink-faint">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 shrink-0" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                {completeLockedReason ?? 'Aún no se puede completar'}
+              </span>
+            ) : (
+              <button
+                onClick={() => void setQuestCompleted(quest.id, !quest.completed)}
+                className={`rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all ${
+                  quest.completed ? 'border border-line/15 text-ink-muted hover:bg-ink/5' : 'text-white shadow-md hover:opacity-90 active:scale-95'
+                }`}
+                style={
+                  quest.completed
+                    ? undefined
+                    : { background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }
+                }
+              >
+                {quest.completed
+                  ? '✓ Conquistada · desmarcar'
+                  : `${big ? '👑' : '⚔'} Completar +${quest.xpValue} XP`}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -458,13 +529,14 @@ function QuestCard({
   )
 }
 
-function EditableTitle({ quest, big }: { quest: Quest; big: boolean }) {
-  const [title, setTitle] = useState(quest.title)
+/** Paso de misión editable inline: toca el texto, corrige y sal (blur) para guardar. */
+function EditableStep({ step }: { step: QuestStep }) {
+  const [title, setTitle] = useState(step.title)
 
   function save() {
     const t = title.trim()
-    if (t && t !== quest.title) void updateQuest(quest.id, { title: t })
-    else setTitle(quest.title)
+    if (t && t !== step.title) void updateQuestStep(step.id, { title: t })
+    else setTitle(step.title)
   }
 
   return (
@@ -473,8 +545,47 @@ function EditableTitle({ quest, big }: { quest: Quest; big: boolean }) {
       onChange={(e) => setTitle(e.target.value)}
       onBlur={save}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+      aria-label="Título del paso"
+      className={`min-w-0 flex-1 border-none bg-transparent text-sm outline-none focus:shadow-none ${
+        step.completed ? 'text-ink-faint line-through' : 'text-ink-dim'
+      }`}
+    />
+  )
+}
+
+function EditableTitle({ quest, big }: { quest: Quest; big: boolean }) {
+  const [title, setTitle] = useState(quest.title)
+  const ref = useRef<HTMLTextAreaElement>(null)
+
+  // Textarea auto-crecible: los títulos largos se muestran completos, sin cortar.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [title])
+
+  function save() {
+    const t = title.trim()
+    if (t && t !== quest.title) void updateQuest(quest.id, { title: t })
+    else setTitle(quest.title)
+  }
+
+  return (
+    <textarea
+      ref={ref}
+      value={title}
+      rows={1}
+      onChange={(e) => setTitle(e.target.value)}
+      onBlur={save}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          ;(e.target as HTMLTextAreaElement).blur()
+        }
+      }}
       aria-label="Título de la misión"
-      className={`w-full border-none bg-transparent font-bold outline-none ${
+      className={`w-full resize-none overflow-hidden border-none bg-transparent font-bold outline-none focus:shadow-none ${
         big ? 'text-xl' : 'text-base'
       } ${quest.completed ? 'text-ink-faint line-through' : 'text-ink'}`}
     />

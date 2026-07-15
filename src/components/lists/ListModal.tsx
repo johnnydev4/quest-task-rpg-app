@@ -42,7 +42,7 @@ export function ListModal({ list, onClose }: ListModalProps) {
 
         <div className="space-y-1.5">
           <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Color</span>
-          <ColorPicker value={color} onChange={(c) => c && setColor(c)} />
+          <ColorPicker value={color} onChange={(c) => c && setColor(c)} allowCustom />
         </div>
 
         {list && (

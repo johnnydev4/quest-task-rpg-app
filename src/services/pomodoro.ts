@@ -28,6 +28,8 @@ interface PersistedState extends PomodoroSnapshot {
   /** Timestamp real de fin de fase: la fuente de verdad, inmune a pantalla apagada o segundo plano. */
   endsAt: number
   focusStartedAt: number | null
+  /** Duración de foco propia de esta sesión (pomodoro de tarea/hábito); null = la de Ajustes. */
+  customFocusMin: number | null
 }
 
 const STORAGE_KEY = 'quest-pomodoro-v1'
@@ -51,6 +53,7 @@ function fresh(totalMs: number): PersistedState {
     minimized: false,
     endsAt: 0,
     focusStartedAt: null,
+    customFocusMin: null,
   }
 }
 
@@ -124,16 +127,20 @@ class PomodoroEngine {
     const s = await getSettings()
     const min =
       phase === 'focus'
-        ? s.pomodoroFocusMin
+        ? (this.state.customFocusMin ?? s.pomodoroFocusMin)
         : phase === 'short'
           ? s.pomodoroShortBreakMin
           : s.pomodoroLongBreakMin
     return Math.max(1, min) * 60_000
   }
 
-  async start(link?: { taskId?: string | null; listId?: string | null }): Promise<void> {
-    const totalMs = await this.phaseDurationMs('focus')
+  async start(
+    link?: { taskId?: string | null; listId?: string | null },
+    opts?: { focusMinutes?: number | null },
+  ): Promise<void> {
+    const customFocusMin = opts?.focusMinutes ?? null
     const s = await getSettings()
+    const totalMs = Math.max(1, customFocusMin ?? s.pomodoroFocusMin) * 60_000
     // Sesión nueva: cualquier pausa manual del sonido ambiental queda olvidada.
     setAmbientSuspended(false)
     this.state = {
@@ -146,6 +153,7 @@ class PomodoroEngine {
       focusStartedAt: Date.now(),
       linkTaskId: link?.taskId ?? null,
       linkListId: link?.listId ?? null,
+      customFocusMin,
       pomodorosDone: this.state.status === 'idle' ? this.state.pomodorosDone : 0,
     }
     if (s.soundEnabled) startAmbient(s.ambientSound, s.ambientVolume)

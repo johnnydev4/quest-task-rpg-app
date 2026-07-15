@@ -4,6 +4,7 @@ import { db } from '../../db/db'
 import { createHabit } from '../../db/repo/habits'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { COMBO_TIERS, habitEnded, RAINBOW_GRADIENT } from '../../lib/habits'
+import { TimeSelect } from '../ui/TimeSelect'
 import { DayPicker } from './DayPicker'
 import { HabitCard } from './HabitCard'
 
@@ -16,6 +17,8 @@ export function HabitsView() {
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5])
   const [endDate, setEndDate] = useState(() => startOfDayOffset(30))
   const [indefinite, setIndefinite] = useState(false)
+  const [reminderTime, setReminderTime] = useState('')
+  const [pomodoroMin, setPomodoroMin] = useState('')
 
   const active = habits.filter((h) => !habitEnded(h)).sort((a, b) => a.createdAt - b.createdAt)
   const finished = habits.filter((h) => habitEnded(h)).sort((a, b) => (b.endDate ?? 0) - (a.endDate ?? 0))
@@ -29,8 +32,12 @@ export function HabitsView() {
       daysOfWeek: days,
       startDate: startOfToday(),
       endDate: indefinite ? null : endDate,
+      reminderTime: reminderTime || null,
+      pomodoroMinutes: pomodoroMin ? Number(pomodoroMin) : null,
     })
     setTitle('')
+    setReminderTime('')
+    setPomodoroMin('')
   }
 
   return (
@@ -77,6 +84,26 @@ export function HabitsView() {
               </label>
             </div>
           </div>
+          <label className="space-y-1.5">
+            <span className="block text-[11px] text-ink-faint">Recordarme a las</span>
+            <TimeSelect value={reminderTime} onChange={setReminderTime} noneLabel="Sin aviso" ariaLabel="Hora del aviso del hábito" />
+          </label>
+          <label className="space-y-1.5">
+            <span className="block text-[11px] text-ink-faint">Pomodoro</span>
+            <select
+              value={pomodoroMin}
+              onChange={(e) => setPomodoroMin(e.target.value)}
+              aria-label="Minutos de pomodoro del hábito"
+              className="rounded-md border border-line/10 bg-surface-700 px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
+            >
+              <option value="">Sin pomodoro</option>
+              {[10, 15, 25, 45, 60, 90].map((m) => (
+                <option key={m} value={m}>
+                  {m} min
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="submit"
             disabled={!title.trim() || days.length === 0}

@@ -13,6 +13,10 @@ export interface NewHabitInput {
   startDate: number
   /** null = hábito indefinido (sin fecha límite). */
   endDate: number | null
+  /** Hora del aviso diario 'HH:MM'; ausente/null = sin aviso. */
+  reminderTime?: string | null
+  /** Minutos de pomodoro vinculados; ausente/null = sin pomodoro. */
+  pomodoroMinutes?: number | null
 }
 
 export async function createHabit(input: NewHabitInput): Promise<string> {
@@ -23,6 +27,8 @@ export async function createHabit(input: NewHabitInput): Promise<string> {
     daysOfWeek: [...input.daysOfWeek].sort(),
     startDate: input.startDate,
     endDate: input.endDate,
+    reminderTime: input.reminderTime ?? null,
+    pomodoroMinutes: input.pomodoroMinutes ?? null,
     createdAt: now,
     updatedAt: now,
     syncStatus: 'pending',

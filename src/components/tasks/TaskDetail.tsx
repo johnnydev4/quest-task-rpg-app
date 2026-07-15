@@ -211,19 +211,19 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
 
   // Portal a <body>: evita que un `transform` de un ancestro (la animación del
   // modal) convierta este `fixed` en relativo al panel y lo recorte.
-  // Móvil: hoja inferior. Escritorio (lg): panel anclado al sidebar izquierdo.
+  // Hoja inferior en todos los tamaños: sube desde abajo (animación modal-in).
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-end justify-center lg:items-stretch lg:justify-start">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center">
       <div className="absolute inset-0 bg-black/55" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative max-h-[82dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl lg:h-full lg:max-h-none lg:w-80 lg:max-w-none lg:rounded-none lg:border-y-0 lg:border-l-0"
-        style={{ animation: 'modal-in 0.22s ease-out both' }}
+        className="relative max-h-[82dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl"
+        style={{ animation: 'sheet-up 0.26s ease-out both' }}
       >
         <div className="sticky top-0 z-10 glass-strong">
-          <div className="flex justify-center pt-2.5 lg:hidden">
+          <div className="flex justify-center pt-2.5">
             <span className="h-1 w-9 rounded-full bg-ink/25" aria-hidden="true" />
           </div>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3">

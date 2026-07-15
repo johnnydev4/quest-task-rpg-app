@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db/db'
 import type { List, Tag } from './db/types'
@@ -35,7 +35,7 @@ import { CalendarView } from './components/calendar/CalendarView'
 import { QuestsView } from './components/quests/QuestsView'
 import { WeeklyQuestBanner } from './components/quests/WeeklyQuestBanner'
 import { HabitsView } from './components/habits/HabitsView'
-import { HabitsToday } from './components/habits/HabitsToday'
+import { HabitsToday, useTodayHabits } from './components/habits/HabitsToday'
 import { pomodoro } from './services/pomodoro'
 
 // Recharts es pesado: se carga solo al entrar a Estadísticas.
@@ -58,6 +58,9 @@ export default function App() {
   const isDesktop = useIsDesktop()
   // Destello del XP recién ganado en la mini-barra del encabezado (móvil).
   const xpGain = useXpGain()
+  // Hábitos que tocan hoy sin cumplir (incluye los que "lingerean" tras
+  // completarse): cuentan para que la sección "Hoy" no se vea vacía.
+  const pendingHabits = useTodayHabits().pendingHabits.length
   const headerPct = Math.min(100, Math.round((intoLevel / needed) * 100))
   const headerGainPct = xpGain ? Math.min(headerPct, Math.round((xpGain.xp / needed) * 100)) : 0
 
@@ -125,6 +128,29 @@ export default function App() {
   const tomorrow = startOfDayOffset(1)
   const pending = tasks.filter((t) => !t.completed)
 
+  // Las tareas recién completadas se quedan unos segundos visibles en su lista
+  // antes de bajar a Completadas (derivado en render, como los hábitos: un
+  // efecto desmontaría la fila un frame y cortaría la transición).
+  const [taskLinger, setTaskLinger] = useState<Set<string>>(new Set())
+  const prevCompletedIds = useRef<Set<string> | null>(null)
+  if (tasksRaw !== undefined) {
+    const completedIds = new Set(tasks.filter((t) => t.completed).map((t) => t.id))
+    if (prevCompletedIds.current === null) {
+      prevCompletedIds.current = completedIds
+    } else {
+      const newly = [...completedIds].filter((id) => !prevCompletedIds.current!.has(id))
+      prevCompletedIds.current = completedIds
+      if (newly.length > 0) setTaskLinger((s) => new Set([...s, ...newly]))
+    }
+  }
+  useEffect(() => {
+    if (taskLinger.size === 0) return
+    const t = setTimeout(() => setTaskLinger(new Set()), 2600)
+    return () => clearTimeout(t)
+  }, [taskLinger])
+  // Para las listas en pantalla: las que "lingerean" siguen entre las pendientes.
+  const displayPending = tasks.filter((t) => !t.completed || taskLinger.has(t.id))
+
   const counts = useMemo(() => {
     const byList: Record<string, number> = {}
     const byTag: Record<string, number> = {}
@@ -170,23 +196,26 @@ export default function App() {
     showMoveToToday?: boolean
   }[] = []
 
+  // Una tarea completada que aún "lingerea" no cuenta como completada en pantalla.
+  const settled = (t: (typeof tasks)[number]) => t.completed && !taskLinger.has(t.id)
+
   if (view.kind === 'today') {
     sections = [
       {
         key: 'overdue',
         title: 'De días anteriores',
-        tasks: sortPending(pending.filter((t) => t.dueAt !== null && t.dueAt < sod)),
+        tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt < sod)),
         showMoveToToday: true,
       },
       {
         key: 'today',
         title: 'Hoy',
-        tasks: sortPending(pending.filter((t) => t.dueAt !== null && t.dueAt >= sod && t.dueAt < tomorrow)),
+        tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= sod && t.dueAt < tomorrow)),
       },
       {
         key: 'done',
         title: 'Completadas hoy',
-        tasks: sortCompleted(tasks.filter((t) => t.completed && (t.completedAt ?? 0) >= sod)),
+        tasks: sortCompleted(tasks.filter((t) => settled(t) && (t.completedAt ?? 0) >= sod)),
         collapsible: true,
       },
     ]
@@ -195,42 +224,42 @@ export default function App() {
       {
         key: 'future',
         title: 'Programadas',
-        tasks: sortPending(pending.filter((t) => t.dueAt !== null && t.dueAt >= tomorrow)),
+        tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= tomorrow)),
       },
       {
         key: 'nodate',
         title: 'Sin fecha',
-        tasks: sortPending(pending.filter((t) => t.dueAt === null)),
+        tasks: sortPending(displayPending.filter((t) => t.dueAt === null)),
         collapsible: true,
       },
     ]
   } else if (view.kind === 'all') {
     sections = [
-      { key: 'pending', tasks: sortPending(pending) },
+      { key: 'pending', tasks: sortPending(displayPending) },
       {
         key: 'done',
         title: 'Completadas',
-        tasks: sortCompleted(tasks.filter((t) => t.completed)).slice(0, 100),
+        tasks: sortCompleted(tasks.filter(settled)).slice(0, 100),
         collapsible: true,
       },
     ]
   } else if (view.kind === 'list') {
     sections = [
-      { key: 'pending', tasks: sortPending(pending.filter((t) => t.listId === view.listId)) },
+      { key: 'pending', tasks: sortPending(displayPending.filter((t) => t.listId === view.listId)) },
       {
         key: 'done',
         title: 'Completadas',
-        tasks: sortCompleted(tasks.filter((t) => t.completed && t.listId === view.listId)).slice(0, 100),
+        tasks: sortCompleted(tasks.filter((t) => settled(t) && t.listId === view.listId)).slice(0, 100),
         collapsible: true,
       },
     ]
   } else if (view.kind === 'tag') {
     sections = [
-      { key: 'pending', tasks: sortPending(pending.filter((t) => t.tagIds.includes(view.tagId))) },
+      { key: 'pending', tasks: sortPending(displayPending.filter((t) => t.tagIds.includes(view.tagId))) },
       {
         key: 'done',
         title: 'Completadas',
-        tasks: sortCompleted(tasks.filter((t) => t.completed && t.tagIds.includes(view.tagId))).slice(0, 100),
+        tasks: sortCompleted(tasks.filter((t) => settled(t) && t.tagIds.includes(view.tagId))).slice(0, 100),
         collapsible: true,
       },
     ]
@@ -464,9 +493,7 @@ export default function App() {
             <>
               {/* La misión de la semana destaca sobre las side quests (tareas normales) */}
               <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />
-              {/* Hábitos que tocan hoy, con su barra de progreso y COMBO */}
-              <HabitsToday section="pending" onManage={() => setView({ kind: 'habits' })} />
-              {isEmpty ? (
+              {isEmpty && pendingHabits === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
                   {/* El sol flota sobre una base de cristal líquido. El resplandor es un
                       gradiente radial (iOS rasteriza mal drop-shadow sobre SVG animado). */}
@@ -502,6 +529,12 @@ export default function App() {
                     onOpen={setDetailId}
                     collapsible={s.collapsible}
                     showMoveToToday={s.showMoveToToday}
+                    // Los hábitos de hoy viven dentro de la propia sección "Hoy"
+                    leading={
+                      s.key === 'today' && pendingHabits > 0 ? (
+                        <HabitsToday section="pending" onManage={() => setView({ kind: 'habits' })} />
+                      ) : undefined
+                    }
                   />
                 ))
               )}
@@ -557,7 +590,9 @@ export default function App() {
       {/* Detalle de tarea en escritorio: panel lateral fijo (estilo To Do), todo queda visible */}
       {detailId && isDesktop && (
         <aside
+          key={detailId}
           className="sticky top-0 hidden h-dvh w-[400px] shrink-0 overflow-y-auto border-l border-line/10 glass-bar lg:block"
+          style={{ animation: 'slide-in-right 0.28s ease-out both' }}
           aria-label="Detalle de la tarea"
         >
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-strong px-5 py-4">

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { List, Tag, Task } from '../../db/types'
 import { TaskItem } from './TaskItem'
 
@@ -10,6 +10,8 @@ interface TaskSectionProps {
   onOpen: (id: string) => void
   collapsible?: boolean
   showMoveToToday?: boolean
+  /** Contenido extra al inicio de la lista (p. ej. los hábitos de hoy). */
+  leading?: ReactNode
 }
 
 export function TaskSection({
@@ -20,10 +22,11 @@ export function TaskSection({
   onOpen,
   collapsible = false,
   showMoveToToday = false,
+  leading,
 }: TaskSectionProps) {
   const [open, setOpen] = useState(!collapsible)
 
-  if (tasks.length === 0) return null
+  if (tasks.length === 0 && !leading) return null
 
   return (
     <section className="space-y-2">
@@ -56,6 +59,7 @@ export function TaskSection({
         ))}
       {(!collapsible || open) && (
         <div className="space-y-2">
+          {leading}
           {tasks.map((task) => (
             <TaskItem
               key={task.id}

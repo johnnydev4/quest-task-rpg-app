@@ -13,12 +13,19 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
   const week = weekOfMonth(now)
   const theme = themeForMonthKey(monthKey)
 
-  // Rechazo del reto persistido por mes y por dispositivo.
+  // Respuesta al reto persistida por mes y por dispositivo.
   const declineKey = `quest-reto-rechazado-${monthKey}`
+  const acceptKey = `quest-reto-aceptado-${monthKey}`
   const [declined, setDeclined] = useState(() => localStorage.getItem(declineKey) === '1')
+  const [accepted, setAccepted] = useState(() => localStorage.getItem(acceptKey) === '1')
   function decline() {
     localStorage.setItem(declineKey, '1')
     setDeclined(true)
+  }
+  function accept() {
+    localStorage.setItem(acceptKey, '1')
+    setAccepted(true)
+    onOpen()
   }
 
   const quests = useLiveQuery(() => db.quests.where('monthKey').equals(monthKey).toArray(), [monthKey])
@@ -33,9 +40,10 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
 
   // Sin misión esta semana: el reto pregunta si lo aceptas. Rechazarlo lo
   // oculta de Hoy durante el resto del mes (no punitivo: vuelve el mes siguiente,
-  // y siempre puedes entrar a Misiones por tu cuenta).
+  // y siempre puedes entrar a Misiones por tu cuenta). Aceptarlo (o tener ya
+  // cualquier misión forjada este mes) también deja de preguntar.
   if (!quest) {
-    if (declined) return null
+    if (declined || accepted || quests.length > 0) return null
     return (
       <div
         className="flex w-full flex-wrap items-center gap-2.5 rounded-2xl border border-dashed px-4 py-3 text-sm"
@@ -50,7 +58,7 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
         </span>
         <span className="flex shrink-0 gap-2">
           <button
-            onClick={onOpen}
+            onClick={accept}
             className="rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
             style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
           >

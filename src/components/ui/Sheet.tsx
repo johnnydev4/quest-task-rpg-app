@@ -18,7 +18,6 @@ interface SheetProps {
 export function Sheet({ title, onClose, children }: SheetProps) {
   const side = useIsDesktop()
   const panelRef = useRef<HTMLDivElement>(null)
-  const handleRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -28,8 +27,9 @@ export function Sheet({ title, onClose, children }: SheetProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Deslizar hacia abajo desde la cabecera cierra (solo la variante inferior).
-  useSwipeToClose(panelRef, handleRef, onClose, !side)
+  // Arrastrar hacia abajo (con el contenido arriba) mueve la hoja con el dedo
+  // y la cierra deslizándola fuera (solo la variante inferior).
+  useSwipeToClose(panelRef, onClose, !side)
 
   // Portal a <body>: evita que un `transform` de un ancestro (la animación de
   // un modal) convierta este `fixed` en relativo al panel y lo recorte.
@@ -48,7 +48,7 @@ export function Sheet({ title, onClose, children }: SheetProps) {
         }
         style={{ animation: `${side ? 'slide-in-right 0.28s' : 'sheet-up 0.26s'} ease-out both` }}
       >
-        <div ref={handleRef} className="sticky top-0 z-10 glass-strong">
+        <div className="sticky top-0 z-10 glass-strong">
           {!side && (
             <div className="flex justify-center pt-2.5">
               <span className="h-1 w-9 rounded-full bg-ink/25" aria-hidden="true" />

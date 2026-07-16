@@ -10,7 +10,6 @@ interface ModalProps {
 /** Modal centrado en escritorio, hoja inferior en móvil. Cierra con Escape, clic fuera o deslizando hacia abajo la cabecera. */
 export function Modal({ title, onClose, children }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
-  const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -20,9 +19,10 @@ export function Modal({ title, onClose, children }: ModalProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Deslizar hacia abajo sobre la cabecera cierra el modal (gesto de hoja iOS,
-  // con listeners nativos no-pasivos: los de React no funcionan en Safari).
-  useSwipeToClose(panelRef, headerRef, onClose)
+  // Arrastrar hacia abajo (con el contenido arriba) mueve el modal con el dedo
+  // y lo cierra deslizándolo fuera (listeners nativos: los de React son
+  // pasivos y Safari se quedaba el gesto para hacer scroll).
+  useSwipeToClose(panelRef, onClose)
 
   // Bloquea el scroll de la página de fondo mientras el modal está abierto
   // (en iOS, sin esto la interfaz de atrás "se mueve" al arrastrar la hoja).
@@ -45,10 +45,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
         className="relative max-h-[85dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl sm:max-h-[90dvh] sm:rounded-2xl"
         style={{ animation: 'modal-in 0.22s ease-out both' }}
       >
-        <header
-          ref={headerRef}
-          className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-strong px-5 py-4"
-        >
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-strong px-5 py-4">
           <h2 className="text-lg font-semibold text-ink">{title}</h2>
           <button
             onClick={onClose}

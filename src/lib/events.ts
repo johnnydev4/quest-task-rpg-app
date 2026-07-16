@@ -19,6 +19,27 @@ export function onCompletion(handler: (detail: CompletionDetail) => void): () =>
   return () => window.removeEventListener(EVENT, listener)
 }
 
+/**
+ * Aviso de "se abrió un panel de configuración" (detalle de tarea u hoja de
+ * hábito): los demás paneles se cierran para que solo haya uno a la vez.
+ * `source` identifica a quien lo abre, para que se ignore a sí mismo.
+ */
+export interface ConfigOpenedDetail {
+  source: string
+}
+
+const CONFIG_EVENT = 'quest:config-opened'
+
+export function emitConfigOpened(source: string): void {
+  window.dispatchEvent(new CustomEvent<ConfigOpenedDetail>(CONFIG_EVENT, { detail: { source } }))
+}
+
+export function onConfigOpened(handler: (detail: ConfigOpenedDetail) => void): () => void {
+  const listener = (e: Event) => handler((e as CustomEvent<ConfigOpenedDetail>).detail)
+  window.addEventListener(CONFIG_EVENT, listener)
+  return () => window.removeEventListener(CONFIG_EVENT, listener)
+}
+
 export interface ToastDetail {
   title: string
   body?: string

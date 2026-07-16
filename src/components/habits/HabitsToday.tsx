@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Habit } from '../../db/types'
+import { emitConfigOpened, onConfigOpened } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { habitEnded, isScheduledToday } from '../../lib/habits'
 import { HabitCard } from './HabitCard'
@@ -63,7 +64,21 @@ export function HabitsToday({ section = 'pending' }: HabitsTodayProps) {
   // Plegable de completados (plegado por defecto, como "Completadas hoy").
   const [open, setOpen] = useState(false)
   // Tocar un hábito abre su hoja de ajustes (como el menú de una tarea).
+  // Solo un panel de configuración a la vez en toda la app: al abrir se avisa
+  // (cierra el detalle de tarea u otras hojas) y se escucha para cerrarse.
+  const instanceId = useId()
   const [editingId, setEditingId] = useState<string | null>(null)
+  const openHabit = (id: string) => {
+    emitConfigOpened(instanceId)
+    setEditingId(id)
+  }
+  useEffect(
+    () =>
+      onConfigOpened((d) => {
+        if (d.source !== instanceId) setEditingId(null)
+      }),
+    [instanceId],
+  )
 
   const sheet = editingId && <HabitDetailSheet habitId={editingId} onClose={() => setEditingId(null)} />
 
@@ -72,7 +87,7 @@ export function HabitsToday({ section = 'pending' }: HabitsTodayProps) {
     return (
       <>
         {pendingHabits.map((h) => (
-          <HabitCard key={h.id} habit={h} compact onManage={() => setEditingId(h.id)} />
+          <HabitCard key={h.id} habit={h} compact onManage={() => openHabit(h.id)} />
         ))}
         {sheet}
       </>
@@ -104,7 +119,7 @@ export function HabitsToday({ section = 'pending' }: HabitsTodayProps) {
       {open && (
         <div className="space-y-2 opacity-75">
           {completedHabits.map((h) => (
-            <HabitCard key={h.id} habit={h} compact onManage={() => setEditingId(h.id)} />
+            <HabitCard key={h.id} habit={h} compact onManage={() => openHabit(h.id)} />
           ))}
         </div>
       )}

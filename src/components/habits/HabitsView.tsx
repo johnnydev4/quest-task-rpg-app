@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import { createHabit } from '../../db/repo/habits'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { COMBO_TIERS, habitEnded, RAINBOW_GRADIENT } from '../../lib/habits'
+import { emitConfigOpened, onConfigOpened } from '../../lib/events'
 import { TimeSelect } from '../ui/TimeSelect'
 import { DayPicker } from './DayPicker'
 import { HabitCard } from './HabitCard'
@@ -20,8 +21,20 @@ export function HabitsView() {
   const [indefinite, setIndefinite] = useState(false)
   const [reminderTime, setReminderTime] = useState('')
   const [pomodoroMin, setPomodoroMin] = useState('')
-  // Tocar un hábito abre su hoja de ajustes.
+  // Tocar un hábito abre su hoja de ajustes (solo un panel de config a la vez).
+  const instanceId = useId()
   const [editingId, setEditingId] = useState<string | null>(null)
+  const openHabit = (id: string) => {
+    emitConfigOpened(instanceId)
+    setEditingId(id)
+  }
+  useEffect(
+    () =>
+      onConfigOpened((d) => {
+        if (d.source !== instanceId) setEditingId(null)
+      }),
+    [instanceId],
+  )
 
   const active = habits.filter((h) => !habitEnded(h)).sort((a, b) => a.createdAt - b.createdAt)
   const finished = habits.filter((h) => habitEnded(h)).sort((a, b) => (b.endDate ?? 0) - (a.endDate ?? 0))
@@ -130,7 +143,7 @@ export function HabitsView() {
       ) : (
         <div className="space-y-3">
           {active.map((h) => (
-            <HabitCard key={h.id} habit={h} onManage={() => setEditingId(h.id)} />
+            <HabitCard key={h.id} habit={h} onManage={() => openHabit(h.id)} />
           ))}
         </div>
       )}
@@ -141,7 +154,7 @@ export function HabitsView() {
             Finalizados <span className="text-xs font-normal text-ink-faint">{finished.length}</span>
           </h2>
           {finished.map((h) => (
-            <HabitCard key={h.id} habit={h} onManage={() => setEditingId(h.id)} />
+            <HabitCard key={h.id} habit={h} onManage={() => openHabit(h.id)} />
           ))}
         </div>
       )}

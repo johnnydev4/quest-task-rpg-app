@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { useSwipeToClose } from '../../lib/useSwipeToClose'
 
 interface ModalProps {
   title: string
@@ -8,6 +9,9 @@ interface ModalProps {
 
 /** Modal centrado en escritorio, hoja inferior en móvil. Cierra con Escape, clic fuera o deslizando hacia abajo la cabecera. */
 export function Modal({ title, onClose, children }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -16,21 +20,9 @@ export function Modal({ title, onClose, children }: ModalProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Deslizar hacia abajo sobre la cabecera cierra el modal (gesto de hoja iOS).
-  const touchStart = useRef<{ x: number; y: number } | null>(null)
-  function onHeaderTouchStart(e: React.TouchEvent) {
-    const t = e.touches[0]
-    touchStart.current = { x: t.clientX, y: t.clientY }
-  }
-  function onHeaderTouchEnd(e: React.TouchEvent) {
-    const start = touchStart.current
-    touchStart.current = null
-    if (!start) return
-    const t = e.changedTouches[0]
-    const dy = t.clientY - start.y
-    const dx = t.clientX - start.x
-    if (dy > 55 && dy > Math.abs(dx) * 1.5) onClose()
-  }
+  // Deslizar hacia abajo sobre la cabecera cierra el modal (gesto de hoja iOS,
+  // con listeners nativos no-pasivos: los de React no funcionan en Safari).
+  useSwipeToClose(panelRef, headerRef, onClose)
 
   // Bloquea el scroll de la página de fondo mientras el modal está abierto
   // (en iOS, sin esto la interfaz de atrás "se mueve" al arrastrar la hoja).
@@ -46,6 +38,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden="true" />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -53,9 +46,8 @@ export function Modal({ title, onClose, children }: ModalProps) {
         style={{ animation: 'modal-in 0.22s ease-out both' }}
       >
         <header
+          ref={headerRef}
           className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-strong px-5 py-4"
-          onTouchStart={onHeaderTouchStart}
-          onTouchEnd={onHeaderTouchEnd}
         >
           <h2 className="text-lg font-semibold text-ink">{title}</h2>
           <button

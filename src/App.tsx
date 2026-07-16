@@ -7,7 +7,7 @@ import { startOfDayOffset, startOfToday } from './lib/dates'
 import { sortCompleted, sortPending } from './lib/taskSort'
 import { createTask } from './db/repo/tasks'
 import { getOrCreateTag } from './db/repo/tags'
-import { onCompletion } from './lib/events'
+import { emitConfigOpened, onCompletion, onConfigOpened } from './lib/events'
 import type { QuickParseResult } from './lib/quickParse'
 import { playCompletion, playLevelUp } from './lib/sound'
 import { applyTheme } from './lib/theme'
@@ -47,6 +47,19 @@ export default function App() {
   const [view, setView] = useState<View>({ kind: 'today' })
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
+
+  // Solo un panel de configuración a la vez: al abrir el detalle de tarea se
+  // avisa (cierra hojas de hábito) y viceversa.
+  useEffect(() => {
+    if (detailId) emitConfigOpened('task-detail')
+  }, [detailId])
+  useEffect(
+    () =>
+      onConfigOpened((d) => {
+        if (d.source !== 'task-detail') setDetailId(null)
+      }),
+    [],
+  )
   const [listModal, setListModal] = useState<ListModalState>({ mode: 'closed' })
   const [editTagId, setEditTagId] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)

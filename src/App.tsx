@@ -185,8 +185,9 @@ export default function App() {
   const currentList: List | undefined = view.kind === 'list' ? listsById.get(view.listId) : undefined
   const currentTag: Tag | undefined = view.kind === 'tag' ? tagsById.get(view.tagId) : undefined
   const isTaskView = ['today', 'upcoming', 'all', 'list', 'tag'].includes(view.kind)
-  // Calendario y estadísticas aprovechan más ancho.
-  const contentMax = view.kind === 'calendar' || view.kind === 'stats' ? 'max-w-5xl' : 'max-w-2xl'
+  // Calendario, estadísticas y misiones aprovechan más ancho.
+  const contentMax =
+    view.kind === 'calendar' || view.kind === 'stats' || view.kind === 'quests' ? 'max-w-5xl' : 'max-w-2xl'
 
   async function handleQuickAdd(parsed: QuickParseResult) {
     // Etiquetas detectadas en el texto (#tag) + la de la vista actual.

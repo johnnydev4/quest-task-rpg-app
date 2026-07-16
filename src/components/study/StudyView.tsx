@@ -198,6 +198,37 @@ export function StudyView() {
 
   // Selectores de vínculo (tarea/hábito/lista): disponibles antes de la sesión
   // y también durante la sesión minimizada (el vínculo no cambia la duración).
+  // Duraciones de la sesión, editables antes de empezar y durante la sesión
+  // minimizada (aplican a la próxima fase). En pantalla completa no se muestran.
+  const durationSteppers = (
+    <div className="flex w-full max-w-sm flex-col gap-2 lg:max-w-none lg:flex-row lg:flex-wrap lg:items-stretch lg:justify-center">
+      <DurationStepper
+        label="Foco"
+        settingKey="pomodoroFocusMin"
+        value={settings.pomodoroFocusMin}
+        step={5}
+        min={1}
+        max={180}
+      />
+      <DurationStepper
+        label="Descanso"
+        settingKey="pomodoroShortBreakMin"
+        value={settings.pomodoroShortBreakMin}
+        step={1}
+        min={1}
+        max={60}
+      />
+      <DurationStepper
+        label="D. largo"
+        settingKey="pomodoroLongBreakMin"
+        value={settings.pomodoroLongBreakMin}
+        step={5}
+        min={1}
+        max={90}
+      />
+    </div>
+  )
+
   const linkSelectors = (
     <div className="grid w-full gap-4 sm:grid-cols-3">
       <label className="space-y-1.5">
@@ -323,6 +354,7 @@ export function StudyView() {
       return (
         <div className="flex flex-col items-center gap-8 rounded-2xl border border-line/5 glass-panel px-6 py-8">
           {sessionContent}
+          {durationSteppers}
           {linkSelectors}
           <button
             onClick={() => pomodoro.setMinimized(false)}
@@ -376,34 +408,7 @@ export function StudyView() {
         >
           Iniciar foco
         </button>
-        {/* Duraciones de la sesión de hoy, editables aquí mismo (también viven en Ajustes) */}
-        {/* lg: fila que envuelve y nunca rebasa el ancho del panel */}
-        <div className="flex w-full max-w-sm flex-col gap-2 lg:max-w-none lg:flex-row lg:flex-wrap lg:items-stretch lg:justify-center">
-          <DurationStepper
-            label="Foco"
-            settingKey="pomodoroFocusMin"
-            value={settings.pomodoroFocusMin}
-            step={5}
-            min={1}
-            max={180}
-          />
-          <DurationStepper
-            label="Descanso"
-            settingKey="pomodoroShortBreakMin"
-            value={settings.pomodoroShortBreakMin}
-            step={1}
-            min={1}
-            max={60}
-          />
-          <DurationStepper
-            label="D. largo"
-            settingKey="pomodoroLongBreakMin"
-            value={settings.pomodoroLongBreakMin}
-            step={5}
-            min={1}
-            max={90}
-          />
-        </div>
+        {durationSteppers}
         <p className="text-xs text-ink-faint">
           Hoy llevas <span className="font-semibold text-accent-300">{todayMinutes} min</span> de foco
         </p>

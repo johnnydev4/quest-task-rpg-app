@@ -255,18 +255,12 @@ class PomodoroEngine {
     this.state.phase = nextPhase
     this.state.totalMs = totalMs
     this.state.remainingMs = totalMs
-    if (nextPhase === 'focus') {
-      // Tras un descanso NO se arranca solo: queda en pausa esperando "Reanudar".
-      this.state.status = 'paused'
-      this.state.endsAt = 0
-      this.state.focusStartedAt = null
-      this.stopTicking()
-    } else {
-      this.state.status = 'running'
-      this.state.endsAt = Date.now() + totalMs
-      this.state.focusStartedAt = null
-      this.startTicking()
-    }
+    // NINGUNA fase arranca sola (ni foco ni descanso): queda en pausa
+    // esperando que el usuario pulse "Reanudar".
+    this.state.status = 'paused'
+    this.state.endsAt = 0
+    this.state.focusStartedAt = null
+    this.stopTicking()
     this.publish()
   }
 

@@ -983,15 +983,13 @@ function TaskForm({
                     type="button"
                     onClick={() => {
                       // Esperar el start: es async y reinicia el estado (pisaría el minimized).
-                      void pomodoro
-                        .start({ taskId: task.id }, { focusMinutes: task.pomodoroMinutes })
-                        .then(() => pomodoro.setMinimized(true))
-                      emitToast({ title: '🍅 Pomodoro iniciado', body: `${task.title} · ${task.pomodoroMinutes} min` })
+                      void pomodoro.start({ taskId: task.id }).then(() => pomodoro.setMinimized(true))
+                      emitToast({ title: '🍅 Pomodoro iniciado', body: `${task.title} · objetivo ${task.pomodoroMinutes} min` })
                       closeSheet()
                     }}
                     className="w-full rounded-xl bg-accent-600 px-4 py-2.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500"
                   >
-                    ▶ Empezar ahora · {task.pomodoroMinutes} min
+                    ▶ Empezar ahora · objetivo {task.pomodoroMinutes} min
                   </button>
                   <SheetOption
                     icon={
@@ -1035,7 +1033,7 @@ function TaskForm({
                       <span className="size-3 rounded-full" style={{ backgroundColor: l.color }} aria-hidden="true" />
                     </span>
                   }
-                  label={l.emoji ? `${l.name} ${l.emoji}` : l.name}
+                  label={l.emoji ? `${l.emoji} ${l.name}` : l.name}
                   selected={task.listId === l.id}
                   onClick={() => {
                     updateTask(task.id, { listId: l.id })

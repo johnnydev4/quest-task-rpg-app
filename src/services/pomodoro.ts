@@ -29,8 +29,6 @@ interface PersistedState extends PomodoroSnapshot {
   /** Timestamp real de fin de fase: la fuente de verdad, inmune a pantalla apagada o segundo plano. */
   endsAt: number
   focusStartedAt: number | null
-  /** Duración de foco propia de esta sesión (pomodoro de tarea/hábito); null = la de Ajustes. */
-  customFocusMin: number | null
 }
 
 const STORAGE_KEY = 'quest-pomodoro-v1'
@@ -55,7 +53,6 @@ function fresh(totalMs: number): PersistedState {
     minimized: false,
     endsAt: 0,
     focusStartedAt: null,
-    customFocusMin: null,
   }
 }
 
@@ -129,20 +126,20 @@ class PomodoroEngine {
     const s = await getSettings()
     const min =
       phase === 'focus'
-        ? (this.state.customFocusMin ?? s.pomodoroFocusMin)
+        ? s.pomodoroFocusMin
         : phase === 'short'
           ? s.pomodoroShortBreakMin
           : s.pomodoroLongBreakMin
     return Math.max(1, min) * 60_000
   }
 
-  async start(
-    link?: { taskId?: string | null; listId?: string | null; habitId?: string | null },
-    opts?: { focusMinutes?: number | null },
-  ): Promise<void> {
-    const customFocusMin = opts?.focusMinutes ?? null
+  async start(link?: {
+    taskId?: string | null
+    listId?: string | null
+    habitId?: string | null
+  }): Promise<void> {
     const s = await getSettings()
-    const totalMs = Math.max(1, customFocusMin ?? s.pomodoroFocusMin) * 60_000
+    const totalMs = Math.max(1, s.pomodoroFocusMin) * 60_000
     // Sesión nueva: cualquier pausa manual del sonido ambiental queda olvidada.
     setAmbientSuspended(false)
     this.state = {
@@ -156,7 +153,6 @@ class PomodoroEngine {
       linkTaskId: link?.taskId ?? null,
       linkListId: link?.listId ?? null,
       linkHabitId: link?.habitId ?? null,
-      customFocusMin,
       pomodorosDone: this.state.status === 'idle' ? this.state.pomodorosDone : 0,
     }
     if (s.soundEnabled) startAmbient(s.ambientSound, s.ambientVolume)
@@ -172,39 +168,13 @@ class PomodoroEngine {
 
   /**
    * Cambia el vínculo tarea/lista/hábito de la sesión (también en caliente).
-   * Dinámica: si la tarea/hábito vinculado tiene un pomodoro asignado, la fase
-   * de foco pasa a durar ese tiempo, restando lo YA transcurrido en la sesión.
+   * No toca la duración del temporizador: el objetivo de pomodoro de la
+   * tarea/hábito se cumple acumulando minutos de foco (su barra de progreso).
    */
-  async setLink(link: {
-    taskId?: string | null
-    listId?: string | null
-    habitId?: string | null
-  }): Promise<void> {
+  setLink(link: { taskId?: string | null; listId?: string | null; habitId?: string | null }): void {
     if (link.taskId !== undefined) this.state.linkTaskId = link.taskId
     if (link.listId !== undefined) this.state.linkListId = link.listId
     if (link.habitId !== undefined) this.state.linkHabitId = link.habitId
-
-    let assigned: number | null = null
-    if (link.taskId) assigned = (await db.tasks.get(link.taskId))?.pomodoroMinutes ?? null
-    else if (link.habitId) assigned = (await db.habits.get(link.habitId))?.pomodoroMinutes ?? null
-
-    if (assigned !== null && this.state.phase === 'focus') {
-      const newTotal = Math.max(1, assigned) * 60_000
-      const elapsed =
-        this.state.status === 'idle' ? 0 : Math.max(0, this.state.totalMs - this.state.remainingMs)
-      const remaining = Math.max(0, newTotal - elapsed)
-      this.state.customFocusMin = assigned
-      this.state.totalMs = newTotal
-      this.state.remainingMs = remaining
-      if (this.state.status === 'running') {
-        this.state.endsAt = Date.now() + remaining
-        if (remaining <= 0) {
-          this.publish()
-          void this.completePhase(true)
-          return
-        }
-      }
-    }
     this.publish()
   }
 
@@ -222,6 +192,8 @@ class PomodoroEngine {
     this.state.status = 'running'
     this.state.endsAt = Date.now() + this.state.remainingMs
     if (this.state.phase === 'focus') {
+      // Foco que arranca tras un descanso (quedó en pausa): marca el inicio real.
+      this.state.focusStartedAt ??= Date.now()
       const s = await getSettings()
       if (s.soundEnabled) startAmbient(s.ambientSound, s.ambientVolume)
     }
@@ -283,11 +255,18 @@ class PomodoroEngine {
     this.state.phase = nextPhase
     this.state.totalMs = totalMs
     this.state.remainingMs = totalMs
-    this.state.status = 'running'
-    this.state.endsAt = Date.now() + totalMs
-    this.state.focusStartedAt = nextPhase === 'focus' ? Date.now() : null
-    if (nextPhase === 'focus' && s.soundEnabled) startAmbient(s.ambientSound, s.ambientVolume)
-    this.startTicking()
+    if (nextPhase === 'focus') {
+      // Tras un descanso NO se arranca solo: queda en pausa esperando "Reanudar".
+      this.state.status = 'paused'
+      this.state.endsAt = 0
+      this.state.focusStartedAt = null
+      this.stopTicking()
+    } else {
+      this.state.status = 'running'
+      this.state.endsAt = Date.now() + totalMs
+      this.state.focusStartedAt = null
+      this.startTicking()
+    }
     this.publish()
   }
 
@@ -297,6 +276,10 @@ class PomodoroEngine {
       const task = await db.tasks.get(this.state.linkTaskId)
       return task?.listId ?? null
     }
+    if (this.state.linkHabitId) {
+      const habit = await db.habits.get(this.state.linkHabitId)
+      return habit?.listId ?? null
+    }
     return null
   }
 
@@ -305,6 +288,7 @@ class PomodoroEngine {
     const session: StudySession = {
       id: uid(),
       taskId: this.state.linkTaskId,
+      habitId: this.state.linkHabitId,
       listId: await this.resolveListId(),
       startedAt: this.state.focusStartedAt ?? now - focusMinutes * 60_000,
       endedAt: now,

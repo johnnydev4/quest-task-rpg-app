@@ -20,6 +20,7 @@ const POMODORO_PRESETS = [10, 15, 25, 45, 60, 90]
  */
 export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClose: () => void }) {
   const habit = useLiveQuery(() => db.habits.get(habitId), [habitId])
+  const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
   const [title, setTitle] = useState<string | null>(null)
   const [calOpen, setCalOpen] = useState(false)
 
@@ -158,17 +159,50 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
             <button
               type="button"
               onClick={() => {
-                void pomodoro
-                  .start({ habitId: habit.id }, { focusMinutes: habit.pomodoroMinutes })
-                  .then(() => pomodoro.setMinimized(true))
-                emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · ${habit.pomodoroMinutes} min` })
+                void pomodoro.start({ habitId: habit.id }).then(() => pomodoro.setMinimized(true))
+                emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · objetivo ${habit.pomodoroMinutes} min` })
                 onClose()
               }}
               className="w-full rounded-xl bg-accent-600 px-4 py-2.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500"
             >
-              ▶ Empezar ahora · {habit.pomodoroMinutes} min
+              ▶ Empezar ahora · objetivo {habit.pomodoroMinutes} min
             </button>
           )}
+        </div>
+
+        {/* Lista (atributo RPG): el XP del hábito sube ese atributo */}
+        <div className="space-y-2">
+          <span className={sectionLabel}>Lista</span>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => void updateHabit(habit.id, { listId: null })}
+              aria-pressed={habit.listId == null}
+              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                habit.listId == null
+                  ? 'border-accent-500/50 bg-accent-500/15 text-accent-300'
+                  : 'border-line/10 text-ink-muted hover:bg-ink/5'
+              }`}
+            >
+              Sin lista
+            </button>
+            {lists.map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => void updateHabit(habit.id, { listId: l.id })}
+                aria-pressed={habit.listId === l.id}
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  habit.listId === l.id
+                    ? 'border-accent-500/50 bg-accent-500/15 text-accent-300'
+                    : 'border-line/10 text-ink-muted hover:bg-ink/5'
+                }`}
+              >
+                <span className="size-2 rounded-full" style={{ backgroundColor: l.color }} aria-hidden="true" />
+                {l.emoji ? `${l.emoji} ${l.name}` : l.name}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Eliminar */}

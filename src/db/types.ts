@@ -20,7 +20,7 @@ export interface List {
   id: string
   name: string
   color: string
-  /** Emoji decorativo mostrado a la derecha del nombre; null/ausente = sin emoji. */
+  /** Emoji decorativo mostrado a la izquierda del nombre; null/ausente = sin emoji. */
   emoji?: string | null
   order: number
   /** Nivel/XP del "atributo" RPG de esta categoría. */
@@ -116,6 +116,8 @@ export interface Reminder {
 export interface StudySession {
   id: string
   taskId: string | null
+  /** Hábito vinculado a la sesión; alimenta su barra de objetivo pomodoro. */
+  habitId?: string | null
   listId: string | null
   startedAt: number
   endedAt: number | null
@@ -179,6 +181,8 @@ export interface Habit {
   reminderTime?: string | null
   /** Minutos de pomodoro vinculados al hábito; null/ausente = sin pomodoro. */
   pomodoroMinutes?: number | null
+  /** Lista (atributo RPG) a la que pertenece; su XP va a esa lista. */
+  listId?: string | null
   createdAt: number
   updatedAt: number
   syncStatus: SyncStatus

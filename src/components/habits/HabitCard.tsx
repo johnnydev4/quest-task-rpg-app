@@ -6,6 +6,7 @@ import { deleteHabit, toggleHabitToday } from '../../db/repo/habits'
 import { pomodoro } from '../../services/pomodoro'
 import { emitToast } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
+import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import {
   comboBackground,
   comboColor,
@@ -54,6 +55,8 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
   const scheduledToday = isScheduledToday(habit)
   const ended = habitEnded(habit)
   const nextXp = xpForCombo(combo + 1)
+  // Barra de objetivo pomodoro: minutos de foco de hoy vinculados a este hábito.
+  const pomo = usePomodoroProgress({ habitId: habit.id }, habit.pomodoroMinutes)
 
   const endLabel =
     habit.endDate === null
@@ -151,6 +154,24 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             {!compact && !ended && !scheduledToday && <span>Hoy no toca 💤</span>}
             {ended && <span>Finalizado</span>}
           </div>
+          {pomo && (
+            <div className={compact ? 'mt-1.5' : 'mt-2'}>
+              <div className="flex items-center justify-between text-[10px] text-ink-faint">
+                <span>
+                  🍅{' '}
+                  {pomo.completed
+                    ? '¡Pomodoro completado!'
+                    : `${pomo.doneMin}/${pomo.goalMin} min de foco`}
+                </span>
+              </div>
+              <div className={`mt-0.5 overflow-hidden rounded-full bg-ink/10 ${compact ? 'h-1' : 'h-1.5'}`}>
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${pomo.completed ? 'bg-ok' : 'bg-accent-500'}`}
+                  style={{ width: `${pomo.pct}%` }}
+                />
+              </div>
+            </div>
+          )}
         </button>
 
         {/* Pomodoro vinculado: arranca un foco con los minutos del hábito */}
@@ -158,10 +179,8 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
           <button
             onClick={() => {
               // Esperar el start: es async y reinicia el estado (pisaría el minimized).
-              void pomodoro
-                .start({ habitId: habit.id }, { focusMinutes: habit.pomodoroMinutes })
-                .then(() => pomodoro.setMinimized(true))
-              emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · ${habit.pomodoroMinutes} min` })
+              void pomodoro.start({ habitId: habit.id }).then(() => pomodoro.setMinimized(true))
+              emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · objetivo ${habit.pomodoroMinutes} min` })
             }}
             aria-label={`Empezar pomodoro de ${habit.pomodoroMinutes} minutos`}
             title={`Pomodoro · ${habit.pomodoroMinutes} min`}

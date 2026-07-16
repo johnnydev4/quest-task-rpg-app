@@ -6,6 +6,7 @@ import { formatDue, formatDueTime, isOverdue, startOfToday } from '../../lib/dat
 import { PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
 import { playHoverTick } from '../../lib/sound'
 import { useSettings } from '../../lib/useSettings'
+import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 
 interface TaskItemProps {
   task: Task
@@ -38,6 +39,8 @@ export function TaskItem({
 
   const overdue = task.dueAt !== null && !task.completed && isOverdue(task.dueAt)
   const taskTags = (tagsById ? task.tagIds.map((id) => tagsById.get(id)).filter(Boolean) : []) as Tag[]
+  // Barra de objetivo pomodoro: minutos de foco de hoy vinculados a esta tarea.
+  const pomo = usePomodoroProgress({ taskId: task.id }, task.pomodoroMinutes)
   // Color efectivo: el propio de la tarea manda; si no tiene, hereda el de su lista.
   const barColor = task.color ?? list?.color ?? null
 
@@ -100,8 +103,8 @@ export function TaskItem({
             {list && (
               <span className={`${chipBase} border-line/10 text-ink-muted`}>
                 <span className="size-1.5 rounded-full" style={{ backgroundColor: list.color }} aria-hidden="true" />
+                {list.emoji && `${list.emoji} `}
                 {list.name}
-                {list.emoji && ` ${list.emoji}`}
               </span>
             )}
             {taskTags.map((tag) => (
@@ -128,6 +131,19 @@ export function TaskItem({
             {task.priority && (
               <span className={`${chipBase} ${PRIORITY_CHIP_CLASS[task.priority]}`}>{PRIORITY_LABEL[task.priority]}</span>
             )}
+          </span>
+        )}
+        {!task.completed && pomo && (
+          <span className="mt-1.5 block max-w-56">
+            <span className="block text-[10px] text-ink-faint">
+              🍅 {pomo.completed ? '¡Pomodoro completado!' : `${pomo.doneMin}/${pomo.goalMin} min de foco`}
+            </span>
+            <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-ink/10">
+              <span
+                className={`block h-full rounded-full transition-all duration-500 ${pomo.completed ? 'bg-ok' : 'bg-accent-500'}`}
+                style={{ width: `${pomo.pct}%` }}
+              />
+            </span>
           </span>
         )}
       </button>

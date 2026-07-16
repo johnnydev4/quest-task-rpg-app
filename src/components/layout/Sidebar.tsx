@@ -190,7 +190,7 @@ export function Sidebar({
             <NavItem
               active={view.kind === 'list' && view.listId === list.id}
               onClick={() => onSelect({ kind: 'list', listId: list.id })}
-              label={list.emoji ? `${list.name} ${list.emoji}` : list.name}
+              label={list.emoji ? `${list.emoji} ${list.name}` : list.name}
               count={counts.byList[list.id] ?? 0}
               badge={list.statLevel > 1 ? `Nv ${list.statLevel}` : undefined}
               icon={

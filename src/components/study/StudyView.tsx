@@ -197,7 +197,7 @@ export function StudyView() {
   }
 
   // Selectores de vínculo (tarea/hábito/lista): disponibles antes de la sesión
-  // y también durante la sesión minimizada (vincular en caliente ajusta el tiempo).
+  // y también durante la sesión minimizada (el vínculo no cambia la duración).
   const linkSelectors = (
     <div className="grid w-full gap-4 sm:grid-cols-3">
       <label className="space-y-1.5">
@@ -365,13 +365,20 @@ export function StudyView() {
       <div className="flex flex-col items-center gap-6 rounded-2xl border border-line/5 glass-panel px-6 py-8">
         <Ring progress={0} label={mmss(settings.pomodoroFocusMin * 60_000)} sub="Listo para enfocar" />
         <button
-          onClick={() => pomodoro.start({ taskId: timer.linkTaskId, listId: timer.linkListId })}
+          onClick={() =>
+            pomodoro.start({
+              taskId: timer.linkTaskId,
+              listId: timer.linkListId,
+              habitId: timer.linkHabitId,
+            })
+          }
           className="rounded-xl bg-accent-600 px-8 py-3 text-base font-semibold text-on-accent shadow-lg shadow-accent-600/25 transition-all hover:bg-accent-500 active:scale-95"
         >
           Iniciar foco
         </button>
         {/* Duraciones de la sesión de hoy, editables aquí mismo (también viven en Ajustes) */}
-        <div className="flex w-full max-w-sm flex-col gap-2 lg:w-auto lg:max-w-none lg:flex-row lg:items-stretch lg:justify-center">
+        {/* lg: fila que envuelve y nunca rebasa el ancho del panel */}
+        <div className="flex w-full max-w-sm flex-col gap-2 lg:max-w-none lg:flex-row lg:flex-wrap lg:items-stretch lg:justify-center">
           <DurationStepper
             label="Foco"
             settingKey="pomodoroFocusMin"
@@ -404,8 +411,8 @@ export function StudyView() {
 
       {linkSelectors}
       <p className="text-[11px] text-ink-faint">
-        Si la tarea o el hábito vinculado tiene un pomodoro asignado, el temporizador pasa a ese tiempo
-        restando lo ya transcurrido.
+        El temporizador siempre usa la duración configurada aquí. Si la tarea o el hábito vinculado
+        tiene un objetivo de pomodoro, su barra se va llenando con tus minutos de foco.
       </p>
 
       <div className="space-y-1.5">

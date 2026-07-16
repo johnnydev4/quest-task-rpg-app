@@ -17,6 +17,8 @@ export interface NewHabitInput {
   reminderTime?: string | null
   /** Minutos de pomodoro vinculados; ausente/null = sin pomodoro. */
   pomodoroMinutes?: number | null
+  /** Lista (atributo RPG) a la que pertenece; ausente/null = sin lista. */
+  listId?: string | null
 }
 
 export async function createHabit(input: NewHabitInput): Promise<string> {
@@ -29,6 +31,7 @@ export async function createHabit(input: NewHabitInput): Promise<string> {
     endDate: input.endDate,
     reminderTime: input.reminderTime ?? null,
     pomodoroMinutes: input.pomodoroMinutes ?? null,
+    listId: input.listId ?? null,
     createdAt: now,
     updatedAt: now,
     syncStatus: 'pending',
@@ -69,7 +72,7 @@ export async function toggleHabitToday(habitId: string): Promise<void> {
     // Desmarcar: resta exactamente el XP que otorgó (sin farmeo).
     await db.habitLogs.delete(existing.id)
     await recordDeletion('habitLogs', existing.id)
-    await applyXp(-existing.xp, null, { touchStreak: false })
+    await applyXp(-existing.xp, habit.listId ?? null, { touchStreak: false })
     return
   }
 
@@ -87,6 +90,7 @@ export async function toggleHabitToday(habitId: string): Promise<void> {
     updatedAt: now,
     syncStatus: 'pending',
   })
-  const result = await applyXp(xp, null, { touchStreak: true })
+  // El XP del hábito sube también el atributo de su lista, si tiene.
+  const result = await applyXp(xp, habit.listId ?? null, { touchStreak: true })
   emitCompletion({ ...result, kind: 'habit' })
 }

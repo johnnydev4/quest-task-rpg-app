@@ -43,6 +43,61 @@ const StatsView = lazy(() => import('./components/stats/StatsView'))
 
 type ListModalState = { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; listId: string }
 
+// Trazos de cada vista (mismos que en el sidebar) para el icono del header.
+const HEADER_ICON_PATHS: Partial<Record<View['kind'], React.ReactNode>> = {
+  today: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </>
+  ),
+  quests: (
+    <path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 8 2a6 6 0 0 0 3-.8V14a6 6 0 0 1-3 .8c-3 0-5-2-8-2a6 6 0 0 0-4 1.2" />
+  ),
+  habits: (
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+  ),
+  upcoming: (
+    <>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+    </>
+  ),
+  all: (
+    <>
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z" />
+    </>
+  ),
+  study: (
+    <>
+      <circle cx="12" cy="13" r="8" />
+      <path d="M12 9v4l2.5 2.5M9 2h6" />
+    </>
+  ),
+  stats: <path d="M3 3v18h18M8 17V9m5 8V5m5 12v-6" />,
+}
+
+/** Icono de la vista actual en el header (mismo lenguaje visual que el sidebar). */
+function HeaderViewIcon({ kind }: { kind: View['kind'] }) {
+  const paths = HEADER_ICON_PATHS[kind]
+  if (!paths) return null
+  return (
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-400">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5.5" aria-hidden="true">
+        {paths}
+      </svg>
+    </span>
+  )
+}
+
 export default function App() {
   const [view, setView] = useState<View>({ kind: 'today' })
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -313,6 +368,21 @@ export default function App() {
                     ? (currentList?.name ?? '')
                     : (currentTag?.name ?? '')
 
+  // Descripción corta bajo el título (vistas RPG/herramienta que no llevan
+  // contador de pendientes). Las vistas de tareas muestran su contador.
+  const viewDescription =
+    view.kind === 'quests'
+      ? 'Acepta retos, completa tareas y gana experiencia.'
+      : view.kind === 'habits'
+        ? 'Construye rutinas y encadena tus combos.'
+        : view.kind === 'calendar'
+          ? 'Tus tareas organizadas por fecha.'
+          : view.kind === 'study'
+            ? 'Enfócate con sesiones de pomodoro.'
+            : view.kind === 'stats'
+              ? 'Tu progreso, tus rachas y tus récords.'
+              : null
+
   const pendingInView =
     view.kind === 'today'
       ? counts.today
@@ -427,20 +497,27 @@ export default function App() {
                 <path d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div className="flex min-w-0 flex-1 items-center gap-2.5">
-              {currentList && (
-                <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: currentList.color }} aria-hidden="true" />
-              )}
-              {currentTag && (
-                <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: currentTag.color }} aria-hidden="true" />
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              {currentList ? (
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${currentList.color}22` }} aria-hidden="true">
+                  <span className="size-3.5 rounded-full" style={{ backgroundColor: currentList.color }} />
+                </span>
+              ) : currentTag ? (
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${currentTag.color}22` }} aria-hidden="true">
+                  <span className="size-3.5 rounded-full" style={{ backgroundColor: currentTag.color }} />
+                </span>
+              ) : (
+                <HeaderViewIcon kind={view.kind} />
               )}
               <div className="min-w-0">
                 <h1 className="truncate text-xl font-bold text-ink">{viewTitle}</h1>
-                {isTaskView && (
+                {isTaskView ? (
                   <p className="text-xs text-ink-faint">
                     {pendingInView === 0 ? 'Sin pendientes' : `${pendingInView} pendiente${pendingInView === 1 ? '' : 's'}`}
                     {currentList && currentList.statLevel > 1 && ` · Nv ${currentList.statLevel}`}
                   </p>
+                ) : (
+                  viewDescription && <p className="truncate text-xs text-ink-faint">{viewDescription}</p>
                 )}
               </div>
             </div>

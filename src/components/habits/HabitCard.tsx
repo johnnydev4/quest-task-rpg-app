@@ -7,6 +7,7 @@ import { pomodoro } from '../../services/pomodoro'
 import { emitToast } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
+import { FlagIcon, TimerIcon } from '../ui/icons'
 import {
   comboBackground,
   comboColor,
@@ -118,7 +119,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             }`}
             title={ended ? 'Hábito finalizado' : 'Hoy no toca'}
           >
-            {ended ? '🏁' : '—'}
+            {ended ? <FlagIcon className="size-3.5" /> : '—'}
           </span>
         )}
 
@@ -157,8 +158,8 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
           {pomo && (
             <div className={compact ? 'mt-1.5' : 'mt-2'}>
               <div className="flex items-center justify-between text-[10px] text-ink-faint">
-                <span>
-                  🍅{' '}
+                <span className="flex items-center gap-1">
+                  <TimerIcon className="size-3" />
                   {pomo.completed
                     ? '¡Pomodoro completado!'
                     : `${pomo.doneMin}/${pomo.goalMin} min de foco`}

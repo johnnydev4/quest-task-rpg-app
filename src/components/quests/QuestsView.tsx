@@ -24,6 +24,17 @@ import {
   type MonthTheme,
 } from '../../lib/questThemes'
 import { ConfirmButton } from '../ui/ConfirmButton'
+import {
+  CalendarIcon,
+  ChartIcon,
+  CrownIcon,
+  GemIcon,
+  HistoryIcon,
+  LockIcon,
+  SparkleIcon,
+  SwordIcon,
+  TrophyIcon,
+} from '../ui/icons'
 
 const inputClass =
   'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
@@ -37,15 +48,6 @@ function XpChip({ xp, theme }: { xp: number; theme: MonthTheme }) {
     >
       +{xp} XP
     </span>
-  )
-}
-
-function LockIcon({ className = 'size-3.5' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${className} shrink-0`} aria-hidden="true">
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
   )
 }
 
@@ -167,8 +169,8 @@ export function QuestsView() {
           onTouchStart={onBannerTouchStart}
           onTouchEnd={onBannerTouchEnd}
         >
-          <span className="pointer-events-none absolute -top-10 -right-3 text-[9rem] opacity-[0.08] select-none" aria-hidden="true">
-            🔒
+          <span className="pointer-events-none absolute -top-6 -right-3 text-ink opacity-[0.06] select-none" aria-hidden="true">
+            <LockIcon className="size-44" />
           </span>
           <div className="relative space-y-2.5">
             <div className="flex items-center justify-between gap-2">
@@ -192,7 +194,7 @@ export function QuestsView() {
               </div>
             </div>
             <h2 className="flex items-center gap-2 text-2xl font-black text-ink">
-              <span aria-hidden="true">🔒</span> Aún sellada
+              <LockIcon className="size-6" /> Aún sellada
             </h2>
             <p className="max-w-md text-sm text-ink-muted">
               El desafío de <span className="font-semibold text-ink-dim">{monthLabelOf(monthKey)}</span> todavía no se ha
@@ -200,8 +202,9 @@ export function QuestsView() {
             </p>
           </div>
         </section>
-        <p className="text-center text-xs text-ink-faint">
-          Solo puedes explorar hasta un mes por delante. El destino se desvela a su debido tiempo. ⚔
+        <p className="flex items-center justify-center gap-1.5 text-center text-xs text-ink-faint">
+          Solo puedes explorar hasta un mes por delante. El destino se desvela a su debido tiempo.
+          <SwordIcon className="size-3.5" />
         </p>
       </div>
     )
@@ -228,10 +231,10 @@ export function QuestsView() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => resolvePrev(true)}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90"
+              className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90"
               style={{ background: `linear-gradient(135deg, ${prevTheme.colorA}, ${prevTheme.colorB})` }}
             >
-              👑 Sí, conquistada · +{MONTHLY_QUEST_XP} XP
+              <CrownIcon className="size-4" /> Sí, conquistada · +{MONTHLY_QUEST_XP} XP
             </button>
             <button
               onClick={() => resolvePrev(false)}
@@ -288,7 +291,7 @@ export function QuestsView() {
         <div className="relative flex flex-col items-start gap-2">
           <div className="flex w-full items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[11px] font-bold tracking-widest text-white uppercase backdrop-blur-sm">
-              ✦ Reto del mes
+              <SparkleIcon className="size-3.5" /> Reto del mes
             </span>
             <div className="flex items-center gap-1.5">
               <button onClick={() => setMonthOffset((o) => o - 1)} aria-label="Mes anterior" className={navBtn}>
@@ -327,15 +330,17 @@ export function QuestsView() {
             </div>
           )}
           {monthly?.completed && (
-            <p className="pt-1 text-sm font-bold text-white">🏆 ¡Misión del mes conquistada! +{MONTHLY_QUEST_XP} XP</p>
+            <p className="flex items-center gap-1.5 pt-1 text-sm font-bold text-white">
+              <TrophyIcon className="size-4" /> ¡Misión del mes conquistada! +{MONTHLY_QUEST_XP} XP
+            </p>
           )}
           {isCurrentMonth && !monthly && (
             <button
               onClick={() => void createQuest(monthKey, 0, theme.epicTitle)}
-              className="mt-2 self-end rounded-full bg-white/95 px-6 py-2.5 text-sm font-bold shadow-lg transition-all hover:bg-white active:scale-95"
+              className="mt-2 flex items-center gap-2 self-end rounded-full bg-white/95 px-6 py-2.5 text-sm font-bold shadow-lg transition-all hover:bg-white active:scale-95"
               style={{ color: theme.colorB }}
             >
-              ⚔ Aceptar reto
+              <SwordIcon className="size-4" /> Aceptar reto
             </button>
           )}
         </div>
@@ -367,11 +372,12 @@ export function QuestsView() {
             ) : monthLockReason ? (
               <div className="flex items-center gap-2 rounded-xl border border-dashed border-line/15 px-3 py-2.5 text-xs text-ink-faint">
                 <LockIcon className="size-4" />
-                <span>👑 Gran misión del mes — {monthLockReason}</span>
+                <CrownIcon className="size-4" />
+                <span>Gran misión del mes — {monthLockReason}</span>
               </div>
             ) : (
               <ForgeRow
-                placeholder={`👑 ¿Cuál es tu gran gesta del mes? (p. ej. "Terminar el curso de…")`}
+                placeholder={`¿Cuál es tu gran gesta del mes? (p. ej. "Terminar el curso de…")`}
                 ariaLabel="Gran misión del mes"
                 theme={theme}
                 onCreate={(title) => void createQuest(monthKey, 0, title)}
@@ -418,7 +424,9 @@ export function QuestsView() {
             }`}
           >
             {monthly?.completed ? (
-              <span>🏆 ¡Reto del mes conquistado! Recompensa ganada: +{MONTHLY_QUEST_XP} XP</span>
+              <span className="flex items-center gap-1.5">
+                <TrophyIcon className="size-4" /> ¡Reto del mes conquistado! Recompensa ganada: +{MONTHLY_QUEST_XP} XP
+              </span>
             ) : (
               <>
                 <LockIcon />
@@ -430,14 +438,16 @@ export function QuestsView() {
 
         {/* Recompensa y estado del reto */}
         <aside className="rounded-2xl border border-line/10 glass-panel p-4 sm:p-5">
-          <h3 className="flex items-center gap-1.5 text-base font-bold text-ink">💎 Recompensa</h3>
+          <h3 className="flex items-center gap-1.5 text-base font-bold text-ink">
+            <GemIcon className="size-4" /> Recompensa
+          </h3>
           <div className="mt-3 flex items-center gap-3">
             <span
-              className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-md"
+              className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-md"
               style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
               aria-hidden="true"
             >
-              {theme.emoji}
+              <GemIcon className="size-6" />
             </span>
             <div>
               <p className="text-2xl font-black text-ink">+{MONTHLY_QUEST_XP} XP</p>
@@ -451,8 +461,8 @@ export function QuestsView() {
           <div className="mt-4 space-y-2.5 rounded-xl border border-line/10 glass-input p-3.5">
             <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Estado del reto</p>
             <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold text-ink">
-                📊 {doneUnits} / {totalUnits} gestas
+              <span className="flex items-center gap-1.5 font-semibold text-ink">
+                <ChartIcon className="size-4 text-ink-muted" /> {doneUnits} / {totalUnits} gestas
               </span>
               <span className="text-xs font-bold" style={{ color: theme.colorA }}>
                 {progressPct}%
@@ -467,12 +477,13 @@ export function QuestsView() {
                 }}
               />
             </div>
-            <p className="text-xs text-ink-muted">
+            <p className="flex items-center gap-1.5 text-xs text-ink-muted">
+              <CalendarIcon className="size-3.5" />
               {daysLeft !== null
-                ? `📅 Quedan ${daysLeft} día${daysLeft === 1 ? '' : 's'}`
+                ? `Quedan ${daysLeft} día${daysLeft === 1 ? '' : 's'}`
                 : monthOffset < 0
-                  ? '📅 Mes terminado'
-                  : '📅 Aún no empieza'}
+                  ? 'Mes terminado'
+                  : 'Aún no empieza'}
             </p>
           </div>
         </aside>
@@ -482,7 +493,7 @@ export function QuestsView() {
       {pastMonthlies.length > 0 && (
         <section className="space-y-2.5">
           <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-ink-faint uppercase">
-            🕑 Retos anteriores
+            <HistoryIcon className="size-3.5" /> Retos anteriores
           </h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {pastMonthlies.map((q) => {
@@ -490,11 +501,11 @@ export function QuestsView() {
               return (
                 <div key={q.id} className="flex items-center gap-3 rounded-2xl border border-line/10 glass-panel p-3.5">
                   <span
-                    className="flex size-10 shrink-0 items-center justify-center rounded-full text-xl"
-                    style={{ background: `${t.colorA}22` }}
+                    className="flex size-10 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: `${t.colorA}22`, color: t.colorA }}
                     aria-hidden="true"
                   >
-                    {t.emoji}
+                    {q.completed ? <TrophyIcon className="size-5" /> : <SwordIcon className="size-5" />}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] text-ink-faint">{monthLabelOf(q.monthKey)}</p>
@@ -624,8 +635,8 @@ function MonthlyQuestBlock({
       }}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold tracking-wide uppercase" style={{ color: theme.colorA }}>
-          👑 Gran misión del mes
+        <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase" style={{ color: theme.colorA }}>
+          <CrownIcon className="size-4" /> Gran misión del mes
         </p>
         <div className="flex items-center gap-2">
           <XpChip xp={quest.xpValue} theme={theme} />
@@ -665,7 +676,7 @@ function MonthlyQuestBlock({
         ) : (
           <button
             onClick={() => void setQuestCompleted(quest.id, !quest.completed)}
-            className={`rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all ${
               quest.completed
                 ? 'border border-line/15 text-ink-muted hover:bg-ink/5'
                 : 'text-white shadow-md hover:opacity-90 active:scale-95'
@@ -674,7 +685,13 @@ function MonthlyQuestBlock({
               quest.completed ? undefined : { background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }
             }
           >
-            {quest.completed ? '✓ Conquistada · desmarcar' : `👑 Completar +${quest.xpValue} XP`}
+            {quest.completed ? (
+              '✓ Conquistada · desmarcar'
+            ) : (
+              <>
+                <CrownIcon className="size-4" /> Completar +{quest.xpValue} XP
+              </>
+            )}
           </button>
         )}
       </div>
@@ -719,14 +736,14 @@ function WeeklyQuestRow({
         <div className="flex items-center gap-2.5 rounded-xl border border-dashed border-line/10 px-3 py-2.5 text-xs text-ink-faint opacity-75">
           <LockIcon className="size-4" />
           <span>
-            ⚔ Semana {week} · {rangeLabel} — {lockedReason ?? 'No disponible'}
+            Semana {week} · {rangeLabel} — {lockedReason ?? 'No disponible'}
           </span>
         </div>
       )
     }
     return (
       <ForgeRow
-        placeholder={`⚔ Forjar misión · Semana ${week} (${rangeLabel})…`}
+        placeholder={`Forjar misión · Semana ${week} (${rangeLabel})…`}
         ariaLabel={`Misión de la semana ${week}`}
         theme={theme}
         onCreate={onCreate}
@@ -772,8 +789,8 @@ function WeeklyQuestRow({
         </button>
         <div className="min-w-0 flex-1">
           <EditableTitle quest={quest} />
-          <p className="text-[10px] text-ink-faint">
-            ⚔ Semana {week} · {rangeLabel}
+          <p className="flex items-center gap-1 text-[10px] text-ink-faint">
+            <SwordIcon className="size-3" /> Semana {week} · {rangeLabel}
             {highlight && (
               <span className="font-semibold" style={{ color: theme.colorA }}>
                 {' '}
@@ -784,7 +801,9 @@ function WeeklyQuestRow({
           </p>
         </div>
         {quest.completed ? (
-          <span className="shrink-0 text-[11px] font-semibold text-ok">🏆 +{quest.xpValue} XP</span>
+          <span className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-ok">
+            <TrophyIcon className="size-3.5" /> +{quest.xpValue} XP
+          </span>
         ) : (
           <XpChip xp={quest.xpValue} theme={theme} />
         )}

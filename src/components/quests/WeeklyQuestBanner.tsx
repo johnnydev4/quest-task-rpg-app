@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import { monthKeyOf, themeForMonthKey, weekOfMonth } from '../../lib/questThemes'
+import { SwordIcon, TrophyIcon } from '../ui/icons'
 
 /**
  * La misión de la semana en curso, destacada entre las tareas normales (side
@@ -59,10 +60,10 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
         <span className="flex shrink-0 gap-2">
           <button
             onClick={accept}
-            className="rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
             style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
           >
-            ⚔ Aceptar el reto
+            <SwordIcon className="size-3.5" /> Aceptar el reto
           </button>
           <button
             onClick={decline}
@@ -95,11 +96,19 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
       </span>
       <div className="relative">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[11px] font-bold tracking-widest uppercase" style={{ color: theme.colorA }}>
-            ⚔ Misión de la semana {week} · {theme.creature}
+          <p className="flex items-center gap-1.5 text-[11px] font-bold tracking-widest uppercase" style={{ color: theme.colorA }}>
+            <SwordIcon className="size-3.5" /> Misión de la semana {week} · {theme.creature}
           </p>
-          <span className="shrink-0 text-[11px] font-medium text-ink-muted">
-            {quest.completed ? '🏆 Conquistada' : steps.length > 0 ? `${done}/${steps.length} pasos` : `+${quest.xpValue} XP`}
+          <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-ink-muted">
+            {quest.completed ? (
+              <>
+                <TrophyIcon className="size-3.5" /> Conquistada
+              </>
+            ) : steps.length > 0 ? (
+              `${done}/${steps.length} pasos`
+            ) : (
+              `+${quest.xpValue} XP`
+            )}
           </span>
         </div>
         <p className={`mt-1 truncate text-base font-bold ${quest.completed ? 'text-ink-faint line-through' : 'text-ink'}`}>

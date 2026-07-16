@@ -7,6 +7,7 @@ import { PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
 import { playHoverTick } from '../../lib/sound'
 import { useSettings } from '../../lib/useSettings'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
+import { CommentIcon, PaperclipIcon, TimerIcon } from '../ui/icons'
 
 interface TaskItemProps {
   task: Task
@@ -122,10 +123,14 @@ export function TaskItem({
               </span>
             )}
             {commentCount > 0 && (
-              <span className={`${chipBase} border-line/10 text-ink-muted`}>💬 {commentCount}</span>
+              <span className={`${chipBase} border-line/10 text-ink-muted`}>
+                <CommentIcon className="size-3" /> {commentCount}
+              </span>
             )}
             {attachmentCount > 0 && (
-              <span className={`${chipBase} border-line/10 text-ink-muted`}>📎 {attachmentCount}</span>
+              <span className={`${chipBase} border-line/10 text-ink-muted`}>
+                <PaperclipIcon className="size-3" /> {attachmentCount}
+              </span>
             )}
             {/* La prioridad solo se muestra si está asignada */}
             {task.priority && (
@@ -135,8 +140,9 @@ export function TaskItem({
         )}
         {!task.completed && pomo && (
           <span className="mt-1.5 block max-w-56">
-            <span className="block text-[10px] text-ink-faint">
-              🍅 {pomo.completed ? '¡Pomodoro completado!' : `${pomo.doneMin}/${pomo.goalMin} min de foco`}
+            <span className="flex items-center gap-1 text-[10px] text-ink-faint">
+              <TimerIcon className="size-3" />
+              {pomo.completed ? '¡Pomodoro completado!' : `${pomo.doneMin}/${pomo.goalMin} min de foco`}
             </span>
             <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-ink/10">
               <span

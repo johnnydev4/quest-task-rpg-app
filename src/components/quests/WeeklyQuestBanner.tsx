@@ -91,9 +91,6 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
         boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.18), 0 10px 26px -10px ${theme.colorA}80`,
       }}
     >
-      <span className="pointer-events-none absolute -top-3 -right-2 text-5xl opacity-30 select-none" aria-hidden="true">
-        {theme.emoji}
-      </span>
       <div className="relative">
         <div className="flex items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-[11px] font-bold tracking-widest uppercase" style={{ color: theme.colorA }}>

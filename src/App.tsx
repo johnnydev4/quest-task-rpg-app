@@ -185,9 +185,12 @@ export default function App() {
   const currentList: List | undefined = view.kind === 'list' ? listsById.get(view.listId) : undefined
   const currentTag: Tag | undefined = view.kind === 'tag' ? tagsById.get(view.tagId) : undefined
   const isTaskView = ['today', 'upcoming', 'all', 'list', 'tag'].includes(view.kind)
-  // Calendario, estadísticas y misiones aprovechan más ancho.
-  const contentMax =
+  // Calendario, estadísticas y misiones aprovechan más ancho. En escritorio el
+  // contenido mantiene su tope de ancho (lectura cómoda) pero se alinea a la
+  // izquierda, pegado al sidebar, en lugar de centrarse (lg:mx-0).
+  const contentMax = `lg:mx-0 ${
     view.kind === 'calendar' || view.kind === 'stats' || view.kind === 'quests' ? 'max-w-5xl' : 'max-w-2xl'
+  }`
 
   async function handleQuickAdd(parsed: QuickParseResult) {
     // Etiquetas detectadas en el texto (#tag) + la de la vista actual.
@@ -591,7 +594,7 @@ export default function App() {
 
         {isTaskView && (
           <div className="sticky bottom-0 z-10">
-            <div className="mx-auto w-full max-w-2xl px-4 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+            <div className="mx-auto w-full max-w-2xl px-4 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 lg:mx-0">
               <QuickAdd
                 placeholder={
                   view.kind === 'today'

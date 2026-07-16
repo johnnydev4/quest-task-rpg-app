@@ -51,6 +51,12 @@ function Ring({ progress, label, sub }: { progress: number; label: string; sub: 
 
 type DurationKey = 'pomodoroFocusMin' | 'pomodoroShortBreakMin' | 'pomodoroLongBreakMin'
 
+const PHASE_OF_KEY: Record<DurationKey, 'focus' | 'short' | 'long'> = {
+  pomodoroFocusMin: 'focus',
+  pomodoroShortBreakMin: 'short',
+  pomodoroLongBreakMin: 'long',
+}
+
 // Serializa los ajustes de duración: varios clics rápidos de +/− se aplican
 // uno tras otro leyendo siempre el valor ya guardado (sin perder pasos).
 let durationQueue: Promise<void> = Promise.resolve()
@@ -61,6 +67,9 @@ function adjustDuration(key: DurationKey, delta: number, min: number, max: numbe
     const next = Math.max(min, Math.min(max, s[key] + delta))
     if (next !== s[key]) await updateSettings({ [key]: next })
   })
+  // Con sesión activa: si el control corresponde a la fase en curso, el
+  // cambio se aplica AL INSTANTE al tiempo restante (no solo a la próxima).
+  pomodoro.adjustCurrentPhase(PHASE_OF_KEY[key], delta)
 }
 
 function DurationStepper({
@@ -199,7 +208,8 @@ export function StudyView() {
   // Selectores de vínculo (tarea/hábito/lista): disponibles antes de la sesión
   // y también durante la sesión minimizada (el vínculo no cambia la duración).
   // Duraciones de la sesión, editables antes de empezar y durante la sesión
-  // minimizada (aplican a la próxima fase). En pantalla completa no se muestran.
+  // minimizada. El control de la fase en curso ajusta el tiempo restante al
+  // instante; los demás aplican a las próximas fases. En pantalla completa no se muestran.
   const durationSteppers = (
     <div className="flex w-full max-w-sm flex-col gap-2 lg:max-w-none lg:flex-row lg:flex-wrap lg:items-stretch lg:justify-center">
       <DurationStepper
@@ -456,7 +466,8 @@ export function StudyView() {
       </div>
 
       <p className="text-xs text-ink-faint">
-        Cada minuto de foco real suma 1 XP. Los cambios de duración aplican a la próxima fase.
+        Cada minuto de foco real suma 1 XP. Durante una sesión, cambiar la duración de la fase en curso
+        ajusta el tiempo restante al momento.
       </p>
     </div>
   )

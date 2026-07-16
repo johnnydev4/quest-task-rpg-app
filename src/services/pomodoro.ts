@@ -178,6 +178,29 @@ class PomodoroEngine {
     this.publish()
   }
 
+  /**
+   * Suma (o resta) minutos a la fase EN CURSO si coincide con `phase`.
+   * Funciona con el temporizador corriendo o en pausa; en marcha, el fin
+   * real (endsAt) se recalcula para que el cambio aplique al instante.
+   */
+  adjustCurrentPhase(phase: PomodoroPhase, deltaMin: number): void {
+    if (this.state.status === 'idle' || this.state.phase !== phase) return
+    const deltaMs = deltaMin * 60_000
+    if (this.state.status === 'running') {
+      this.state.remainingMs = Math.max(0, this.state.endsAt - Date.now())
+    }
+    this.state.remainingMs = Math.max(0, this.state.remainingMs + deltaMs)
+    this.state.totalMs = Math.max(60_000, this.state.totalMs + deltaMs)
+    if (this.state.status === 'running') {
+      this.state.endsAt = Date.now() + this.state.remainingMs
+      if (this.state.remainingMs <= 0) {
+        void this.completePhase(true)
+        return
+      }
+    }
+    this.publish()
+  }
+
   pause(): void {
     if (this.state.status !== 'running') return
     this.state.status = 'paused'

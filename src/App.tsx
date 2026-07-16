@@ -90,11 +90,9 @@ function HeaderViewIcon({ kind }: { kind: View['kind'] }) {
   const paths = HEADER_ICON_PATHS[kind]
   if (!paths) return null
   return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-400">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5.5" aria-hidden="true">
-        {paths}
-      </svg>
-    </span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-7 shrink-0 text-accent-400" aria-hidden="true">
+      {paths}
+    </svg>
   )
 }
 
@@ -499,13 +497,9 @@ export default function App() {
             </button>
             <div className="flex min-w-0 flex-1 items-center gap-3">
               {currentList ? (
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${currentList.color}22` }} aria-hidden="true">
-                  <span className="size-3.5 rounded-full" style={{ backgroundColor: currentList.color }} />
-                </span>
+                <span className="size-3.5 shrink-0 rounded-full" style={{ backgroundColor: currentList.color }} aria-hidden="true" />
               ) : currentTag ? (
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${currentTag.color}22` }} aria-hidden="true">
-                  <span className="size-3.5 rounded-full" style={{ backgroundColor: currentTag.color }} />
-                </span>
+                <span className="size-3.5 shrink-0 rounded-full" style={{ backgroundColor: currentTag.color }} aria-hidden="true" />
               ) : (
                 <HeaderViewIcon kind={view.kind} />
               )}

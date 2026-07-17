@@ -459,8 +459,8 @@ export function StudyView() {
             value={settings.ambientVolume}
             onChange={(e) => updateSettings({ ambientVolume: Number(e.target.value) })}
             aria-label="Volumen ambiental"
-            className="mt-2 w-full max-w-xs"
-            style={{ accentColor: 'var(--color-accent-500)' }}
+            className="glass-range mt-2 w-full max-w-xs"
+            style={{ '--fill': `${settings.ambientVolume * 100}%` } as React.CSSProperties}
           />
         )}
       </div>

@@ -177,6 +177,68 @@ a {
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 6%, transparent);
 }
 
+/*
+ * Slider Liquid Glass: pista de cristal translúcido con blur, relleno de
+ * acento hasta --fill (0–100%) y pulgar de cristal con sombra suave.
+ */
+.glass-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--t-line) 12%, transparent);
+  background-color: color-mix(in srgb, var(--t-glass) 45%, transparent);
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--t-accent-500) 90%, transparent),
+    var(--t-accent-400) var(--fill, 50%),
+    transparent var(--fill, 50%)
+  );
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  box-shadow:
+    inset 0 1px 2px 0 color-mix(in srgb, #000000 16%, transparent),
+    inset 0 1px 0 0 color-mix(in srgb, #ffffff 6%, transparent);
+  cursor: pointer;
+}
+
+.glass-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #ffffff, #e7e7ef);
+  border: 1px solid color-mix(in srgb, var(--t-line) 18%, transparent);
+  box-shadow:
+    0 2px 8px color-mix(in srgb, #000000 35%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 90%, transparent);
+  transition: transform 0.15s ease;
+}
+
+.glass-range::-webkit-slider-thumb:hover {
+  transform: scale(1.08);
+}
+
+.glass-range::-webkit-slider-thumb:active {
+  transform: scale(1.18);
+}
+
+.glass-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #ffffff, #e7e7ef);
+  border: 1px solid color-mix(in srgb, var(--t-line) 18%, transparent);
+  box-shadow:
+    0 2px 8px color-mix(in srgb, #000000 35%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 90%, transparent);
+}
+
+.glass-range::-moz-range-track {
+  background: transparent;
+}
+
 /* Accesibilidad: foco visible por teclado, coherente con el acento. */
 :focus-visible {
   outline: 2px solid var(--t-accent-500);

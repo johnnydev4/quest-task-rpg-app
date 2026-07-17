@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { PHASE_LABEL, pomodoro } from '../../services/pomodoro'
+import { CoffeeIcon, TargetIcon } from '../ui/icons'
 
 function mmss(ms: number): string {
   const total = Math.ceil(ms / 1000)
@@ -49,8 +50,8 @@ export function MiniTimer({ onExpand }: { onExpand: () => void }) {
                 className={timer.phase === 'focus' ? 'stroke-accent-500' : 'stroke-ok'}
               />
             </svg>
-            <span className="absolute text-[9px]" aria-hidden="true">
-              {timer.phase === 'focus' ? '🎯' : '☕'}
+            <span className={`absolute ${timer.phase === 'focus' ? 'text-accent-400' : 'text-ok'}`} aria-hidden="true">
+              {timer.phase === 'focus' ? <TargetIcon className="size-3" /> : <CoffeeIcon className="size-3" />}
             </span>
           </span>
           <span className="flex flex-col items-start leading-tight">
@@ -62,6 +63,14 @@ export function MiniTimer({ onExpand }: { onExpand: () => void }) {
               {timer.status === 'paused' && ' · pausa'}
             </span>
           </span>
+        </button>
+        <button
+          onClick={() => pomodoro.adjustCurrentPhase(timer.phase, 5)}
+          aria-label="Añadir 5 minutos a la fase actual"
+          title="Añadir 5 minutos a la fase actual"
+          className="flex h-8 items-center justify-center rounded-full border border-line/10 px-2 text-xs font-bold text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
+        >
+          +5
         </button>
         <button
           onClick={() => (timer.status === 'running' ? pomodoro.pause() : void pomodoro.resume())}

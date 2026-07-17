@@ -125,6 +125,28 @@ export function TimerIcon({ className }: { className?: string }) {
   )
 }
 
+/** Diana: fase de foco. */
+export function TargetIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </Icon>
+  )
+}
+
+/** Taza: fase de descanso. */
+export function CoffeeIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
+      <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z" />
+      <path d="M6 2v2M10 2v2M14 2v2" />
+    </Icon>
+  )
+}
+
 /** Candado: bloqueado / aún no disponible. */
 export function LockIcon({ className }: { className?: string }) {
   return (

@@ -86,7 +86,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
 
   return (
     <div
-      className={`glass-strong relative overflow-hidden rounded-2xl border ${compact ? 'p-2.5' : 'p-4'} ${ended ? 'opacity-70' : ''}`}
+      className={`glass-strong relative overflow-hidden rounded-2xl border ${compact ? 'p-2' : 'p-3'} ${ended ? 'opacity-70' : ''}`}
       style={{
         borderColor: `${color}66`,
         background: rainbow

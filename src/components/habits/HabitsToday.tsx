@@ -117,7 +117,7 @@ export function HabitsToday({ section = 'pending' }: HabitsTodayProps) {
         Hábitos completados <span className="text-xs font-normal text-ink-faint">{completedHabits.length}</span>
       </button>
       {open && (
-        <div className="space-y-2 opacity-75">
+        <div className="space-y-1.5 opacity-75">
           {completedHabits.map((h) => (
             <HabitCard key={h.id} habit={h} compact onManage={() => openHabit(h.id)} />
           ))}

@@ -141,7 +141,7 @@ export function HabitsView() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {active.map((h) => (
             <HabitCard key={h.id} habit={h} onManage={() => openHabit(h.id)} />
           ))}
@@ -149,7 +149,7 @@ export function HabitsView() {
       )}
 
       {finished.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <h2 className="px-1 text-sm font-semibold text-ink-muted">
             Finalizados <span className="text-xs font-normal text-ink-faint">{finished.length}</span>
           </h2>

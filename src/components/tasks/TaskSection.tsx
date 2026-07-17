@@ -32,7 +32,7 @@ export function TaskSection({
   if (tasks.length === 0 && !leading) return null
 
   return (
-    <section className="space-y-2">
+    <section className="space-y-1.5">
       {title &&
         (collapsible ? (
           <button
@@ -61,7 +61,7 @@ export function TaskSection({
           </h2>
         ))}
       {(!collapsible || open) && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {leading}
           {tasks.map((task) => (
             <TaskItem

@@ -47,7 +47,7 @@ export function TaskItem({
 
   return (
     <div
-      className="group flex items-center gap-3 rounded-xl border border-line/5 glass-panel px-3 py-2.5 transition-colors hover:border-line/15"
+      className="group flex items-center gap-3 rounded-xl border border-line/5 glass-panel px-3 py-1.5 transition-colors hover:border-line/15"
       onMouseEnter={() => {
         // Tic ASMR sutil solo en dispositivos con puntero (escritorio).
         if (settings.soundEnabled && window.matchMedia('(hover: hover)').matches) {
@@ -78,7 +78,7 @@ export function TaskItem({
           {task.title}
         </p>
         {!task.completed && (
-          <span className="mt-1 flex flex-wrap items-center gap-1.5">
+          <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
             {task.dueAt !== null &&
               (hideTodayChip && formatDue(task.dueAt) === 'Hoy' ? (
                 // En la pestaña Hoy: sin etiqueta redundante; solo la hora si la tiene.

@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { List } from '../../db/types'
 import { createList, deleteList, moveList, updateList } from '../../db/repo/lists'
-import { DEFAULT_LIST_COLOR } from '../../lib/colors'
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
 import { ConfirmButton } from '../ui/ConfirmButton'
@@ -14,7 +13,8 @@ interface ListModalProps {
 
 export function ListModal({ list, onClose }: ListModalProps) {
   const [name, setName] = useState(list?.name ?? '')
-  const [color, setColor] = useState(list?.color ?? DEFAULT_LIST_COLOR)
+  // Las listas nuevas empiezan sin color; represionar el color elegido lo quita.
+  const [color, setColor] = useState<string | null>(list?.color ?? null)
   const [emoji, setEmoji] = useState(list?.emoji ?? '')
 
   async function save(e: FormEvent) {
@@ -43,8 +43,8 @@ export function ListModal({ list, onClose }: ListModalProps) {
         </div>
 
         <div className="space-y-1.5">
-          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Color</span>
-          <ColorPicker value={color} onChange={(c) => c && setColor(c)} allowCustom />
+          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Color (opcional)</span>
+          <ColorPicker value={color} onChange={setColor} allowCustom />
         </div>
 
         <div className="space-y-1.5">

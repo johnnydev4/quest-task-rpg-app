@@ -19,7 +19,8 @@ export interface RecurrenceRule {
 export interface List {
   id: string
   name: string
-  color: string
+  /** Color de la lista; null = sin color (punto hueco, sin tinte en tareas). */
+  color: string | null
   /** Emoji decorativo mostrado a la izquierda del nombre; null/ausente = sin emoji. */
   emoji?: string | null
   order: number

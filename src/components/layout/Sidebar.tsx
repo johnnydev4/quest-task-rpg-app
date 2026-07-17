@@ -99,21 +99,15 @@ export function Sidebar({
           )}
         />
         <NavItem
-          active={view.kind === 'quests'}
-          onClick={() => onSelect({ kind: 'quests' })}
-          label="Misiones"
+          active={view.kind === 'all'}
+          onClick={() => onSelect({ kind: 'all' })}
+          label="Todas"
+          count={counts.all}
           icon={icon(
             <>
-              <path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 8 2a6 6 0 0 0 3-.8V14a6 6 0 0 1-3 .8c-3 0-5-2-8-2a6 6 0 0 0-4 1.2" />
+              <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+              <path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z" />
             </>,
-          )}
-        />
-        <NavItem
-          active={view.kind === 'habits'}
-          onClick={() => onSelect({ kind: 'habits' })}
-          label="Hábitos"
-          icon={icon(
-            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />,
           )}
         />
         <NavItem
@@ -141,15 +135,11 @@ export function Sidebar({
           )}
         />
         <NavItem
-          active={view.kind === 'all'}
-          onClick={() => onSelect({ kind: 'all' })}
-          label="Todas"
-          count={counts.all}
+          active={view.kind === 'habits'}
+          onClick={() => onSelect({ kind: 'habits' })}
+          label="Hábitos"
           icon={icon(
-            <>
-              <path d="M22 12h-6l-2 3h-4l-2-3H2" />
-              <path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z" />
-            </>,
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />,
           )}
         />
         <NavItem
@@ -168,6 +158,16 @@ export function Sidebar({
           onClick={() => onSelect({ kind: 'stats' })}
           label="Estadísticas"
           icon={icon(<path d="M3 3v18h18M8 17V9m5 8V5m5 12v-6" />)}
+        />
+        <NavItem
+          active={view.kind === 'quests'}
+          onClick={() => onSelect({ kind: 'quests' })}
+          label="Misiones"
+          icon={icon(
+            <>
+              <path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 8 2a6 6 0 0 0 3-.8V14a6 6 0 0 1-3 .8c-3 0-5-2-8-2a6 6 0 0 0-4 1.2" />
+            </>,
+          )}
         />
       </nav>
 
@@ -195,8 +195,8 @@ export function Sidebar({
               badge={list.statLevel > 1 ? `Nv ${list.statLevel}` : undefined}
               icon={
                 <span
-                  className="size-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: list.color }}
+                  className={`size-2.5 shrink-0 rounded-full ${list.color ? '' : 'border-2 border-ink-muted'}`}
+                  style={list.color ? { backgroundColor: list.color } : undefined}
                   aria-hidden="true"
                 />
               }

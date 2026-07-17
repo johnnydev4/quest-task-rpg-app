@@ -147,6 +147,35 @@ export function CoffeeIcon({ className }: { className?: string }) {
   )
 }
 
+/** Sol: la vista/acción "Hoy". */
+export function SunIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </Icon>
+  )
+}
+
+/** Check en círculo: completar. */
+export function CheckCircleIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="m9 12 2 2 4-4" />
+    </Icon>
+  )
+}
+
+/** Carpeta: listas. */
+export function FolderIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+    </Icon>
+  )
+}
+
 /** Candado: bloqueado / aún no disponible. */
 export function LockIcon({ className }: { className?: string }) {
   return (

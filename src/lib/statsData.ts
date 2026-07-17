@@ -128,7 +128,7 @@ export function computeStats(
     .slice(0, 8)
 
   const byList = lists
-    .map((l) => ({ name: l.name, xp: l.statXp, color: l.color, nivel: l.statLevel }))
+    .map((l) => ({ name: l.name, xp: l.statXp, color: l.color ?? '#8b5cf6', nivel: l.statLevel }))
     .sort((a, b) => b.xp - a.xp)
 
   // Historial de rachas: días activos consecutivos, de todas las tareas completadas.

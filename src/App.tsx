@@ -497,7 +497,11 @@ export default function App() {
             </button>
             <div className="flex min-w-0 flex-1 items-center gap-3">
               {currentList ? (
-                <span className="size-3.5 shrink-0 rounded-full" style={{ backgroundColor: currentList.color }} aria-hidden="true" />
+                <span
+                  className={`size-3.5 shrink-0 rounded-full ${currentList.color ? '' : 'border-2 border-ink-muted'}`}
+                  style={currentList.color ? { backgroundColor: currentList.color } : undefined}
+                  aria-hidden="true"
+                />
               ) : currentTag ? (
                 <span className="size-3.5 shrink-0 rounded-full" style={{ backgroundColor: currentTag.color }} aria-hidden="true" />
               ) : (

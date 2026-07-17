@@ -198,7 +198,11 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
                     : 'border-line/10 text-ink-muted hover:bg-ink/5'
                 }`}
               >
-                <span className="size-2 rounded-full" style={{ backgroundColor: l.color }} aria-hidden="true" />
+                <span
+                  className={`size-2 rounded-full ${l.color ? '' : 'border-2 border-ink-muted'}`}
+                  style={l.color ? { backgroundColor: l.color } : undefined}
+                  aria-hidden="true"
+                />
                 {l.emoji ? `${l.emoji} ${l.name}` : l.name}
               </button>
             ))}

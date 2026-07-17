@@ -1,13 +1,24 @@
+import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { List, Tag, Task } from '../../db/types'
 import { setTaskCompleted, updateTask } from '../../db/repo/tasks'
-import { formatDue, formatDueTime, isOverdue, startOfToday } from '../../lib/dates'
+import { formatDue, formatDueTime, isOverdue, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
 import { playHoverTick } from '../../lib/sound'
 import { useSettings } from '../../lib/useSettings'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
-import { CommentIcon, PaperclipIcon, TimerIcon } from '../ui/icons'
+import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
+import {
+  CalendarIcon,
+  CheckCircleIcon,
+  CommentIcon,
+  FlagIcon,
+  FolderIcon,
+  PaperclipIcon,
+  SunIcon,
+  TimerIcon,
+} from '../ui/icons'
 
 interface TaskItemProps {
   task: Task
@@ -22,6 +33,74 @@ interface TaskItemProps {
 
 const chipBase = 'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium'
 
+/** Menú contextual (clic derecho) de una tarea: Hoy, prioridad, completar, fecha y lista. */
+function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: number; onClose: () => void }) {
+  const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
+  const inToday = task.dueAt !== null && task.dueAt < startOfDayOffset(1)
+
+  const entries: MenuEntry[] = [
+    inToday
+      ? {
+          label: 'Quitar de Hoy',
+          icon: <SunIcon className="size-4" />,
+          onClick: () => void updateTask(task.id, { dueAt: null }),
+        }
+      : {
+          label: 'Agregar a Hoy',
+          icon: <SunIcon className="size-4" />,
+          onClick: () => void updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false }),
+        },
+    {
+      label: task.completed ? 'Marcar como pendiente' : 'Marcar como completada',
+      icon: <CheckCircleIcon className="size-4" />,
+      onClick: () => void setTaskCompleted(task.id, !task.completed),
+    },
+    {
+      label: 'Definir prioridad',
+      icon: <FlagIcon className="size-4" />,
+      submenu: [
+        ...(['low', 'medium', 'high'] as const).map((p) => ({
+          label: PRIORITY_LABEL[p],
+          selected: task.priority === p,
+          onClick: () => void updateTask(task.id, { priority: p }),
+        })),
+        {
+          label: 'Sin prioridad',
+          selected: task.priority === null,
+          onClick: () => void updateTask(task.id, { priority: null }),
+        },
+      ],
+    },
+    {
+      label: 'Fecha de vencimiento',
+      icon: <CalendarIcon className="size-4" />,
+      submenu: [
+        { label: 'Hoy', onClick: () => void updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false }) },
+        { label: 'Mañana', onClick: () => void updateTask(task.id, { dueAt: startOfDayOffset(1), dueHasTime: false }) },
+        {
+          label: 'En una semana',
+          onClick: () => void updateTask(task.id, { dueAt: startOfDayOffset(7), dueHasTime: false }),
+        },
+        { label: 'Sin fecha', selected: task.dueAt === null, onClick: () => void updateTask(task.id, { dueAt: null }) },
+      ],
+    },
+    {
+      label: 'Mover a lista…',
+      icon: <FolderIcon className="size-4" />,
+      submenu: [
+        ...lists.map((l) => ({
+          label: l.emoji ? `${l.emoji} ${l.name}` : l.name,
+          selected: task.listId === l.id,
+          onClick: () => void updateTask(task.id, { listId: l.id }),
+        })),
+        { label: 'Sin lista', selected: task.listId === null, onClick: () => void updateTask(task.id, { listId: null }) },
+      ],
+    },
+  ]
+
+  return <ContextMenu x={x} y={y} entries={entries} onClose={onClose} />
+}
+
 export function TaskItem({
   task,
   list,
@@ -31,6 +110,7 @@ export function TaskItem({
   hideTodayChip = false,
 }: TaskItemProps) {
   const settings = useSettings()
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const subtasks = useLiveQuery(() => db.subtasks.where('taskId').equals(task.id).toArray(), [task.id])
   const commentCount = useLiveQuery(() => db.comments.where('taskId').equals(task.id).count(), [task.id]) ?? 0
   const attachmentCount =
@@ -48,6 +128,10 @@ export function TaskItem({
   return (
     <div
       className="group flex items-center gap-3 rounded-xl border border-line/5 glass-panel px-3 py-1.5 transition-colors hover:border-line/15"
+      onContextMenu={(e) => {
+        e.preventDefault()
+        setMenu({ x: e.clientX, y: e.clientY })
+      }}
       onMouseEnter={() => {
         // Tic ASMR sutil solo en dispositivos con puntero (escritorio).
         if (settings.soundEnabled && window.matchMedia('(hover: hover)').matches) {
@@ -103,7 +187,9 @@ export function TaskItem({
             )}
             {list && (
               <span className={`${chipBase} border-line/10 text-ink-muted`}>
-                <span className="size-1.5 rounded-full" style={{ backgroundColor: list.color }} aria-hidden="true" />
+                {list.color && (
+                  <span className="size-1.5 rounded-full" style={{ backgroundColor: list.color }} aria-hidden="true" />
+                )}
                 {list.emoji && `${list.emoji} `}
                 {list.name}
               </span>
@@ -161,6 +247,7 @@ export function TaskItem({
           Hoy
         </button>
       )}
+      {menu && <TaskContextMenu task={task} x={menu.x} y={menu.y} onClose={() => setMenu(null)} />}
     </div>
   )
 }

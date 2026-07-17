@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Habit } from '../../db/types'
-import { deleteHabit, toggleHabitToday } from '../../db/repo/habits'
+import { deleteHabit, toggleHabitToday, updateHabit } from '../../db/repo/habits'
 import { pomodoro } from '../../services/pomodoro'
 import { emitToast } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
-import { FlagIcon, TimerIcon } from '../ui/icons'
+import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
+import { CheckCircleIcon, FlagIcon, FolderIcon, TimerIcon } from '../ui/icons'
 import {
   comboBackground,
   comboColor,
@@ -29,12 +30,62 @@ interface HabitCardProps {
   onManage?: () => void
 }
 
+/** Menú contextual (clic derecho) de un hábito: completar hoy y mover a lista. */
+function HabitContextMenu({
+  habit,
+  canToggleToday,
+  todayDone,
+  x,
+  y,
+  onClose,
+}: {
+  habit: Habit
+  canToggleToday: boolean
+  todayDone: boolean
+  x: number
+  y: number
+  onClose: () => void
+}) {
+  const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
+
+  const entries: MenuEntry[] = [
+    ...(canToggleToday
+      ? [
+          {
+            label: todayDone ? 'Desmarcar hoy' : 'Completar hoy',
+            icon: <CheckCircleIcon className="size-4" />,
+            onClick: () => void toggleHabitToday(habit.id),
+          },
+        ]
+      : []),
+    {
+      label: 'Mover a lista…',
+      icon: <FolderIcon className="size-4" />,
+      submenu: [
+        ...lists.map((l) => ({
+          label: l.emoji ? `${l.emoji} ${l.name}` : l.name,
+          selected: habit.listId === l.id,
+          onClick: () => void updateHabit(habit.id, { listId: l.id }),
+        })),
+        {
+          label: 'Sin lista',
+          selected: habit.listId == null,
+          onClick: () => void updateHabit(habit.id, { listId: null }),
+        },
+      ],
+    },
+  ]
+
+  return <ContextMenu x={x} y={y} entries={entries} onClose={onClose} />
+}
+
 /**
  * Tarjeta de hábito: cristal más opaco que el resto, teñida con el color del
  * COMBO actual (la escalera 1=rojo … 7+=arcoíris) y con barra de progreso.
  * La palabra "Combo" solo aparece unos segundos al completar, con animación.
  */
 export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) {
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const logsRaw = useLiveQuery(() => db.habitLogs.where('habitId').equals(habit.id).toArray(), [habit.id])
   const logsLoaded = logsRaw !== undefined
   const logs = logsRaw ?? []
@@ -87,6 +138,10 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
   return (
     <div
       className={`glass-strong relative overflow-hidden rounded-2xl border ${compact ? 'p-2' : 'p-3'} ${ended ? 'opacity-70' : ''}`}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        setMenu({ x: e.clientX, y: e.clientY })
+      }}
       style={{
         borderColor: `${color}66`,
         background: rainbow
@@ -222,6 +277,16 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             />
           </div>
         </>
+      )}
+      {menu && (
+        <HabitContextMenu
+          habit={habit}
+          canToggleToday={scheduledToday && !ended}
+          todayDone={todayDone}
+          x={menu.x}
+          y={menu.y}
+          onClose={() => setMenu(null)}
+        />
       )}
     </div>
   )

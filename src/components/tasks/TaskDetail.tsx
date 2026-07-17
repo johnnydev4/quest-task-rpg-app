@@ -727,7 +727,9 @@ function TaskForm({
           value={
             currentList ? (
               <span className="inline-flex items-center gap-1.5">
-                <span className="size-2 rounded-full" style={{ backgroundColor: currentList.color }} aria-hidden="true" />
+                {currentList.color && (
+                  <span className="size-2 rounded-full" style={{ backgroundColor: currentList.color }} aria-hidden="true" />
+                )}
                 {currentList.name}
               </span>
             ) : null
@@ -1030,7 +1032,11 @@ function TaskForm({
                   key={l.id}
                   icon={
                     <span className="flex size-5.5 items-center justify-center lg:size-5">
-                      <span className="size-3 rounded-full" style={{ backgroundColor: l.color }} aria-hidden="true" />
+                      <span
+                        className={`size-3 rounded-full ${l.color ? '' : 'border-2 border-ink-muted'}`}
+                        style={l.color ? { backgroundColor: l.color } : undefined}
+                        aria-hidden="true"
+                      />
                     </span>
                   }
                   label={l.emoji ? `${l.emoji} ${l.name}` : l.name}

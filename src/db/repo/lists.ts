@@ -3,7 +3,7 @@ import { db } from '../db'
 import type { List } from '../types'
 import { recordDeletion } from './tombstones'
 
-export async function createList(name: string, color: string, emoji?: string | null): Promise<string> {
+export async function createList(name: string, color: string | null, emoji?: string | null): Promise<string> {
   const now = Date.now()
   const last = await db.lists.orderBy('order').last()
   const list: List = {

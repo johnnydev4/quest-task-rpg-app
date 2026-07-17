@@ -259,6 +259,18 @@ textarea:focus {
 }
 
 /* Animaciones del sistema RPG y micro-interacciones (Fases 3 y 10) */
+/* Menú contextual: aparece con un pop sutil desde el cursor. */
+@keyframes menu-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes levelup-in {
   0% {
     opacity: 0;

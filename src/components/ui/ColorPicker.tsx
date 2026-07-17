@@ -3,7 +3,7 @@ import { PALETTE } from '../../lib/colors'
 interface ColorPickerProps {
   value: string | null
   onChange: (color: string | null) => void
-  /** Permite la opción "sin color" (para tareas; las listas siempre tienen color). */
+  /** Muestra el botón explícito "sin color" (además, represionar el color elegido lo deselecciona). */
   allowNone?: boolean
   /** Añade un pozal arcoíris para elegir cualquier color fuera de la paleta. */
   allowCustom?: boolean
@@ -33,7 +33,7 @@ export function ColorPicker({ value, onChange, allowNone = false, allowCustom = 
         <button
           key={color}
           type="button"
-          onClick={() => onChange(color)}
+          onClick={() => onChange(value === color ? null : color)}
           aria-label={`Color ${color}`}
           aria-pressed={value === color}
           className={`size-8 rounded-full border-2 transition-all ${

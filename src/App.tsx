@@ -227,13 +227,13 @@ export default function App() {
       for (const tagId of t.tagIds) byTag[tagId] = (byTag[tagId] ?? 0) + 1
     }
     return {
-      today: pending.filter((t) => t.dueAt !== null && t.dueAt < tomorrow).length,
+      today: pending.filter((t) => t.dueAt !== null && t.dueAt >= sod && t.dueAt < tomorrow).length,
       upcoming: pending.filter((t) => t.dueAt !== null && t.dueAt >= tomorrow).length,
       all: pending.length,
       byList,
       byTag,
     }
-  }, [pending, tomorrow])
+  }, [pending, sod, tomorrow])
 
   const currentList: List | undefined = view.kind === 'list' ? listsById.get(view.listId) : undefined
   const currentTag: Tag | undefined = view.kind === 'tag' ? tagsById.get(view.tagId) : undefined
@@ -280,12 +280,8 @@ export default function App() {
   if (view.kind === 'today') {
     sections = [
       {
-        key: 'overdue',
-        title: 'De días anteriores',
-        tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt < sod)),
-        showMoveToToday: true,
-      },
-      {
+        // Hoy muestra SOLO lo de hoy: las tareas vencidas de días anteriores
+        // no aparecen aquí (viven en "Todas", donde se pueden reprogramar).
         key: 'today',
         title: 'Hoy',
         tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= sod && t.dueAt < tomorrow)),

@@ -239,7 +239,7 @@ export function TaskItem({
           </span>
         )}
       </button>
-      {showMoveToToday && !task.completed && (
+      {showMoveToToday && overdue && !task.completed && (
         <button
           onClick={() => updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false })}
           className="shrink-0 rounded-lg border border-line/10 px-2.5 py-1 text-xs font-medium text-ink-dim opacity-90 transition-colors hover:bg-ink/5 hover:text-ink"

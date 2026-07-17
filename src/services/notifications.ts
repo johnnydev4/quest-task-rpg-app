@@ -11,6 +11,20 @@ export const notificationService = {
     return typeof Notification !== 'undefined'
   },
 
+  /** iPhone/iPad (incluye iPad moderno que se anuncia como Mac táctil). */
+  isIos(): boolean {
+    const ua = navigator.userAgent
+    return /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && navigator.maxTouchPoints > 1)
+  },
+
+  /** ¿Corre como app instalada (pantalla de inicio) y no como pestaña del navegador? */
+  isStandalone(): boolean {
+    return (
+      window.matchMedia?.('(display-mode: standalone)').matches === true ||
+      (navigator as { standalone?: boolean }).standalone === true
+    )
+  },
+
   permission(): NotificationPermission | 'unsupported' {
     return typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
   },

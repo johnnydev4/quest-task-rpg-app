@@ -5,6 +5,7 @@ import { useSettings } from '../../lib/useSettings'
 import { COMPLETION_SOUNDS, playCompletion } from '../../lib/sound'
 import { ACCENT_PRESETS } from '../../lib/theme'
 import { exportData, importData } from '../../services/backup'
+import { notificationService } from '../../services/notifications'
 import { cloudConfigured } from '../../services/supabase'
 import { Modal } from '../ui/Modal'
 
@@ -14,6 +15,103 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <h3 className="text-xs font-semibold tracking-wide text-ink-faint uppercase">{title}</h3>
       {children}
     </section>
+  )
+}
+
+/**
+ * Notificaciones del sistema (recordatorios, hábitos y fases de pomodoro).
+ * En iPhone/iPad solo existen con la app INSTALADA en la pantalla de inicio
+ * (iOS 16.4+); desde Safari a secas la API ni siquiera está disponible.
+ */
+function NotificationsSettings() {
+  const [permission, setPermission] = useState(notificationService.permission())
+  const [testSent, setTestSent] = useState(false)
+  const ios = notificationService.isIos()
+  const standalone = notificationService.isStandalone()
+
+  async function enable() {
+    await notificationService.requestPermission()
+    setPermission(notificationService.permission())
+  }
+
+  function sendTest() {
+    void notificationService.notify('🔔 Notificaciones activas', 'Así se verán tus recordatorios y avisos.')
+    setTestSent(true)
+  }
+
+  // iPhone sin instalar: el único camino es añadir a pantalla de inicio.
+  if (permission === 'unsupported' && ios && !standalone) {
+    return (
+      <div className="space-y-2 rounded-xl border border-line/10 glass-input p-3.5 text-sm text-ink-dim">
+        <p className="font-medium text-ink">Instala Quest para recibir avisos</p>
+        <p className="text-xs text-ink-muted">
+          En iPhone las notificaciones solo funcionan con la app instalada:
+        </p>
+        <ol className="list-decimal space-y-1 pl-5 text-xs text-ink-muted">
+          <li>
+            Abre Quest en Safari y toca el botón <span className="font-semibold text-ink-dim">Compartir</span>.
+          </li>
+          <li>
+            Elige <span className="font-semibold text-ink-dim">Añadir a pantalla de inicio</span>.
+          </li>
+          <li>Abre Quest desde su icono nuevo y vuelve a estos Ajustes para activarlas.</li>
+        </ol>
+      </div>
+    )
+  }
+
+  if (permission === 'unsupported') {
+    return (
+      <p className="text-xs text-ink-faint">
+        Este navegador no soporta notificaciones del sistema; los avisos saldrán dentro de la app.
+      </p>
+    )
+  }
+
+  if (permission === 'denied') {
+    return (
+      <div className="space-y-1.5 rounded-xl border border-warn/25 bg-warn/5 p-3.5 text-sm">
+        <p className="font-medium text-warn">Notificaciones bloqueadas</p>
+        <p className="text-xs text-ink-muted">
+          {ios
+            ? 'Actívalas en Ajustes de iOS → Notificaciones → Quest → Permitir notificaciones.'
+            : 'Actívalas en los permisos del sitio de tu navegador y recarga la app.'}
+          {' '}Mientras tanto, los avisos saldrán dentro de la app.
+        </p>
+      </div>
+    )
+  }
+
+  if (permission === 'granted') {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-sm text-ink-dim">
+          <span className="size-2 rounded-full bg-ok" aria-hidden="true" />
+          Activadas: recordatorios, hábitos y pomodoro
+        </span>
+        <button
+          onClick={sendTest}
+          className="rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5"
+        >
+          {testSent ? '✓ Enviada' : 'Probar notificación'}
+        </button>
+      </div>
+    )
+  }
+
+  // permission === 'default': aún sin pedir. En iOS la petición DEBE salir de un toque.
+  return (
+    <div className="space-y-2">
+      <button
+        onClick={() => void enable()}
+        className="w-full rounded-xl bg-accent-600 px-4 py-2.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500"
+      >
+        Activar notificaciones
+      </button>
+      <p className="text-[11px] text-ink-faint">
+        Para recordatorios de tareas, avisos de hábitos y cambios de fase del pomodoro.
+      </p>
+    </div>
   )
 }
 
@@ -60,6 +158,10 @@ export function SettingsModal({
               <path d="M9 6l6 6-6 6" />
             </svg>
           </button>
+        </Section>
+
+        <Section title="Notificaciones">
+          <NotificationsSettings />
         </Section>
 
         <Section title="Apariencia">

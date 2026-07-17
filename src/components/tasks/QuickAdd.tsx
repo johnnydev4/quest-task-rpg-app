@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { parseQuickAdd, type QuickParseResult } from '../../lib/quickParse'
 
 interface QuickAddProps {
@@ -13,6 +13,7 @@ interface QuickAddProps {
  */
 export function QuickAdd({ placeholder, onAdd }: QuickAddProps) {
   const [text, setText] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
   const parsed = useMemo(() => (text.trim() ? parseQuickAdd(text) : null), [text])
 
   function submit(e: FormEvent) {
@@ -20,6 +21,9 @@ export function QuickAdd({ placeholder, onAdd }: QuickAddProps) {
     if (!parsed || !parsed.title.trim()) return
     onAdd(parsed)
     setText('')
+    // En táctil (smartphone), Enter añade la tarea Y esconde el teclado; en
+    // escritorio el foco se queda para encadenar varias tareas seguidas.
+    if (window.matchMedia('(pointer: coarse)').matches) inputRef.current?.blur()
   }
 
   return (
@@ -39,10 +43,12 @@ export function QuickAdd({ placeholder, onAdd }: QuickAddProps) {
       )}
       <form onSubmit={submit} className="flex gap-2">
         <input
+          ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={placeholder}
           aria-label="Añadir tarea"
+          enterKeyHint="done"
           className="min-w-0 flex-1 rounded-xl border border-line/10 glass-panel px-4 py-3 text-sm text-ink placeholder-ink-faint shadow-lg outline-none transition-colors focus:border-accent-500/60"
         />
         <button

@@ -14,6 +14,12 @@ export interface RecurrenceRule {
   every: number
   unit: RecurrenceUnit
   end: RecurrenceEnd
+  /**
+   * Días de la semana concretos (0=domingo … 6=sábado). Si está presente y no
+   * vacío, la siguiente ocurrencia es el próximo día del conjunto (p. ej.
+   * [1,2,3,4,5] = días laborales) y `every`/`unit` no se usan.
+   */
+  daysOfWeek?: number[] | null
 }
 
 export interface List {
@@ -46,6 +52,11 @@ export interface Task {
   completed: boolean
   completedAt: number | null
   recurrenceRule: RecurrenceRule | null
+  /**
+   * Si esta tarea nació como siguiente ocurrencia de una recurrente, el id de
+   * la tarea completada que la generó: al deshacer aquella, esta se anula.
+   */
+  spawnedFromTaskId?: string | null
   tagIds: string[]
   /** Minutos de pomodoro asignados a la tarea; null/ausente = sin pomodoro. */
   pomodoroMinutes?: number | null

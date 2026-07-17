@@ -2,7 +2,7 @@ import { uid } from '../../lib/uid'
 import { db } from '../db'
 import type { Priority, Task } from '../types'
 import { xpForPriority } from '../../lib/xp'
-import { emitCompletion } from '../../lib/events'
+import { emitCompletion, emitToast } from '../../lib/events'
 import { allowsNext, nextOccurrence, ruleForNext } from '../../lib/recurrence'
 import { startOfToday } from '../../lib/dates'
 import { applyXp } from './progress'
@@ -77,6 +77,8 @@ async function spawnNextOccurrence(task: Task): Promise<void> {
       completed: false,
       completedAt: null,
       recurrenceRule: stillRecurs,
+      // Linaje: si se deshace la tarea que la generó, esta ocurrencia se anula.
+      spawnedFromTaskId: task.id,
       createdAt: now,
       updatedAt: now,
       syncStatus: 'pending',
@@ -114,11 +116,59 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
   const task = await db.tasks.get(id)
   if (!task || task.completed === completed) return
   await updateTask(id, { completed, completedAt: completed ? Date.now() : null })
-  if (completed) await spawnNextOccurrence(task)
+
+  if (completed) {
+    await spawnNextOccurrence(task)
+  } else {
+    // Deshacer: la ocurrencia que ESTA completación generó se anula (si aún
+    // está pendiente); así la tarea no queda duplicada al volver a la lista.
+    const spawned = (await db.tasks.toArray()).filter(
+      (t) => t.spawnedFromTaskId === id && !t.completed,
+    )
+    for (const s of spawned) await deleteTask(s.id)
+  }
+
+  // Una recurrente ATRASADA (de días anteriores) completada tarde no da XP;
+  // simétricamente, deshacerla tampoco lo resta.
+  const overdueRecurring =
+    task.recurrenceRule !== null && task.dueAt !== null && task.dueAt < startOfToday()
+  if (overdueRecurring) {
+    if (completed) emitToast({ title: 'Completada sin XP', body: 'Repetición atrasada de días anteriores.' })
+    return
+  }
+
   const result = await applyXp(completed ? task.xpValue : -task.xpValue, task.listId, {
     touchStreak: completed,
   })
   if (completed) emitCompletion({ ...result, kind: 'task' })
+}
+
+/**
+ * "Saltar a hoy" de una recurrente atrasada: reprograma la tarea a su
+ * ocurrencia más cercana desde hoy (diaria → hoy; cada 2 días con 1 pasado →
+ * mañana), desplazando también sus recordatorios.
+ */
+export async function skipOverdueToNearest(id: string): Promise<void> {
+  const task = await db.tasks.get(id)
+  if (!task || !task.recurrenceRule || task.dueAt === null) return
+  const sod = startOfToday()
+  if (task.dueAt >= sod) return
+
+  let next = task.dueAt
+  while (next < sod) next = nextOccurrence(next, task.recurrenceRule)
+
+  const delta = next - task.dueAt
+  await updateTask(id, { dueAt: next })
+  const reminders = await db.reminders.where('taskId').equals(id).toArray()
+  for (const r of reminders) {
+    await db.reminders.update(r.id, {
+      remindAt: r.remindAt + delta,
+      firedCount: 0,
+      dismissed: false,
+      updatedAt: Date.now(),
+      syncStatus: 'pending',
+    })
+  }
 }
 
 export async function deleteTask(id: string): Promise<void> {

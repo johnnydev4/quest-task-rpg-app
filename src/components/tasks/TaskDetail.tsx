@@ -25,7 +25,8 @@ import {
   startOfDayOffset,
   startOfToday,
 } from '../../lib/dates'
-import { describeRule } from '../../lib/recurrence'
+import { describeRule, isWorkdaysRule, WORKDAYS } from '../../lib/recurrence'
+import { DayPicker } from '../habits/DayPicker'
 import { PRIORITIES, PRIORITY_LABEL, PRIORITY_SELECTED_CLASS } from '../../lib/priority'
 import { notificationService } from '../../services/notifications'
 import { pomodoro } from '../../services/pomodoro'
@@ -386,9 +387,16 @@ const REPEAT_PRESETS: { unit: RecurrenceUnit; label: string }[] = [
  */
 function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
   const rule = task.recurrenceRule
-  const isSimple = !!rule && rule.every === 1 && rule.end.type === 'never'
-  const isCustom = !!rule && !isSimple
+  const hasDays = !!rule && (rule.daysOfWeek?.length ?? 0) > 0
+  const isWorkdays = hasDays && isWorkdaysRule(rule!)
+  const isCustomDays = hasDays && !isWorkdays
+  const isSimple = !!rule && !hasDays && rule.every === 1 && rule.end.type === 'never'
+  const isCustom = !!rule && !hasDays && !isSimple
   const [showCustom, setShowCustom] = useState(isCustom)
+  const [showDays, setShowDays] = useState(isCustomDays)
+
+  // La fecha ancla es obligatoria para que la repetición aparezca en Hoy.
+  const anchor = task.dueAt === null ? { dueAt: startOfToday(), dueHasTime: false } : {}
 
   return (
     <div className="space-y-1">
@@ -431,6 +439,63 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
       <SheetOption
         icon={
           <RowIcon>
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+          </RowIcon>
+        }
+        label="Días laborales (L–V)"
+        selected={isWorkdays}
+        onClick={() => {
+          updateTask(task.id, {
+            recurrenceRule: { every: 1, unit: 'week', end: { type: 'never' }, daysOfWeek: WORKDAYS },
+            ...anchor,
+          })
+          onDone()
+        }}
+      />
+      <SheetOption
+        icon={
+          <RowIcon>
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+            <path d="M8 15h.01M12 15h.01M16 15h.01" />
+          </RowIcon>
+        }
+        label="Días de la semana…"
+        selected={isCustomDays}
+        onClick={() => {
+          if (!hasDays) {
+            updateTask(task.id, {
+              recurrenceRule: {
+                every: 1,
+                unit: 'week',
+                end: { type: 'never' },
+                daysOfWeek: [new Date().getDay()],
+              },
+              ...anchor,
+            })
+          }
+          setShowDays(true)
+          setShowCustom(false)
+        }}
+      />
+      {showDays && rule && hasDays && (
+        <div className="space-y-1.5 px-1 py-2">
+          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">
+            Se repite los días
+          </span>
+          <DayPicker
+            value={rule.daysOfWeek ?? []}
+            onChange={(days) =>
+              days.length > 0 &&
+              void updateTask(task.id, { recurrenceRule: { ...rule, daysOfWeek: [...days].sort() } })
+            }
+          />
+        </div>
+      )}
+      <SheetOption
+        icon={
+          <RowIcon>
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 3.6a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </RowIcon>
@@ -438,12 +503,13 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
         label="Personalizado"
         selected={isCustom}
         onClick={() => {
-          if (!rule) {
+          if (!rule || hasDays) {
             updateTask(task.id, {
               recurrenceRule: { every: 2, unit: 'day', end: { type: 'never' } },
-              ...(task.dueAt === null ? { dueAt: startOfToday(), dueHasTime: false } : {}),
+              ...anchor,
             })
           }
+          setShowDays(false)
           setShowCustom(true)
         }}
       />

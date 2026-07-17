@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { List, Tag, Task } from '../../db/types'
-import { setTaskCompleted, updateTask } from '../../db/repo/tasks'
+import { setTaskCompleted, skipOverdueToNearest, updateTask } from '../../db/repo/tasks'
 import { formatDue, formatDueTime, isOverdue, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
 import { playHoverTick } from '../../lib/sound'
@@ -15,6 +15,7 @@ import {
   CommentIcon,
   FlagIcon,
   FolderIcon,
+  ForwardIcon,
   PaperclipIcon,
   SunIcon,
   TimerIcon,
@@ -37,8 +38,20 @@ const chipBase = 'inline-flex items-center gap-1 rounded-full border px-2 py-0.5
 function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: number; onClose: () => void }) {
   const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
   const inToday = task.dueAt !== null && task.dueAt < startOfDayOffset(1)
+  // Recurrente atrasada: puede saltar a su ocurrencia más cercana desde hoy.
+  const overdueRecurring =
+    task.recurrenceRule !== null && task.dueAt !== null && task.dueAt < startOfToday() && !task.completed
 
   const entries: MenuEntry[] = [
+    ...(overdueRecurring
+      ? [
+          {
+            label: 'Saltar a hoy',
+            icon: <ForwardIcon className="size-4" />,
+            onClick: () => void skipOverdueToNearest(task.id),
+          },
+        ]
+      : []),
     inToday
       ? {
           label: 'Quitar de Hoy',

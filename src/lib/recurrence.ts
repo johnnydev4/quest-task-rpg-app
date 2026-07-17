@@ -7,9 +7,26 @@ export const RECURRENCE_UNITS: { id: RecurrenceUnit; label: string; plural: stri
   { id: 'year', label: 'año', plural: 'años' },
 ]
 
+/** Lunes a viernes (0=domingo … 6=sábado). */
+export const WORKDAYS = [1, 2, 3, 4, 5]
+
+const DAY_SHORT: Record<number, string> = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mié', 4: 'jue', 5: 'vie', 6: 'sáb' }
+
+export function isWorkdaysRule(rule: RecurrenceRule): boolean {
+  const days = rule.daysOfWeek ?? []
+  return days.length === WORKDAYS.length && WORKDAYS.every((d) => days.includes(d))
+}
+
 /** Próxima ocurrencia a partir de una fecha base, usando la API de Date (respeta meses/años irregulares). */
 export function nextOccurrence(fromMs: number, rule: RecurrenceRule): number {
   const d = new Date(fromMs)
+  // Días concretos de la semana: avanza día a día hasta el próximo del conjunto.
+  if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+    do {
+      d.setDate(d.getDate() + 1)
+    } while (!rule.daysOfWeek.includes(d.getDay()))
+    return d.getTime()
+  }
   switch (rule.unit) {
     case 'day':
       d.setDate(d.getDate() + rule.every)
@@ -43,8 +60,18 @@ export function ruleForNext(rule: RecurrenceRule): RecurrenceRule {
 }
 
 export function describeRule(rule: RecurrenceRule): string {
-  const unit = RECURRENCE_UNITS.find((u) => u.id === rule.unit)!
-  const base = rule.every === 1 ? `Cada ${unit.label}` : `Cada ${rule.every} ${unit.plural}`
+  let base: string
+  if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+    base = isWorkdaysRule(rule)
+      ? 'Días laborales'
+      : `Cada ${[...rule.daysOfWeek]
+          .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)) // lunes primero
+          .map((d) => DAY_SHORT[d])
+          .join(', ')}`
+  } else {
+    const unit = RECURRENCE_UNITS.find((u) => u.id === rule.unit)!
+    base = rule.every === 1 ? `Cada ${unit.label}` : `Cada ${rule.every} ${unit.plural}`
+  }
   if (rule.end.type === 'count') return `${base} · ${rule.end.remaining} veces más`
   if (rule.end.type === 'until') {
     const f = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(rule.end.date)

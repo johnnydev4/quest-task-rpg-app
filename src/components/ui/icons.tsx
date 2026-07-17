@@ -147,6 +147,16 @@ export function CoffeeIcon({ className }: { className?: string }) {
   )
 }
 
+/** Doble flecha: saltar a la siguiente ocurrencia. */
+export function ForwardIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M6 17l5-5-5-5" />
+      <path d="M13 17l5-5-5-5" />
+    </Icon>
+  )
+}
+
 /** Sol: la vista/acción "Hoy". */
 export function SunIcon({ className }: { className?: string }) {
   return (

@@ -10,6 +10,8 @@ export interface MenuEntry {
   submenu?: MenuEntry[]
   /** Marca la opción como la activa (check a la izquierda en submenús). */
   selected?: boolean
+  /** Acción destructiva: se pinta en rojo (eliminar). */
+  danger?: boolean
 }
 
 /**
@@ -84,10 +86,14 @@ export function ContextMenu({
                   onClose()
                 }
               }}
-              className={itemClass}
+              className={
+                entry.danger
+                  ? 'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-danger transition-colors hover:bg-danger/10'
+                  : itemClass
+              }
             >
               {entry.icon && (
-                <span className="text-ink-muted" aria-hidden="true">
+                <span className={entry.danger ? 'text-danger' : 'text-ink-muted'} aria-hidden="true">
                   {entry.icon}
                 </span>
               )}

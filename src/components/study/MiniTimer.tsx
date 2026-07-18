@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react'
+import { useRef, useState, useSyncExternalStore } from 'react'
 import { PHASE_LABEL, pomodoro } from '../../services/pomodoro'
 import { CoffeeIcon, TargetIcon } from '../ui/icons'
 
@@ -9,13 +9,27 @@ function mmss(ms: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+const POS_KEY = 'quest-minitimer-pos'
+
 /**
  * Mini-temporizador flotante: aparece al minimizar el modo estudio para poder
  * navegar por la app sin perder de vista la sesión. Tocar el tiempo vuelve
- * al modo estudio a pantalla completa.
+ * al modo estudio a pantalla completa. Se puede ARRASTRAR a cualquier esquina
+ * si tapa contenido (la posición se recuerda por dispositivo).
  */
 export function MiniTimer({ onExpand }: { onExpand: () => void }) {
   const timer = useSyncExternalStore(pomodoro.subscribe, pomodoro.getSnapshot)
+  const ref = useRef<HTMLDivElement>(null)
+  // Un arrastre no debe disparar el clic de los botones al soltar.
+  const suppressClick = useRef(false)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(() => {
+    try {
+      const raw = localStorage.getItem(POS_KEY)
+      return raw ? (JSON.parse(raw) as { x: number; y: number }) : null
+    } catch {
+      return null
+    }
+  })
 
   if (timer.status === 'idle' || !timer.minimized) return null
 
@@ -23,8 +37,58 @@ export function MiniTimer({ onExpand }: { onExpand: () => void }) {
   const r = 14
   const c = 2 * Math.PI * r
 
+  function clampToViewport(x: number, y: number) {
+    const el = ref.current
+    const w = el?.offsetWidth ?? 170
+    const h = el?.offsetHeight ?? 48
+    return {
+      x: Math.min(Math.max(8, x), window.innerWidth - w - 8),
+      y: Math.min(Math.max(8, y), window.innerHeight - h - 8),
+    }
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    const el = ref.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const d = { sx: e.clientX, sy: e.clientY, bx: rect.left, by: rect.top, moved: false }
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - d.sx
+      const dy = ev.clientY - d.sy
+      // Umbral de 6px: por debajo sigue siendo un toque/clic normal.
+      if (!d.moved && Math.hypot(dx, dy) < 6) return
+      d.moved = true
+      setPos(clampToViewport(d.bx + dx, d.by + dy))
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      if (d.moved) {
+        suppressClick.current = true
+        setTimeout(() => (suppressClick.current = false), 0)
+        setPos((p) => {
+          if (p) localStorage.setItem(POS_KEY, JSON.stringify(p))
+          return p
+        })
+      }
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+
   return (
-    <div className="fixed right-4 bottom-24 z-30 lg:bottom-6">
+    <div
+      ref={ref}
+      className={`fixed z-30 cursor-grab active:cursor-grabbing ${pos ? '' : 'right-4 bottom-24 lg:bottom-6'}`}
+      style={{ touchAction: 'none', ...(pos ? { left: pos.x, top: pos.y } : {}) }}
+      onPointerDown={onPointerDown}
+      onClickCapture={(e) => {
+        if (suppressClick.current) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }}
+    >
       <div
         className="flex items-center gap-2 rounded-full border border-line/10 glass-strong py-1.5 pr-1.5 pl-2 shadow-xl"
         style={{ animation: 'levelup-in 0.3s ease-out both' }}

@@ -9,7 +9,7 @@ import { localDateKey } from '../../lib/dates'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
-import { CheckCircleIcon, FlagIcon, FolderIcon, TimerIcon } from '../ui/icons'
+import { CheckCircleIcon, FlagIcon, FolderIcon, TimerIcon, TrashIcon } from '../ui/icons'
 import {
   comboBackground,
   comboColor,
@@ -75,6 +75,12 @@ function HabitContextMenu({
         },
       ],
     },
+    {
+      label: 'Eliminar hábito',
+      icon: <TrashIcon className="size-4" />,
+      danger: true,
+      onClick: () => void deleteHabit(habit.id),
+    },
   ]
 
   return <ContextMenu x={x} y={y} entries={entries} onClose={onClose} />
@@ -139,7 +145,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
   return (
     <SwipeToDelete onDelete={() => void deleteHabit(habit.id)} className="rounded-2xl">
     <div
-      className={`glass-strong relative overflow-hidden rounded-2xl border ${compact ? 'p-2' : 'p-3'} ${ended ? 'opacity-70' : ''}`}
+      className={`glass-strong relative overflow-hidden rounded-2xl border ${compact ? 'px-3 py-1.5' : 'px-3 py-2'} ${ended ? 'opacity-70' : ''}`}
       onContextMenu={(e) => {
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
@@ -151,7 +157,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
           : `linear-gradient(125deg, ${color}36, ${color}15 70%)`,
       }}
     >
-      <div className={`flex items-center ${compact ? 'gap-2.5' : 'gap-3'}`}>
+      <div className="flex items-center gap-3">
         {/* Check de hoy */}
         {scheduledToday && !ended ? (
           <button
@@ -159,12 +165,12 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             aria-label={todayDone ? 'Desmarcar hoy' : `Cumplir hoy (+${nextXp} XP)`}
             title={todayDone ? 'Desmarcar hoy' : `Cumplir hoy · +${nextXp} XP`}
             className={`flex shrink-0 items-center justify-center rounded-full border-2 transition-all ${
-              compact ? 'size-7' : 'size-9'
+              compact ? 'size-5' : 'size-6'
             } ${todayDone ? 'border-transparent' : 'border-ink-muted hover:scale-110'}`}
             style={todayDone ? { background: comboBackground(combo) } : undefined}
           >
             {todayDone && (
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={compact ? 'size-3.5' : 'size-4'} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={compact ? 'size-3' : 'size-3.5'} aria-hidden="true">
                 <path d="M5 13l4 4L19 7" />
               </svg>
             )}
@@ -172,7 +178,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
         ) : (
           <span
             className={`flex shrink-0 items-center justify-center rounded-full border-2 border-dashed border-line/15 text-[10px] text-ink-faint ${
-              compact ? 'size-7' : 'size-9'
+              compact ? 'size-5' : 'size-6'
             }`}
             title={ended ? 'Hábito finalizado' : 'Hoy no toca'}
           >
@@ -187,7 +193,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
           className="min-w-0 flex-1 text-left disabled:cursor-default"
         >
           <div className="flex items-center justify-between gap-2">
-            <p className={`truncate font-bold text-ink ${compact ? 'text-sm' : 'text-sm'}`}>{habit.title}</p>
+            <p className="truncate text-sm font-medium text-ink">{habit.title}</p>
             {showCombo && combo > 0 && (
               <span
                 className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black tracking-wide text-white uppercase"
@@ -197,13 +203,13 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
               </span>
             )}
           </div>
-          <div className={`overflow-hidden rounded-full bg-ink/10 ${compact ? 'mt-1.5 h-1.5' : 'mt-2 h-2'}`}>
+          <div className={`overflow-hidden rounded-full bg-ink/10 ${compact ? 'mt-1 h-1' : 'mt-1.5 h-1.5'}`}>
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{ width: `${pct}%`, background: comboBackground(combo) }}
             />
           </div>
-          <div className={`flex items-center justify-between text-ink-faint ${compact ? 'mt-1 text-[10px]' : 'mt-1 text-[11px]'}`}>
+          <div className={`flex items-center justify-between text-[10px] text-ink-faint ${compact ? 'mt-0.5' : 'mt-1'}`}>
             <span>
               {total === null
                 ? `${done} cumplido${done === 1 ? '' : 's'} · sin fecha límite`
@@ -213,7 +219,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             {ended && <span>Finalizado</span>}
           </div>
           {pomo && (
-            <div className={compact ? 'mt-1.5' : 'mt-2'}>
+            <div className={compact ? 'mt-1' : 'mt-1.5'}>
               <div className="flex items-center justify-between text-[10px] text-ink-faint">
                 <span className="flex items-center gap-1">
                   <TimerIcon className="size-3" />
@@ -242,7 +248,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             }}
             aria-label={`Empezar pomodoro de ${habit.pomodoroMinutes} minutos`}
             title={`Pomodoro · ${habit.pomodoroMinutes} min`}
-            className="flex shrink-0 items-center gap-1 rounded-lg border border-line/10 px-2 py-1.5 text-[11px] font-semibold text-ink-dim transition-colors hover:bg-ink/5"
+            className="flex shrink-0 items-center gap-1 rounded-lg border border-line/10 px-2 py-1 text-[10px] font-semibold text-ink-dim transition-colors hover:bg-ink/5"
           >
             <svg viewBox="0 0 24 24" fill="currentColor" className="size-3" aria-hidden="true">
               <path d="M8 5.14v13.72L19 12z" />
@@ -255,14 +261,14 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
       {/* Extras solo en la vista Hábitos */}
       {!compact && (
         <>
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-line/5 pt-2.5">
+          <div className="mt-2 flex items-center justify-between gap-2 border-t border-line/5 pt-2">
             <div className="flex gap-1" aria-label="Días programados">
               {WEEKDAY_ORDER.map((day) => {
                 const active = habit.daysOfWeek.includes(day)
                 return (
                   <span
                     key={day}
-                    className={`flex size-6 items-center justify-center rounded-full text-[10px] font-bold ${
+                    className={`flex size-5 items-center justify-center rounded-full text-[9px] font-bold ${
                       active ? 'text-white' : 'text-ink-faint opacity-50'
                     }`}
                     style={active ? { backgroundColor: `${color}cc` } : undefined}

@@ -20,6 +20,7 @@ import {
   PaperclipIcon,
   SunIcon,
   TimerIcon,
+  TrashIcon,
 } from '../ui/icons'
 
 interface TaskItemProps {
@@ -33,7 +34,8 @@ interface TaskItemProps {
   hideTodayChip?: boolean
 }
 
-const chipBase = 'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium'
+// Chips compactos: la fila de configuración bajo el título ocupa lo mínimo.
+const chipBase = 'inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium'
 
 /** Menú contextual (clic derecho) de una tarea: Hoy, prioridad, completar, fecha y lista. */
 function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: number; onClose: () => void }) {
@@ -110,6 +112,12 @@ function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: nu
         { label: 'Sin lista', selected: task.listId === null, onClick: () => void updateTask(task.id, { listId: null }) },
       ],
     },
+    {
+      label: 'Eliminar tarea',
+      icon: <TrashIcon className="size-4" />,
+      danger: true,
+      onClick: () => void deleteTask(task.id),
+    },
   ]
 
   return <ContextMenu x={x} y={y} entries={entries} onClose={onClose} />
@@ -177,7 +185,7 @@ export function TaskItem({
           {task.title}
         </p>
         {!task.completed && (
-          <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
+          <span className="mt-0.5 flex flex-wrap items-center gap-1">
             {task.dueAt !== null &&
               (hideTodayChip && formatDue(task.dueAt) === 'Hoy' ? (
                 // En la pestaña Hoy: sin etiqueta redundante; solo la hora si la tiene.
@@ -225,12 +233,12 @@ export function TaskItem({
             )}
             {commentCount > 0 && (
               <span className={`${chipBase} border-line/10 text-ink-muted`}>
-                <CommentIcon className="size-3" /> {commentCount}
+                <CommentIcon className="size-2.5" /> {commentCount}
               </span>
             )}
             {attachmentCount > 0 && (
               <span className={`${chipBase} border-line/10 text-ink-muted`}>
-                <PaperclipIcon className="size-3" /> {attachmentCount}
+                <PaperclipIcon className="size-2.5" /> {attachmentCount}
               </span>
             )}
             {/* La prioridad solo se muestra si está asignada */}

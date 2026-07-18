@@ -74,12 +74,11 @@ export function Sidebar({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-3 pt-1 pb-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent-400 to-accent-600">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
-            <path d="M5 14l7-7 7 7" />
-            <path d="M5 20l7-7 7 7" />
-          </svg>
-        </div>
+        <img
+          src="/pwa-192x192.png"
+          alt="Quest"
+          className="size-8 rounded-lg object-cover shadow-sm"
+        />
         <span className="text-lg font-bold text-ink lg:text-base">Quest</span>
       </div>
 

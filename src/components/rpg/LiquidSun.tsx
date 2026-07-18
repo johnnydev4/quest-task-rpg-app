@@ -32,17 +32,18 @@ export function LiquidSun({ className }: { className?: string }) {
           <stop offset="52.4%" stopColor="#ff8400" />
           <stop offset="100%" stopColor="#ff0d00" />
         </linearGradient>
-        {/* Región en coordenadas absolutas: con porcentajes + userSpaceOnUse,
-            iOS Safari recortaba el desenfoque en un borde cuadrado. */}
-        <filter id="sun-glow" filterUnits="userSpaceOnUse" x="-400" y="-400" width="1200" height="1200">
+        {/* Región en coordenadas absolutas CEÑIDA al sol (0–400 + margen para el
+            desenfoque): con regiones enormes iOS rasteriza la máscara a baja
+            resolución y el disco se ve pixelado/no redondo en el borde. */}
+        <filter id="sun-glow" filterUnits="userSpaceOnUse" x="-50" y="-50" width="500" height="500">
           <feGaussianBlur stdDeviation="15" in="SourceGraphic" />
         </filter>
-        <filter id="sun-invert">
+        <filter id="sun-invert" filterUnits="userSpaceOnUse" x="-50" y="-50" width="500" height="500">
           <feComponentTransfer in="SourceGraphic">
             <feFuncA type="table" tableValues="1 0" />
           </feComponentTransfer>
         </filter>
-        <mask id="sun-clip" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-10000" y="-10000" width="20000" height="20000" style={{ maskType: 'alpha' }}>
+        <mask id="sun-clip" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-50" y="-50" width="500" height="500" style={{ maskType: 'alpha' }}>
           <g filter="url(#sun-invert)">
             <rect x="0" y="0" width="400" height="400" fill="#ffffff" opacity="0" />
             <g transform="matrix(1.1,0,0,1.1,289.1,223.1)">
@@ -55,7 +56,7 @@ export function LiquidSun({ className }: { className?: string }) {
         <filter id="sun-white-a">
           <feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0" />
         </filter>
-        <mask id="sun-inner" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-10000" y="-10000" width="20000" height="20000" style={{ maskType: 'alpha' }}>
+        <mask id="sun-inner" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-50" y="-50" width="500" height="500" style={{ maskType: 'alpha' }}>
           <g filter="url(#sun-white-a)" transform="matrix(1.1,0,0,1.1,289.1,223.1)">
             <g transform="matrix(1,0,0,1,-81,-21)">
               <path d={SUN_BLOB} fill="#5b71db" />
@@ -65,7 +66,7 @@ export function LiquidSun({ className }: { className?: string }) {
         <filter id="sun-white-b">
           <feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0" />
         </filter>
-        <mask id="sun-ring-a" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-10000" y="-10000" width="20000" height="20000" style={{ maskType: 'alpha' }}>
+        <mask id="sun-ring-a" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-50" y="-50" width="500" height="500" style={{ maskType: 'alpha' }}>
           <g transform="matrix(0.909,0,0,0.909,-262.818,-202.818)">
             <g filter="url(#sun-white-b)" transform="matrix(1.1,0,0,1.1,289.1,223.1)">
               <g transform="matrix(1,0,0,1,-81,-21)">
@@ -77,7 +78,7 @@ export function LiquidSun({ className }: { className?: string }) {
         <filter id="sun-white-c">
           <feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0" />
         </filter>
-        <mask id="sun-ring-b" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-10000" y="-10000" width="20000" height="20000" style={{ maskType: 'alpha' }}>
+        <mask id="sun-ring-b" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-50" y="-50" width="500" height="500" style={{ maskType: 'alpha' }}>
           <g transform="matrix(0.909,0,0,0.909,-262.818,-202.818)">
             <g filter="url(#sun-white-c)" transform="matrix(1.1,0,0,1.1,289.1,223.1)">
               <g transform="matrix(1,0,0,1,-81,-21)">

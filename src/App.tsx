@@ -4,7 +4,8 @@ import { db } from './db/db'
 import type { List, Tag } from './db/types'
 import type { View } from './lib/view'
 import { startOfDayOffset, startOfToday } from './lib/dates'
-import { sortCompleted, sortPending } from './lib/taskSort'
+import { sortCompleted, sortPending, TASK_SORT_OPTIONS, type TaskSortMode } from './lib/taskSort'
+import { SortMenu } from './components/ui/SortMenu'
 import { createTask, rollOverdueRecurringTasks } from './db/repo/tasks'
 import { getOrCreateTag } from './db/repo/tags'
 import { emitConfigOpened, onCompletion, onConfigOpened } from './lib/events'
@@ -100,6 +101,14 @@ export default function App() {
   const [view, setView] = useState<View>({ kind: 'today' })
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
+  // Criterio de orden de las tareas, recordado entre sesiones.
+  const [taskSort, setTaskSort] = useState<TaskSortMode>(
+    () => (localStorage.getItem('quest-task-sort') as TaskSortMode) || 'agenda',
+  )
+  function changeTaskSort(mode: TaskSortMode) {
+    setTaskSort(mode)
+    localStorage.setItem('quest-task-sort', mode)
+  }
 
   // Solo un panel de configuración a la vez: al abrir el detalle de tarea se
   // avisa (cierra hojas de hábito) y viceversa.
@@ -293,7 +302,7 @@ export default function App() {
         // no aparecen aquí (viven en "Todas", donde se pueden reprogramar).
         key: 'today',
         title: 'Hoy',
-        tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= sod && t.dueAt < tomorrow)),
+        tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= sod && t.dueAt < tomorrow), taskSort),
         hideTodayChip: true,
       },
       {
@@ -308,18 +317,18 @@ export default function App() {
       {
         key: 'future',
         title: 'Programadas',
-        tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= tomorrow)),
+        tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= tomorrow), taskSort),
       },
       {
         key: 'nodate',
         title: 'Sin fecha',
-        tasks: sortPending(displayPending.filter((t) => t.dueAt === null)),
+        tasks: sortPending(displayPending.filter((t) => t.dueAt === null), taskSort),
         collapsible: true,
       },
     ]
   } else if (view.kind === 'all') {
     sections = [
-      { key: 'pending', tasks: sortPending(displayPending) },
+      { key: 'pending', tasks: sortPending(displayPending, taskSort) },
       {
         key: 'done',
         title: 'Completadas',
@@ -329,7 +338,7 @@ export default function App() {
     ]
   } else if (view.kind === 'list') {
     sections = [
-      { key: 'pending', tasks: sortPending(displayPending.filter((t) => t.listId === view.listId)) },
+      { key: 'pending', tasks: sortPending(displayPending.filter((t) => t.listId === view.listId), taskSort) },
       {
         key: 'done',
         title: 'Completadas',
@@ -339,7 +348,7 @@ export default function App() {
     ]
   } else if (view.kind === 'tag') {
     sections = [
-      { key: 'pending', tasks: sortPending(displayPending.filter((t) => t.tagIds.includes(view.tagId))) },
+      { key: 'pending', tasks: sortPending(displayPending.filter((t) => t.tagIds.includes(view.tagId)), taskSort) },
       {
         key: 'done',
         title: 'Completadas',
@@ -524,6 +533,9 @@ export default function App() {
                 )}
               </div>
             </div>
+            {isTaskView && !isEmpty && (
+              <SortMenu value={taskSort} options={TASK_SORT_OPTIONS} onChange={changeTaskSort} label="Ordenar tareas" />
+            )}
             {currentList && (
               <button
                 onClick={() => setListModal({ mode: 'edit', listId: currentList.id })}

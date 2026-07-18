@@ -6,12 +6,21 @@ import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '..
 import { COMBO_TIERS, habitEnded, RAINBOW_GRADIENT } from '../../lib/habits'
 import { emitConfigOpened, onConfigOpened } from '../../lib/events'
 import { TimeSelect } from '../ui/TimeSelect'
+import { SortMenu } from '../ui/SortMenu'
 import { DayPicker } from './DayPicker'
 import { HabitCard } from './HabitCard'
 import { HabitDetailSheet } from './HabitDetailSheet'
 
 const inputClass =
   'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
+
+type HabitSortMode = 'created' | 'name' | 'end'
+
+const HABIT_SORT_OPTIONS: { id: HabitSortMode; label: string }[] = [
+  { id: 'created', label: 'Creación' },
+  { id: 'name', label: 'Nombre (A–Z)' },
+  { id: 'end', label: 'Fecha límite' },
+]
 
 export function HabitsView() {
   const habits = useLiveQuery(() => db.habits.toArray(), []) ?? []
@@ -36,7 +45,27 @@ export function HabitsView() {
     [instanceId],
   )
 
-  const active = habits.filter((h) => !habitEnded(h)).sort((a, b) => a.createdAt - b.createdAt)
+  const [habitSort, setHabitSort] = useState<HabitSortMode>(
+    () => (localStorage.getItem('quest-habit-sort') as HabitSortMode) || 'created',
+  )
+  function changeHabitSort(mode: HabitSortMode) {
+    setHabitSort(mode)
+    localStorage.setItem('quest-habit-sort', mode)
+  }
+  const sortActive = (arr: typeof habits) => {
+    const a = [...arr]
+    switch (habitSort) {
+      case 'name':
+        return a.sort((x, y) => x.title.localeCompare(y.title, 'es', { sensitivity: 'base' }))
+      case 'end':
+        // Fecha límite más próxima primero; los indefinidos, al final.
+        return a.sort((x, y) => (x.endDate ?? Infinity) - (y.endDate ?? Infinity))
+      default:
+        return a.sort((x, y) => x.createdAt - y.createdAt)
+    }
+  }
+
+  const active = sortActive(habits.filter((h) => !habitEnded(h)))
   const finished = habits.filter((h) => habitEnded(h)).sort((a, b) => (b.endDate ?? 0) - (a.endDate ?? 0))
 
   function submit(e: FormEvent) {
@@ -142,6 +171,14 @@ export function HabitsView() {
         </div>
       ) : (
         <div className="space-y-2">
+          {active.length > 0 && (
+            <div className="flex items-center justify-between px-1">
+              <span className="text-sm font-semibold text-ink-muted">
+                Activos <span className="text-xs font-normal text-ink-faint">{active.length}</span>
+              </span>
+              <SortMenu value={habitSort} options={HABIT_SORT_OPTIONS} onChange={changeHabitSort} label="Ordenar hábitos" />
+            </div>
+          )}
           {active.map((h) => (
             <HabitCard key={h.id} habit={h} onManage={() => openHabit(h.id)} />
           ))}

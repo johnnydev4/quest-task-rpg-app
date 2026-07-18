@@ -14,22 +14,47 @@ const dayOf = (t: Task) => {
   return d.getTime()
 }
 
+export type TaskSortMode = 'agenda' | 'name' | 'priority' | 'created'
+
+export const TASK_SORT_OPTIONS: { id: TaskSortMode; label: string }[] = [
+  { id: 'agenda', label: 'Fecha y hora' },
+  { id: 'name', label: 'Nombre (A–Z)' },
+  { id: 'priority', label: 'Prioridad' },
+  { id: 'created', label: 'Añadidas primero' },
+]
+
+const byName = (a: Task, b: Task) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })
+
+/** Orden de agenda: día más próximo → con hora antes que solo-fecha → prioridad → antigüedad. */
+function byAgenda(a: Task, b: Task): number {
+  const d = dayOf(a) - dayOf(b)
+  if (d !== 0) return d
+  if (a.dueHasTime !== b.dueHasTime) return a.dueHasTime ? -1 : 1
+  return (
+    (a.dueAt ?? NO_DUE) - (b.dueAt ?? NO_DUE) ||
+    weight(b.priority) - weight(a.priority) ||
+    a.createdAt - b.createdAt
+  )
+}
+
 /**
- * Pendientes, como una agenda: día más próximo primero; dentro del día, las
- * tareas CON hora en orden cronológico y las de solo-fecha después; a igualdad,
- * prioridad alta primero y por último las más antiguas. Sin fecha, al final.
+ * Pendientes ordenadas según el modo elegido por el usuario. Por defecto,
+ * agenda (día/hora). "name" alfabético, "priority" por prioridad y luego
+ * agenda, "created" las más recientes primero.
  */
-export function sortPending(tasks: Task[]): Task[] {
-  return [...tasks].sort((a, b) => {
-    const byDay = dayOf(a) - dayOf(b)
-    if (byDay !== 0) return byDay
-    if (a.dueHasTime !== b.dueHasTime) return a.dueHasTime ? -1 : 1
-    return (
-      (a.dueAt ?? NO_DUE) - (b.dueAt ?? NO_DUE) ||
-      weight(b.priority) - weight(a.priority) ||
-      a.createdAt - b.createdAt
-    )
-  })
+export function sortPending(tasks: Task[], mode: TaskSortMode = 'agenda'): Task[] {
+  const arr = [...tasks]
+  switch (mode) {
+    case 'name':
+      return arr.sort(byName)
+    case 'priority':
+      return arr.sort((a, b) => weight(b.priority) - weight(a.priority) || byAgenda(a, b))
+    case 'created':
+      return arr.sort((a, b) => b.createdAt - a.createdAt)
+    case 'agenda':
+    default:
+      return arr.sort(byAgenda)
+  }
 }
 
 /** Completadas: la más reciente primero. */

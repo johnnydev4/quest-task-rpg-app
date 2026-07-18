@@ -147,6 +147,19 @@ export function CoffeeIcon({ className }: { className?: string }) {
   )
 }
 
+/** Orden: líneas descendentes con flecha (ordenar). */
+export function SortIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M11 5h10" />
+      <path d="M11 9h7" />
+      <path d="M11 13h4" />
+      <path d="M3 17l3 3 3-3" />
+      <path d="M6 18V4" />
+    </Icon>
+  )
+}
+
 /** Papelera: eliminar. */
 export function TrashIcon({ className }: { className?: string }) {
   return (

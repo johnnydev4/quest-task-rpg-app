@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { List, Tag, Task } from '../../db/types'
-import { setTaskCompleted, skipOverdueToNearest, updateTask } from '../../db/repo/tasks'
+import { deleteTask, setTaskCompleted, skipOverdueToNearest, updateTask } from '../../db/repo/tasks'
 import { formatDue, formatDueTime, isOverdue, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
 import { playHoverTick } from '../../lib/sound'
 import { useSettings } from '../../lib/useSettings'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
+import { SwipeToDelete } from '../ui/SwipeToDelete'
 import {
   CalendarIcon,
   CheckCircleIcon,
@@ -139,6 +140,7 @@ export function TaskItem({
   const barColor = task.color ?? list?.color ?? null
 
   return (
+    <SwipeToDelete onDelete={() => void deleteTask(task.id)}>
     <div
       className="group flex items-center gap-3 rounded-xl border border-line/5 glass-panel px-3 py-1.5 transition-colors hover:border-line/15"
       onContextMenu={(e) => {
@@ -262,5 +264,6 @@ export function TaskItem({
       )}
       {menu && <TaskContextMenu task={task} x={menu.x} y={menu.y} onClose={() => setMenu(null)} />}
     </div>
+    </SwipeToDelete>
   )
 }

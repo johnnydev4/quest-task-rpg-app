@@ -8,6 +8,7 @@ import { emitToast } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
+import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { CheckCircleIcon, FlagIcon, FolderIcon, TimerIcon } from '../ui/icons'
 import {
   comboBackground,
@@ -136,6 +137,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
   }, [todayDone, logsLoaded])
 
   return (
+    <SwipeToDelete onDelete={() => void deleteHabit(habit.id)} className="rounded-2xl">
     <div
       className={`glass-strong relative overflow-hidden rounded-2xl border ${compact ? 'p-2' : 'p-3'} ${ended ? 'opacity-70' : ''}`}
       onContextMenu={(e) => {
@@ -289,5 +291,6 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
         />
       )}
     </div>
+    </SwipeToDelete>
   )
 }

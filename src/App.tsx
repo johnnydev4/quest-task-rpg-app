@@ -5,7 +5,7 @@ import type { List, Tag } from './db/types'
 import type { View } from './lib/view'
 import { startOfDayOffset, startOfToday } from './lib/dates'
 import { sortCompleted, sortPending } from './lib/taskSort'
-import { createTask } from './db/repo/tasks'
+import { createTask, rollOverdueRecurringTasks } from './db/repo/tasks'
 import { getOrCreateTag } from './db/repo/tags'
 import { emitConfigOpened, onCompletion, onConfigOpened } from './lib/events'
 import type { QuickParseResult } from './lib/quickParse'
@@ -134,6 +134,15 @@ export default function App() {
   useEffect(() => {
     startReminderScheduler()
     startAutoSync()
+  }, [])
+
+  // Recurrentes atrasadas → saltan solas a su próxima ocurrencia desde hoy
+  // (así las diarias siempre están en Hoy). Al abrir y cada 10 min por si la
+  // app queda abierta cruzando la medianoche.
+  useEffect(() => {
+    void rollOverdueRecurringTasks()
+    const t = setInterval(() => void rollOverdueRecurringTasks(), 10 * 60_000)
+    return () => clearInterval(t)
   }, [])
 
   // Al cambiar de pestaña: volver al inicio y cerrar el detalle de tarea que

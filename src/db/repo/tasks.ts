@@ -144,6 +144,19 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
 }
 
 /**
+ * Al abrir la app (y al cambiar de día con ella abierta): toda recurrente
+ * pendiente que quedó atrasada salta sola a su ocurrencia más cercana desde
+ * hoy, para que las diarias siempre aparezcan en la pestaña Hoy.
+ */
+export async function rollOverdueRecurringTasks(): Promise<void> {
+  const sod = startOfToday()
+  const stuck = (await db.tasks.toArray()).filter(
+    (t) => !t.completed && t.recurrenceRule !== null && t.dueAt !== null && t.dueAt < sod,
+  )
+  for (const t of stuck) await skipOverdueToNearest(t.id)
+}
+
+/**
  * "Saltar a hoy" de una recurrente atrasada: reprograma la tarea a su
  * ocurrencia más cercana desde hoy (diaria → hoy; cada 2 días con 1 pasado →
  * mañana), desplazando también sus recordatorios.

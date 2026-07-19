@@ -9,7 +9,6 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
   accentColor: '#8b5cf6',
   glassTint: null,
-  bgImage: null,
   bgBlur: 14,
   ambientSound: 'none',
   ambientVolume: 0.5,
@@ -18,6 +17,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pomodoroLongBreakMin: 15,
   pomodoroLongBreakEvery: 4,
   updatedAt: 0,
+  syncStatus: 'synced',
 }
 
 export async function getSettings(): Promise<Settings> {
@@ -29,5 +29,6 @@ export async function getSettings(): Promise<Settings> {
 
 export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>): Promise<void> {
   const current = await getSettings()
-  await db.settings.put({ ...current, ...patch, updatedAt: Date.now() })
+  // syncStatus 'pending' → la personalización se sube en la próxima sync.
+  await db.settings.put({ ...current, ...patch, updatedAt: Date.now(), syncStatus: 'pending' })
 }

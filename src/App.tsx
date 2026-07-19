@@ -5,6 +5,7 @@ import type { List, Tag } from './db/types'
 import type { View } from './lib/view'
 import { startOfDayOffset, startOfToday } from './lib/dates'
 import { sortCompleted, sortPending, TASK_SORT_OPTIONS, type TaskSortMode } from './lib/taskSort'
+import { levelFromXp, STAT_XP_BASE } from './lib/level'
 import { SortMenu } from './components/ui/SortMenu'
 import { createTask, rollOverdueRecurringTasks } from './db/repo/tasks'
 import { getOrCreateTag } from './db/repo/tags'
@@ -172,7 +173,8 @@ export default function App() {
   }, [settings.theme, settings.accentColor, settings.glassTint])
 
   // Fondo personalizado pre-difuminado (bitmap estático: no cuesta nada componerlo).
-  const bgUrl = useBlurredBackground(settings.bgImage, settings.bgBlur)
+  const bgBlob = useLiveQuery(async () => (await db.appMedia.get('bg'))?.blob ?? null, []) ?? null
+  const bgUrl = useBlurredBackground(bgBlob, settings.bgBlur)
 
   // Recompensa inmediata: sonido, vibración y celebración de level-up (spec §7).
   useEffect(
@@ -327,8 +329,17 @@ export default function App() {
       },
     ]
   } else if (view.kind === 'all') {
+    const isOverdue = (t: (typeof displayPending)[number]) => t.dueAt !== null && t.dueAt < sod
     sections = [
-      { key: 'pending', tasks: sortPending(displayPending, taskSort) },
+      {
+        // Categoría desplegable para las tareas atrasadas.
+        key: 'overdue',
+        title: 'Vencidas',
+        tasks: sortPending(displayPending.filter(isOverdue), taskSort),
+        collapsible: true,
+        showMoveToToday: true,
+      },
+      { key: 'pending', tasks: sortPending(displayPending.filter((t) => !isOverdue(t)), taskSort) },
       {
         key: 'done',
         title: 'Completadas',
@@ -532,7 +543,6 @@ export default function App() {
                 {isTaskView ? (
                   <p className="text-xs text-ink-faint">
                     {pendingInView === 0 ? 'Sin pendientes' : `${pendingInView} pendiente${pendingInView === 1 ? '' : 's'}`}
-                    {currentList && currentList.statLevel > 1 && ` · Nv ${currentList.statLevel}`}
                   </p>
                 ) : (
                   viewDescription && <p className="truncate text-xs text-ink-faint">{viewDescription}</p>
@@ -551,6 +561,37 @@ export default function App() {
               </button>
             )}
           </div>
+          {/* Barra de nivel PROPIA de la lista: sube cuando cumples sus tareas/hábitos */}
+          {currentList &&
+            (() => {
+              const stat = levelFromXp(currentList.statXp, STAT_XP_BASE)
+              const color = currentList.color ?? 'var(--color-accent-500)'
+              const pct = Math.min(100, Math.round((stat.intoLevel / stat.needed) * 100))
+              return (
+                <div className={`mx-auto w-full ${contentMax} px-4 pb-3 sm:px-6`}>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold"
+                      style={{ color, backgroundColor: `color-mix(in srgb, ${color} 18%, transparent)` }}
+                    >
+                      Nv {stat.level}
+                    </span>
+                    <div
+                      className="relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-ink/5"
+                      role="progressbar"
+                      aria-valuenow={stat.intoLevel}
+                      aria-valuemax={stat.needed}
+                      aria-label={`Nivel de la lista ${currentList.name}`}
+                    >
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                    </div>
+                    <span className="shrink-0 text-[11px] text-ink-faint">
+                      {stat.intoLevel}/{stat.needed} XP
+                    </span>
+                  </div>
+                </div>
+              )
+            })()}
           {/* Barra de XP compacta en móvil (en escritorio vive en la sidebar) */}
           <div className={`mx-auto w-full ${contentMax} px-4 pb-3 sm:px-6 lg:hidden`}>
             <div className="flex items-center gap-2">

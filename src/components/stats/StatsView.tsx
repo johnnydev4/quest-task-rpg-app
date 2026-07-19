@@ -17,6 +17,7 @@ import {
   YAxis,
 } from 'recharts'
 import { db } from '../../db/db'
+import { FlameIcon } from '../ui/icons'
 import { useProfile } from '../../lib/useProfile'
 import { computeStats, makeBuckets, type StatsRange } from '../../lib/statsData'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
@@ -90,7 +91,7 @@ export default function StatsView() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Summary label="Tareas completadas" value={String(stats.totals.completed)} />
-        <Summary label="Racha actual" value={streak > 0 ? `🔥 ${streak} días` : '—'} />
+        <Summary label="Racha actual" value={streak > 0 ? `${streak} días` : '—'} />
         <Summary label="Tiempo de foco" value={hours > 0 ? `${hours} h ${mins} m` : `${mins} min`} />
         <Summary label="Nivel" value={String(level)} />
       </div>
@@ -299,7 +300,7 @@ export default function StatsView() {
                 key={i}
                 className="inline-flex items-center gap-1.5 rounded-full border border-warn/30 bg-warn/10 px-3 py-1 text-xs font-medium text-warn"
               >
-                🔥 {s.days} {s.days === 1 ? 'día' : 'días'}
+                <FlameIcon className="size-3" /> {s.days} {s.days === 1 ? 'día' : 'días'}
                 <span className="text-warn/60">
                   {s.start}
                   {s.days > 1 && ` → ${s.end}`}

@@ -5,7 +5,8 @@ import { supabase } from './supabase'
  * Sincronización local-first (spec §4): Dexie es la fuente de verdad inmediata;
  * Supabase es respaldo/multi-dispositivo. Conflictos: "última escritura gana"
  * por `updatedAt`. Todo viaja por una única tabla `sync_items` (jsonb) con RLS.
- * Los ajustes (tema, sonido…) no se sincronizan: son preferencias del dispositivo.
+ * Los ajustes de personalización (tema, colores, sonidos…) SÍ se sincronizan;
+ * la imagen de fondo vive en `appMedia` y no viaja (blob pesado, por dispositivo).
  */
 
 const TABLES = [
@@ -22,6 +23,7 @@ const TABLES = [
   'questSteps',
   'habits',
   'habitLogs',
+  'settings',
 ] as const
 
 type TableName = (typeof TABLES)[number]
@@ -48,7 +50,8 @@ export function onSync(handler: (state: SyncState) => void): () => void {
 }
 
 function stripLocal(item: Record<string, unknown>): Record<string, unknown> {
-  const { syncStatus: _sync, blob: _blob, ...rest } = item
+  // bgImage: campo heredado de ajustes antiguos (ya migrado); nunca se sube.
+  const { syncStatus: _sync, blob: _blob, bgImage: _bg, ...rest } = item
   return rest
 }
 

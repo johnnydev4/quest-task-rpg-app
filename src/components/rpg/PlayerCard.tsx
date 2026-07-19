@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { onCompletion } from '../../lib/events'
 import { useProfile } from '../../lib/useProfile'
 import { titleForLevel } from '../../lib/titles'
+import { FlameIcon, SparkleIcon } from '../ui/icons'
 
 /** XP recién ganado (se limpia solo tras ~1.4 s); para el destello de las barras. */
 export function useXpGain(): { xp: number; key: number } | null {
@@ -84,8 +85,16 @@ export function PlayerCard() {
         <span>
           {intoLevel}/{needed} XP
         </span>
-        <span className={streak > 0 ? 'font-medium text-warn' : ''}>
-          {streak > 0 ? `🔥 ${streak} día${streak === 1 ? '' : 's'}` : '✨ Empieza tu racha hoy'}
+        <span className={`flex items-center gap-1 ${streak > 0 ? 'font-medium text-warn' : ''}`}>
+          {streak > 0 ? (
+            <>
+              <FlameIcon className="size-3" /> {streak} día{streak === 1 ? '' : 's'}
+            </>
+          ) : (
+            <>
+              <SparkleIcon className="size-3" /> Empieza tu racha hoy
+            </>
+          )}
         </span>
       </div>
     </div>

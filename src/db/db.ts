@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type {
+  AppMedia,
   Attachment,
   Comment,
   Habit,
@@ -33,6 +34,7 @@ const db = new Dexie('quest-db') as Dexie & {
   questSteps: EntityTable<QuestStep, 'id'>
   habits: EntityTable<Habit, 'id'>
   habitLogs: EntityTable<HabitLog, 'id'>
+  appMedia: EntityTable<AppMedia, 'id'>
 }
 
 // IndexedDB no indexa booleanos, así que `completed` se filtra en memoria
@@ -81,5 +83,17 @@ db.version(5).stores({
   habits: 'id, endDate',
   habitLogs: 'id, habitId, dateKey',
 })
+
+// Imagen de fondo movida a su propia tabla (antes vivía en la fila de ajustes,
+// y cambiar la difusión reescribía el blob entero; en iPhone eso lo rompía).
+db.version(6)
+  .stores({ appMedia: 'id' })
+  .upgrade(async (tx) => {
+    const s = (await tx.table('settings').get('app')) as { bgImage?: Blob | null } | undefined
+    if (s?.bgImage) {
+      await tx.table('appMedia').put({ id: 'bg', blob: s.bgImage })
+      await tx.table('settings').update('app', { bgImage: null })
+    }
+  })
 
 export { db }

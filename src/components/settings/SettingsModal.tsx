@@ -1,6 +1,9 @@
 import { useRef, useState, type ReactNode } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../../db/db'
 import type { ThemeMode } from '../../db/types'
 import { updateSettings } from '../../db/repo/settings'
+import { setBgImage } from '../../db/repo/media'
 import { useSettings } from '../../lib/useSettings'
 import { COMPLETION_SOUNDS, playCompletion } from '../../lib/sound'
 import { ACCENT_PRESETS } from '../../lib/theme'
@@ -132,6 +135,7 @@ export function SettingsModal({
   const fileRef = useRef<HTMLInputElement>(null)
   const bgFileRef = useRef<HTMLInputElement>(null)
   const [dataMsg, setDataMsg] = useState<string | null>(null)
+  const hasBg = useLiveQuery(async () => !!(await db.appMedia.get('bg')), []) ?? false
   // ¿El acento actual es un color libre (ninguno de los 6 predefinidos)?
   const isCustomAccent = !ACCENT_PRESETS.some(
     (p) => p.color.toLowerCase() === settings.accentColor.toLowerCase(),
@@ -292,11 +296,11 @@ export function SettingsModal({
                 onClick={() => bgFileRef.current?.click()}
                 className="rounded-lg border border-line/10 px-3 py-2 text-sm font-medium text-ink-dim transition-colors hover:bg-ink/5"
               >
-                {settings.bgImage ? 'Cambiar imagen' : 'Subir imagen'}
+                {hasBg ? 'Cambiar imagen' : 'Subir imagen'}
               </button>
-              {settings.bgImage && (
+              {hasBg && (
                 <button
-                  onClick={() => updateSettings({ bgImage: null })}
+                  onClick={() => void setBgImage(null)}
                   className="rounded-lg border border-line/10 px-3 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-ink/5"
                 >
                   Quitar fondo
@@ -314,13 +318,13 @@ export function SettingsModal({
                   if (file.size > 10 * 1024 * 1024) {
                     setDataMsg('La imagen supera los 10 MB')
                   } else {
-                    void updateSettings({ bgImage: file })
+                    void setBgImage(file)
                   }
                   e.target.value = ''
                 }}
               />
             </div>
-            {settings.bgImage && (
+            {hasBg && (
               <label className="block max-w-xs">
                 <span className="mb-1 block text-xs text-ink-faint">Difusión · {settings.bgBlur}px</span>
                 <input

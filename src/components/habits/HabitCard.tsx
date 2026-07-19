@@ -9,7 +9,7 @@ import { localDateKey } from '../../lib/dates'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
-import { CheckCircleIcon, FlagIcon, FolderIcon, TimerIcon, TrashIcon } from '../ui/icons'
+import { CheckCircleIcon, FlagIcon, FolderIcon, MoonIcon, TimerIcon, TrashIcon } from '../ui/icons'
 import {
   comboBackground,
   comboColor,
@@ -215,7 +215,11 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
                 ? `${done} cumplido${done === 1 ? '' : 's'} · sin fecha límite`
                 : `${done}/${total} · hasta el ${endLabel}`}
             </span>
-            {!compact && !ended && !scheduledToday && <span>Hoy no toca 💤</span>}
+            {!compact && !ended && !scheduledToday && (
+              <span className="flex items-center gap-1">
+                <MoonIcon className="size-3" /> Hoy no toca
+              </span>
+            )}
             {ended && <span>Finalizado</span>}
           </div>
           {pomo && (

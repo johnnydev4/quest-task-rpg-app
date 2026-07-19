@@ -241,8 +241,6 @@ export interface Settings {
   accentColor: string
   /** Tinte del efecto Liquid Glass; null = neutro (color de superficie). */
   glassTint: string | null
-  /** Imagen de fondo del área de tareas (local, por dispositivo). */
-  bgImage: Blob | null
   /** Difusión (blur) del fondo en px. */
   bgBlur: number
   ambientSound: AmbientSoundId
@@ -253,6 +251,18 @@ export interface Settings {
   pomodoroLongBreakMin: number
   pomodoroLongBreakEvery: number
   updatedAt: number
+  /** Los ajustes de personalización SÍ se sincronizan (tema, colores, sonidos…). */
+  syncStatus?: SyncStatus
+}
+
+/**
+ * Medios locales por dispositivo (id único). Hoy: la imagen de fondo ('bg').
+ * Vive en su propia tabla para que cambiar la difusión no reescriba el blob
+ * entero cada vez (en iPhone eso rompía el fondo) y para no sincronizarlo.
+ */
+export interface AppMedia {
+  id: string
+  blob: Blob
 }
 
 /** Lápida local para propagar eliminaciones a la nube (Fase 9). */

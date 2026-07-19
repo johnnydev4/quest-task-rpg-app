@@ -359,6 +359,12 @@ export default function App() {
   }
 
   const isEmpty = sections.every((s) => s.tasks.length === 0)
+  // El menú de orden se ancla a la fila del título de la primera sección con
+  // tareas (p. ej. "Hoy"), como el de la vista de hábitos junto a "Activos".
+  const firstSectionWithTasks = sections.findIndex((s) => s.tasks.length > 0)
+  const taskSortMenu = (
+    <SortMenu value={taskSort} options={TASK_SORT_OPTIONS} onChange={changeTaskSort} label="Ordenar tareas" />
+  )
   const viewTitle =
     view.kind === 'today'
       ? 'Hoy'
@@ -533,9 +539,6 @@ export default function App() {
                 )}
               </div>
             </div>
-            {isTaskView && !isEmpty && (
-              <SortMenu value={taskSort} options={TASK_SORT_OPTIONS} onChange={changeTaskSort} label="Ordenar tareas" />
-            )}
             {currentList && (
               <button
                 onClick={() => setListModal({ mode: 'edit', listId: currentList.id })}
@@ -637,7 +640,7 @@ export default function App() {
                   </p>
                 </div>
               ) : (
-                sections.map((s) => (
+                sections.map((s, i) => (
                   <TaskSection
                     key={`${JSON.stringify(view)}-${s.key}`}
                     title={s.title}
@@ -648,6 +651,7 @@ export default function App() {
                     collapsible={s.collapsible}
                     showMoveToToday={s.showMoveToToday}
                     hideTodayChip={s.hideTodayChip}
+                    action={i === firstSectionWithTasks ? taskSortMenu : undefined}
                     // Los hábitos de hoy viven dentro de la propia sección "Hoy"
                     leading={
                       s.key === 'today' && pendingHabits > 0 ? <HabitsToday section="pending" /> : undefined
@@ -667,7 +671,7 @@ export default function App() {
               </p>
             </div>
           ) : (
-            sections.map((s) => (
+            sections.map((s, i) => (
               <TaskSection
                 key={`${JSON.stringify(view)}-${s.key}`}
                 title={s.title}
@@ -677,6 +681,7 @@ export default function App() {
                 onOpen={setDetailId}
                 collapsible={s.collapsible}
                 showMoveToToday={s.showMoveToToday}
+                action={i === firstSectionWithTasks ? taskSortMenu : undefined}
               />
             ))
           )}

@@ -92,7 +92,7 @@ function HeaderViewIcon({ kind }: { kind: View['kind'] }) {
   const paths = HEADER_ICON_PATHS[kind]
   if (!paths) return null
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-7 shrink-0 text-accent-400" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6 shrink-0 text-accent-400 lg:size-7" aria-hidden="true">
       {paths}
     </svg>
   )
@@ -520,9 +520,9 @@ export default function App() {
             <button
               onClick={() => setDrawerOpen(true)}
               aria-label="Abrir menú"
-              className="flex size-9 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-ink/5 lg:hidden"
+              className="flex size-8 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-ink/5 lg:hidden"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-5" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4.5" aria-hidden="true">
                 <path d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -553,9 +553,9 @@ export default function App() {
               <button
                 onClick={() => setListModal({ mode: 'edit', listId: currentList.id })}
                 aria-label="Editar lista"
-                className="flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink lg:size-9"
+                className="flex size-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 lg:size-4.5" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5" aria-hidden="true">
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
                 </svg>
               </button>

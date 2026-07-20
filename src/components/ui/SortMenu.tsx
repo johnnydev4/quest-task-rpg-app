@@ -51,11 +51,11 @@ export function SortMenu<T extends string>({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={label}
-        className="flex items-center gap-1 rounded-lg border border-line/10 glass-input px-2 py-1 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink lg:gap-1.5 lg:px-2.5 lg:py-1.5"
+        className="flex items-center gap-1.5 rounded-lg border border-line/10 glass-input px-2.5 py-1.5 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
       >
-        <SortIcon className="size-3 lg:size-3.5" />
+        <SortIcon className="size-3.5" />
         <span className="hidden sm:inline">{current.label}</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`size-2.5 text-ink-faint transition-transform lg:size-3 ${open ? 'rotate-180' : ''}`} aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`size-3 text-ink-faint transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true">
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>

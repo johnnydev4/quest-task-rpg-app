@@ -23,6 +23,7 @@ function NavItem({
   label,
   count,
   badge,
+  fadeMetaOnHover = false,
 }: {
   active: boolean
   onClick: () => void
@@ -30,7 +31,10 @@ function NavItem({
   label: string
   count?: number
   badge?: string
+  /** Al hacer hover en la fila (grupo), nivel y contador se desvanecen para dejar sitio al lápiz de editar. */
+  fadeMetaOnHover?: boolean
 }) {
+  const metaFade = fadeMetaOnHover ? ' transition-opacity group-hover:opacity-0' : ''
   return (
     <button
       onClick={onClick}
@@ -42,10 +46,10 @@ function NavItem({
       {icon}
       <span className="min-w-0 flex-1 truncate text-left">{label}</span>
       {badge && (
-        <span className="rounded bg-accent-500/15 px-1.5 py-px text-xs font-bold text-accent-300 lg:px-1 lg:text-[10px]">{badge}</span>
+        <span className={`rounded bg-accent-500/15 px-1.5 py-px text-xs font-bold text-accent-300 lg:px-1 lg:text-[10px]${metaFade}`}>{badge}</span>
       )}
       {count !== undefined && count > 0 && (
-        <span className={`text-sm lg:text-xs ${active ? 'text-accent-300/80' : 'text-ink-faint'}`}>{count}</span>
+        <span className={`text-sm lg:text-xs ${active ? 'text-accent-300/80' : 'text-ink-faint'}${metaFade}`}>{count}</span>
       )}
     </button>
   )
@@ -193,6 +197,7 @@ export function Sidebar({
               label={list.emoji ? `${list.emoji} ${list.name}` : list.name}
               count={counts.byList[list.id] ?? 0}
               badge={list.statLevel > 1 ? `Nv ${list.statLevel}` : undefined}
+              fadeMetaOnHover
               icon={
                 <span
                   className={`size-2.5 shrink-0 rounded-full ${list.color ? '' : 'border-2 border-ink-muted'}`}
@@ -204,7 +209,7 @@ export function Sidebar({
             <button
               onClick={() => onEditList(list.id)}
               aria-label={`Editar lista ${list.name}`}
-              className="absolute top-1/2 right-8 -translate-y-1/2 rounded p-1 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink focus:opacity-100"
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink focus:opacity-100"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
@@ -233,6 +238,7 @@ export function Sidebar({
                   onClick={() => onSelect({ kind: 'tag', tagId: tag.id })}
                   label={tag.name}
                   count={counts.byTag[tag.id] ?? 0}
+                  fadeMetaOnHover
                   icon={icon(
                     <>
                       <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
@@ -243,7 +249,7 @@ export function Sidebar({
                 <button
                   onClick={() => onEditTag(tag.id)}
                   aria-label={`Editar etiqueta ${tag.name}`}
-                  className="absolute top-1/2 right-8 -translate-y-1/2 rounded p-1 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink focus:opacity-100"
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink focus:opacity-100"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
                     <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />

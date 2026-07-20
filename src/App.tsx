@@ -26,7 +26,6 @@ import { useBlurredBackground } from './lib/useBlurredBackground'
 import { ListModal } from './components/lists/ListModal'
 import { TagModal } from './components/tags/TagModal'
 import { LevelUpToast } from './components/rpg/LevelUpToast'
-import { LiquidSun } from './components/rpg/LiquidSun'
 import { useXpGain } from './components/rpg/PlayerCard'
 import { SettingsModal } from './components/settings/SettingsModal'
 import { AccountModal } from './components/account/AccountModal'
@@ -657,23 +656,25 @@ export default function App() {
               <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />
               {isEmpty && pendingHabits === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
-                  {/* El sol flota sobre una base de cristal líquido. El resplandor es un
-                      gradiente radial (iOS rasteriza mal drop-shadow sobre SVG animado). */}
+                  {/* Sol de cristal (PNG con alpha real: se funde con tema claro y oscuro).
+                      Flota con un balanceo suave y su resplandor "respira" detrás. */}
                   <div className="relative grid place-items-center py-1">
                     <div
-                      className="absolute size-36 rounded-full"
-                      style={{ background: 'radial-gradient(circle, rgba(255,132,0,0.30), transparent 65%)' }}
+                      className="absolute size-40 rounded-full"
+                      style={{
+                        background:
+                          'radial-gradient(circle, rgba(255,150,20,0.40), rgba(255,132,0,0.16) 45%, transparent 70%)',
+                        animation: 'sun-glow-pulse 4.5s ease-in-out infinite',
+                      }}
                       aria-hidden="true"
                     />
-                    {/* Translucidez simple (sin backdrop-filter: en iOS lo pinta cuadrado) */}
-                    <div
-                      className="size-20 rounded-full"
-                      style={{
-                        backgroundColor: 'color-mix(in srgb, var(--t-glass) 60%, transparent)',
-                        boxShadow: 'inset 0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent)',
-                      }}
+                    <img
+                      src="/sun-glass.png"
+                      alt=""
+                      draggable={false}
+                      className="relative size-36 select-none"
+                      style={{ animation: 'sun-float 6s ease-in-out infinite' }}
                     />
-                    <LiquidSun className="absolute size-32" />
                   </div>
                   <p className="font-medium text-ink-dim">Nada para hoy</p>
                   <p className="max-w-xs text-sm text-ink-faint">

@@ -259,6 +259,29 @@ textarea:focus {
 }
 
 /* Animaciones del sistema RPG y micro-interacciones (Fases 3 y 10) */
+/* Sol del estado vacío de Hoy: flota suavemente y su resplandor respira. */
+@keyframes sun-float {
+  0%,
+  100% {
+    transform: translateY(4px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+
+@keyframes sun-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
 /* Menú contextual: aparece con un pop sutil desde el cursor. */
 @keyframes menu-pop {
   from {

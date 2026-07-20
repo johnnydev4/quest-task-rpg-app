@@ -10,6 +10,9 @@ principles in mind. Offline-first and installable as an app on desktop and mobil
 > and refine it as I keep learning about modern web development, product design, and
 > AI-assisted engineering. Feedback and ideas are welcome.
 
+## Live demo
+[View it live](https://quest-task-rpg-app.vercel.app/)
+
 ## Features
 
 - **Tasks & lists** — Full CRUD with subtasks, colors, priorities, notes, comments,

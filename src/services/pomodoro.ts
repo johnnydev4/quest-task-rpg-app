@@ -40,6 +40,16 @@ export const PHASE_LABEL: Record<PomodoroPhase, string> = {
   long: 'Descanso largo',
 }
 
+/** Título original de la pestaña, para restaurarlo al parar el temporizador. */
+const BASE_TITLE = typeof document !== 'undefined' ? document.title : 'Quest'
+
+function formatClock(ms: number): string {
+  const total = Math.max(0, Math.round(ms / 1000))
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 function fresh(totalMs: number): PersistedState {
   return {
     phase: 'focus',
@@ -93,12 +103,23 @@ class PomodoroEngine {
 
   private publish(): void {
     this.snapshot = this.toSnapshot()
+    this.syncDocumentTitle()
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state))
     } catch {
       // sin espacio: el timer sigue funcionando en memoria
     }
     this.listeners.forEach((cb) => cb())
+  }
+
+  /** Refleja el tiempo restante en la pestaña del navegador mientras corre. */
+  private syncDocumentTitle(): void {
+    if (typeof document === 'undefined') return
+    if (this.state.status === 'running') {
+      document.title = `${formatClock(this.state.remainingMs)} · ${PHASE_LABEL[this.state.phase]}`
+    } else {
+      document.title = BASE_TITLE
+    }
   }
 
   private startTicking(): void {
@@ -118,6 +139,7 @@ class PomodoroEngine {
       void this.completePhase(true)
     } else {
       this.snapshot = this.toSnapshot()
+      this.syncDocumentTitle()
       this.listeners.forEach((cb) => cb())
     }
   }

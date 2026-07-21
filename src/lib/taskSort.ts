@@ -14,14 +14,18 @@ const dayOf = (t: Task) => {
   return d.getTime()
 }
 
-export type TaskSortMode = 'agenda' | 'name' | 'priority' | 'created'
+export type TaskSortMode = 'agenda' | 'name' | 'priority' | 'created' | 'manual'
 
 export const TASK_SORT_OPTIONS: { id: TaskSortMode; label: string }[] = [
   { id: 'agenda', label: 'Fecha y hora' },
   { id: 'name', label: 'Nombre (A–Z)' },
   { id: 'priority', label: 'Prioridad' },
   { id: 'created', label: 'Añadidas primero' },
+  { id: 'manual', label: 'Manual (arrastrar)' },
 ]
+
+/** Posición manual; las tareas antiguas usan su fecha de creación. */
+const slot = (t: Task) => t.order ?? t.createdAt
 
 const byName = (a: Task, b: Task) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })
 
@@ -51,6 +55,8 @@ export function sortPending(tasks: Task[], mode: TaskSortMode = 'agenda'): Task[
       return arr.sort((a, b) => weight(b.priority) - weight(a.priority) || byAgenda(a, b))
     case 'created':
       return arr.sort((a, b) => b.createdAt - a.createdAt)
+    case 'manual':
+      return arr.sort((a, b) => slot(a) - slot(b) || a.createdAt - b.createdAt)
     case 'agenda':
     default:
       return arr.sort(byAgenda)

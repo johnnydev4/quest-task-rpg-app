@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { TrashIcon } from './icons'
+import { isDragActive } from './Sortable'
 
 /**
  * Deslizar a la IZQUIERDA para eliminar (gesto iOS): el contenido sigue al
@@ -58,6 +59,12 @@ export function SwipeToDelete({
     }
 
     const onMove = (e: TouchEvent) => {
+      // Si la pulsación larga arrancó un arrastre de reordenación, este gesto no es un swipe.
+      if (isDragActive()) {
+        tracking = false
+        engaged = false
+        return
+      }
       if (!tracking) return
       const t = e.touches[0]
       const mx = t.clientX - startX

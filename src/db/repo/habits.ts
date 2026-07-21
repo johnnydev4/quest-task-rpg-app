@@ -32,6 +32,7 @@ export async function createHabit(input: NewHabitInput): Promise<string> {
     reminderTime: input.reminderTime ?? null,
     pomodoroMinutes: input.pomodoroMinutes ?? null,
     listId: input.listId ?? null,
+    order: now,
     createdAt: now,
     updatedAt: now,
     syncStatus: 'pending',
@@ -45,6 +46,21 @@ export async function updateHabit(
   patch: Partial<Omit<Habit, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>>,
 ): Promise<void> {
   await db.habits.update(id, { ...patch, updatedAt: Date.now(), syncStatus: 'pending' })
+}
+
+/** Aplica el orden manual de un arrastre (mismas posiciones, repartidas de nuevo). */
+export async function reorderHabits(ids: string[]): Promise<void> {
+  const found = await db.habits.bulkGet(ids)
+  const present = found.filter((h): h is Habit => !!h)
+  if (present.length < 2) return
+  const targets = ids.filter((_, i) => found[i] !== undefined)
+  const slots = present.map((h) => h.order ?? h.createdAt).sort((a, b) => a - b)
+  const now = Date.now()
+  await db.transaction('rw', db.habits, async () => {
+    for (let i = 0; i < targets.length; i++) {
+      await db.habits.update(targets[i], { order: slots[i], updatedAt: now, syncStatus: 'pending' })
+    }
+  })
 }
 
 export async function deleteHabit(id: string): Promise<void> {

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import type { List, Tag, Task } from '../../db/types'
+import { SortableItem, SortableList } from '../ui/Sortable'
 import { TaskItem } from './TaskItem'
 
 interface TaskSectionProps {
@@ -18,6 +19,10 @@ interface TaskSectionProps {
   hideTodayChip?: boolean
   /** Control a la derecha de la fila del título (p. ej. el menú de orden). */
   action?: ReactNode
+  /** Reordenar arrastrando; ausente = sección no arrastrable (completadas). */
+  onReorder?: (ids: string[]) => void
+  /** Soltar sobre una lista del menú lateral (escritorio): mueve la tarea allí. */
+  onMoveToList?: (listId: string, taskId: string) => void
 }
 
 export function TaskSection({
@@ -32,6 +37,8 @@ export function TaskSection({
   leading,
   hideTodayChip = false,
   action,
+  onReorder,
+  onMoveToList,
 }: TaskSectionProps) {
   const [open, setOpen] = useState(!collapsible)
 
@@ -75,18 +82,27 @@ export function TaskSection({
       {(!collapsible || open) && (
         <div className="space-y-1.5">
           {leading}
-          {tasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              list={task.listId ? listsById.get(task.listId) : undefined}
-              tagsById={tagsById}
-              onOpen={onOpen}
-              showMoveToToday={showMoveToToday}
-              showOverdueActions={showOverdueActions}
-              hideTodayChip={hideTodayChip}
-            />
-          ))}
+          <SortableList
+            ids={tasks.map((t) => t.id)}
+            disabled={!onReorder}
+            onReorder={(ids) => onReorder?.(ids)}
+            onDropOnList={onMoveToList}
+            className="space-y-1.5"
+          >
+            {tasks.map((task) => (
+              <SortableItem key={task.id} id={task.id}>
+                <TaskItem
+                  task={task}
+                  list={task.listId ? listsById.get(task.listId) : undefined}
+                  tagsById={tagsById}
+                  onOpen={onOpen}
+                  showMoveToToday={showMoveToToday}
+                  showOverdueActions={showOverdueActions}
+                  hideTodayChip={hideTodayChip}
+                />
+              </SortableItem>
+            ))}
+          </SortableList>
         </div>
       )}
     </section>

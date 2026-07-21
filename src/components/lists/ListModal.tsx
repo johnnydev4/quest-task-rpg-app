@@ -5,6 +5,28 @@ import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
 import { ConfirmButton } from '../ui/ConfirmButton'
 
+/**
+ * Un emoji completo: pictograma base + sus modificadores (tono de piel,
+ * variación VS16, secuencias ZWJ como 👨‍👩‍👧) o un keycap (1️⃣). Se usa para
+ * quedarse SOLO con el primer emoji de lo que escriba el usuario: letras,
+ * números y símbolos sueltos no valen como icono de lista.
+ */
+const EMOJI_RE = new RegExp(
+  [
+    // Banderas (dos indicadores regionales) y keycaps (1️⃣, #️⃣).
+    '\\p{Regional_Indicator}{2}',
+    '[#*0-9]\\uFE0F?\\u20E3',
+    // Pictograma + modificadores + posibles uniones ZWJ.
+    '\\p{Extended_Pictographic}(?:\\p{Emoji_Modifier}|\\uFE0F)*(?:\\u200D\\p{Extended_Pictographic}(?:\\p{Emoji_Modifier}|\\uFE0F)*)*',
+  ].join('|'),
+  'u',
+)
+
+/** Primer emoji del texto; cadena vacía si no hay ninguno. */
+function firstEmoji(value: string): string {
+  return value.match(EMOJI_RE)?.[0] ?? ''
+}
+
 interface ListModalProps {
   /** null → crear lista nueva. */
   list: List | null
@@ -16,12 +38,21 @@ export function ListModal({ list, onClose }: ListModalProps) {
   // Las listas nuevas empiezan sin color; represionar el color elegido lo quita.
   const [color, setColor] = useState<string | null>(list?.color ?? null)
   const [emoji, setEmoji] = useState(list?.emoji ?? '')
+  // Aviso cuando lo tecleado no contiene ningún emoji (texto o números sueltos).
+  const [emojiError, setEmojiError] = useState(false)
+
+  /** El icono personalizado solo admite emojis: se queda con el primero y descarta el resto. */
+  function handleCustomEmoji(value: string) {
+    const only = firstEmoji(value)
+    setEmoji(only)
+    setEmojiError(value.length > 0 && only === '')
+  }
 
   async function save(e: FormEvent) {
     e.preventDefault()
     const n = name.trim()
     if (!n) return
-    const em = emoji.trim() || null
+    const em = firstEmoji(emoji) || null
     if (list) await updateList(list.id, { name: n, color, emoji: em })
     else await createList(n, color, em)
     onClose()
@@ -56,7 +87,10 @@ export function ListModal({ list, onClose }: ListModalProps) {
               <button
                 key={e}
                 type="button"
-                onClick={() => setEmoji(emoji === e ? '' : e)}
+                onClick={() => {
+                  setEmoji(emoji === e ? '' : e)
+                  setEmojiError(false)
+                }}
                 aria-label={`Emoji ${e}`}
                 aria-pressed={emoji === e}
                 className={`flex size-9 items-center justify-center rounded-lg border text-lg transition-all ${
@@ -68,13 +102,17 @@ export function ListModal({ list, onClose }: ListModalProps) {
             ))}
             <input
               value={emoji}
-              onChange={(e) => setEmoji(e.target.value)}
+              onChange={(e) => handleCustomEmoji(e.target.value)}
               placeholder="Otro…"
-              maxLength={4}
+              maxLength={12}
               aria-label="Emoji personalizado de la lista"
-              className="w-20 rounded-lg border border-line/10 glass-input px-2 py-2 text-center text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/60"
+              aria-invalid={emojiError}
+              className={`w-20 rounded-lg border glass-input px-2 py-2 text-center text-sm text-ink placeholder-ink-faint outline-none ${
+                emojiError ? 'border-danger/60' : 'border-line/10 focus:border-accent-500/60'
+              }`}
             />
           </div>
+          {emojiError && <p className="text-[11px] text-danger">Solo se admiten emojis (ni texto ni números).</p>}
         </div>
 
         {list && (

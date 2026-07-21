@@ -35,6 +35,7 @@ export async function createTask(input: NewTaskInput): Promise<string> {
     completedAt: null,
     recurrenceRule: input.recurrenceRule ?? null,
     tagIds: input.tagIds ?? [],
+    order: now,
     xpValue: xpForPriority(priority),
     createdAt: now,
     updatedAt: now,
@@ -71,6 +72,25 @@ export async function updateTask(
   }
 
   await db.tasks.update(id, { ...full, updatedAt: Date.now(), syncStatus: 'pending' })
+}
+
+/**
+ * Aplica el orden manual de un arrastre. Solo se reparten las posiciones que
+ * ya ocupaban esas tareas, así reordenar dentro de una sección no altera la
+ * posición relativa de las demás.
+ */
+export async function reorderTasks(ids: string[]): Promise<void> {
+  const found = await db.tasks.bulkGet(ids)
+  const present = found.filter((t): t is Task => !!t)
+  if (present.length < 2) return
+  const targets = ids.filter((_, i) => found[i] !== undefined)
+  const slots = present.map((t) => t.order ?? t.createdAt).sort((a, b) => a - b)
+  const now = Date.now()
+  await db.transaction('rw', db.tasks, async () => {
+    for (let i = 0; i < targets.length; i++) {
+      await db.tasks.update(targets[i], { order: slots[i], updatedAt: now, syncStatus: 'pending' })
+    }
+  })
 }
 
 /** Al completar una tarea recurrente se crea la siguiente ocurrencia (con subtareas y recordatorios desplazados). */

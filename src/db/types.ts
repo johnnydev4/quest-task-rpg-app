@@ -60,6 +60,8 @@ export interface Task {
   tagIds: string[]
   /** Minutos de pomodoro asignados a la tarea; null/ausente = sin pomodoro. */
   pomodoroMinutes?: number | null
+  /** Posición manual (arrastrar y soltar). Ausente = se usa createdAt. */
+  order?: number
   xpValue: number
   createdAt: number
   updatedAt: number
@@ -195,6 +197,8 @@ export interface Habit {
   pomodoroMinutes?: number | null
   /** Lista (atributo RPG) a la que pertenece; su XP va a esa lista. */
   listId?: string | null
+  /** Posición manual (arrastrar y soltar). Ausente = se usa createdAt. */
+  order?: number
   createdAt: number
   updatedAt: number
   syncStatus: SyncStatus

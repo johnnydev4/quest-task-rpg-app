@@ -5,6 +5,8 @@ import type { Habit } from '../../db/types'
 import { emitConfigOpened, onConfigOpened } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { habitEnded, isScheduledToday } from '../../lib/habits'
+import { reorderHabits, updateHabit } from '../../db/repo/habits'
+import { SortableItem, SortableList } from '../ui/Sortable'
 import { HabitCard } from './HabitCard'
 import { HabitDetailSheet } from './HabitDetailSheet'
 
@@ -45,7 +47,10 @@ export function useTodayHabits(): { pendingHabits: Habit[]; completedHabits: Hab
     return () => clearTimeout(t)
   }, [lingering])
 
-  const today = (habits ?? []).filter((h) => isScheduledToday(h) && !habitEnded(h))
+  // Orden manual (arrastrar); los hábitos antiguos caen en su fecha de creación.
+  const today = (habits ?? [])
+    .filter((h) => isScheduledToday(h) && !habitEnded(h))
+    .sort((a, b) => (a.order ?? a.createdAt) - (b.order ?? b.createdAt))
   return {
     pendingHabits: today.filter((h) => !doneIds.has(h.id) || lingering.has(h.id)),
     completedHabits: today.filter((h) => doneIds.has(h.id) && !lingering.has(h.id)),
@@ -86,9 +91,18 @@ export function HabitsToday({ section = 'pending' }: HabitsTodayProps) {
     if (pendingHabits.length === 0) return null
     return (
       <>
-        {pendingHabits.map((h) => (
-          <HabitCard key={h.id} habit={h} compact onManage={() => openHabit(h.id)} />
-        ))}
+        <SortableList
+          ids={pendingHabits.map((h) => h.id)}
+          onReorder={(ids) => void reorderHabits(ids)}
+          onDropOnList={(listId, habitId) => void updateHabit(habitId, { listId })}
+          className="space-y-1.5"
+        >
+          {pendingHabits.map((h) => (
+            <SortableItem key={h.id} id={h.id}>
+              <HabitCard habit={h} compact onManage={() => openHabit(h.id)} />
+            </SortableItem>
+          ))}
+        </SortableList>
         {sheet}
       </>
     )

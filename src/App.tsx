@@ -7,7 +7,7 @@ import { startOfDayOffset, startOfToday } from './lib/dates'
 import { sortCompleted, sortPending, TASK_SORT_OPTIONS, type TaskSortMode } from './lib/taskSort'
 import { levelFromXp, STAT_XP_BASE } from './lib/level'
 import { SortMenu } from './components/ui/SortMenu'
-import { createTask } from './db/repo/tasks'
+import { createTask, reorderTasks, updateTask } from './db/repo/tasks'
 import { getOrCreateTag } from './db/repo/tags'
 import { emitConfigOpened, onCompletion, onConfigOpened } from './lib/events'
 import type { QuickParseResult } from './lib/quickParse'
@@ -108,6 +108,11 @@ export default function App() {
   function changeTaskSort(mode: TaskSortMode) {
     setTaskSort(mode)
     localStorage.setItem('quest-task-sort', mode)
+  }
+  // Arrastrar una tarea fija su posición: el criterio pasa a ser manual.
+  async function handleTaskReorder(ids: string[]) {
+    await reorderTasks(ids)
+    if (taskSort !== 'manual') changeTaskSort('manual')
   }
 
   // Solo un panel de configuración a la vez: al abrir el detalle de tarea se
@@ -700,6 +705,8 @@ export default function App() {
                     showOverdueActions={s.showOverdueActions}
                     hideTodayChip={s.hideTodayChip}
                     action={i === firstSectionWithTasks ? taskSortMenu : undefined}
+                    onReorder={s.key === 'done' ? undefined : (ids) => void handleTaskReorder(ids)}
+                    onMoveToList={(listId, taskId) => void updateTask(taskId, { listId })}
                     // Los hábitos de hoy viven dentro de la propia sección "Hoy"
                     leading={
                       s.key === 'today' && pendingHabits > 0 ? <HabitsToday section="pending" /> : undefined
@@ -730,6 +737,8 @@ export default function App() {
                 collapsible={s.collapsible}
                 showMoveToToday={s.showMoveToToday}
                 action={i === firstSectionWithTasks ? taskSortMenu : undefined}
+                onReorder={s.key === 'done' ? undefined : (ids) => void handleTaskReorder(ids)}
+                onMoveToList={(listId, taskId) => void updateTask(taskId, { listId })}
               />
             ))
           )}

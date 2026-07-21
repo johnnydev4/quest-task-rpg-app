@@ -41,6 +41,16 @@ export async function deleteList(id: string): Promise<void> {
   })
 }
 
+/** Aplica el orden resultante de arrastrar y soltar (ids ya en su nueva posición). */
+export async function reorderLists(ids: string[]): Promise<void> {
+  const now = Date.now()
+  await db.transaction('rw', db.lists, async () => {
+    for (let i = 0; i < ids.length; i++) {
+      await db.lists.update(ids[i], { order: i + 1, updatedAt: now, syncStatus: 'pending' })
+    }
+  })
+}
+
 /** Intercambia el orden con la lista vecina (dir -1 = subir, 1 = bajar). */
 export async function moveList(id: string, dir: -1 | 1): Promise<void> {
   const lists = await db.lists.orderBy('order').toArray()

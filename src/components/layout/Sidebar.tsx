@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import type { List, Tag } from '../../db/types'
 import type { View } from '../../lib/view'
 import { useOnlineStatus } from '../../lib/useOnlineStatus'
+import { reorderLists } from '../../db/repo/lists'
+import { SortableItem, SortableList } from '../ui/Sortable'
 import { PlayerCard } from '../rpg/PlayerCard'
 
 interface SidebarProps {
@@ -193,9 +195,19 @@ export function Sidebar({
         </button>
       </div>
 
-      <div className="flex flex-col gap-0.5">
+      {/* Las listas se reordenan arrastrando (ratón y táctil) y además son
+          zona de destino: soltar una tarea o un hábito encima la mueve aquí. */}
+      <SortableList
+        ids={lists.map((l) => l.id)}
+        onReorder={(ids) => void reorderLists(ids)}
+        className="flex flex-col gap-0.5"
+      >
         {lists.map((list) => (
-          <div key={list.id} className="group relative">
+          <SortableItem key={list.id} id={list.id}>
+          <div
+            data-drop-list={list.id}
+            className="group relative rounded-lg transition-shadow data-[drop-over=true]:ring-2 data-[drop-over=true]:ring-accent-400 data-[drop-over=true]:ring-inset"
+          >
             <NavItem
               active={view.kind === 'list' && view.listId === list.id}
               onClick={() => onSelect({ kind: 'list', listId: list.id })}
@@ -221,7 +233,11 @@ export function Sidebar({
               </svg>
             </button>
           </div>
+          </SortableItem>
         ))}
+      </SortableList>
+
+      <div className="flex flex-col gap-0.5">
         {lists.length === 0 && (
           <button
             onClick={onNewList}

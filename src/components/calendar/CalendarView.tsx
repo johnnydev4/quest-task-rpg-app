@@ -31,7 +31,15 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
   const [range, setRange] = useState({ back: 0, forward: 5 })
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const tasks = useLiveQuery(() => db.tasks.toArray(), []) ?? []
+  const lists = useLiveQuery(() => db.lists.toArray(), [])
   const settings = useSettings()
+
+  // Color efectivo de la tarea, igual que en la lista de tareas: el suyo manda
+  // y, si no tiene, hereda el de su lista.
+  const colorOf = useMemo(() => {
+    const byId = new Map((lists ?? []).map((l) => [l.id, l.color]))
+    return (t: Task) => t.color ?? (t.listId ? (byId.get(t.listId) ?? null) : null)
+  }, [lists])
 
   const currentMonthRef = useRef<HTMLElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -125,6 +133,7 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
             monthStart={ms}
             tasksByDay={tasksByDay}
             todayKey={todayKey}
+            colorOf={colorOf}
             onSelectDay={setSelectedDay}
           />
         )
@@ -149,6 +158,7 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
         <DayModal
           dayMs={selectedDay}
           tasks={tasksByDay.get(dayKeyOf(new Date(selectedDay))) ?? []}
+          colorOf={colorOf}
           onClose={() => setSelectedDay(null)}
           onOpenTask={(id) => {
             setSelectedDay(null)
@@ -164,12 +174,14 @@ function MonthGrid({
   monthStart,
   tasksByDay,
   todayKey,
+  colorOf,
   onSelectDay,
   ref,
 }: {
   monthStart: number
   tasksByDay: Map<string, Task[]>
   todayKey: string
+  colorOf: (t: Task) => string | null
   onSelectDay: (ms: number) => void
   ref?: React.Ref<HTMLElement>
 }) {
@@ -220,30 +232,36 @@ function MonthGrid({
               </span>
               {/* Escritorio: mini-chips con título; móvil: puntos */}
               <span className="hidden min-w-0 flex-col gap-0.5 md:flex">
-                {dayTasks.slice(0, 3).map((t) => (
-                  <span
-                    key={t.id}
-                    className={`truncate rounded px-1 py-px text-[10px] leading-tight ${
-                      t.completed ? 'line-through opacity-50' : ''
-                    } ${t.color ? '' : 'bg-accent-500/15 text-accent-300'}`}
-                    style={t.color ? { backgroundColor: `${t.color}26`, color: t.color } : undefined}
-                  >
-                    {t.dueHasTime && `${formatDueTime(t.dueAt!)} `}
-                    {t.title}
-                  </span>
-                ))}
+                {dayTasks.slice(0, 3).map((t) => {
+                  const c = colorOf(t)
+                  return (
+                    <span
+                      key={t.id}
+                      className={`truncate rounded px-1 py-px text-[10px] leading-tight ${
+                        t.completed ? 'line-through opacity-50' : ''
+                      } ${c ? '' : 'bg-accent-500/15 text-accent-300'}`}
+                      style={c ? { backgroundColor: `color-mix(in srgb, ${c} 18%, transparent)`, color: c } : undefined}
+                    >
+                      {t.dueHasTime && `${formatDueTime(t.dueAt!)} `}
+                      {t.title}
+                    </span>
+                  )
+                })}
                 {dayTasks.length > 3 && (
                   <span className="px-1 text-[10px] text-ink-faint">+{dayTasks.length - 3} más</span>
                 )}
               </span>
               <span className="flex flex-wrap items-center gap-0.5 md:hidden">
-                {dayTasks.slice(0, 4).map((t) => (
-                  <span
-                    key={t.id}
-                    className={`size-1.5 rounded-full ${t.completed ? 'opacity-40' : ''} ${t.color ? '' : 'bg-accent-500'}`}
-                    style={t.color ? { backgroundColor: t.color } : undefined}
-                  />
-                ))}
+                {dayTasks.slice(0, 4).map((t) => {
+                  const c = colorOf(t)
+                  return (
+                    <span
+                      key={t.id}
+                      className={`size-1.5 rounded-full ${t.completed ? 'opacity-40' : ''} ${c ? '' : 'bg-accent-500'}`}
+                      style={c ? { backgroundColor: c } : undefined}
+                    />
+                  )
+                })}
                 {dayTasks.length > 4 && <span className="text-[9px] text-ink-faint">+{dayTasks.length - 4}</span>}
               </span>
             </button>
@@ -257,11 +275,13 @@ function MonthGrid({
 function DayModal({
   dayMs,
   tasks,
+  colorOf,
   onClose,
   onOpenTask,
 }: {
   dayMs: number
   tasks: Task[]
+  colorOf: (t: Task) => string | null
   onClose: () => void
   onOpenTask: (id: string) => void
 }) {
@@ -328,8 +348,8 @@ function DayModal({
                 className="flex w-full items-center gap-2.5 rounded-lg border border-line/5 glass-input px-3 py-2 text-left transition-colors hover:border-line/15"
               >
                 <span
-                  className={`size-2 shrink-0 rounded-full ${t.color ? '' : 'bg-accent-500'}`}
-                  style={t.color ? { backgroundColor: t.color } : undefined}
+                  className={`size-2 shrink-0 rounded-full ${colorOf(t) ? '' : 'bg-accent-500'}`}
+                  style={colorOf(t) ? { backgroundColor: colorOf(t)! } : undefined}
                   aria-hidden="true"
                 />
                 <span

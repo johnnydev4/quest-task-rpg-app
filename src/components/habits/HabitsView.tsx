@@ -1,7 +1,8 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
-import { createHabit } from '../../db/repo/habits'
+import { createHabit, reorderHabits, updateHabit } from '../../db/repo/habits'
+import { SortableItem, SortableList } from '../ui/Sortable'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { COMBO_TIERS, habitEnded, RAINBOW_GRADIENT } from '../../lib/habits'
 import { emitConfigOpened, onConfigOpened } from '../../lib/events'
@@ -14,12 +15,13 @@ import { HabitDetailSheet } from './HabitDetailSheet'
 const inputClass =
   'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
 
-type HabitSortMode = 'created' | 'name' | 'end'
+type HabitSortMode = 'created' | 'name' | 'end' | 'manual'
 
 const HABIT_SORT_OPTIONS: { id: HabitSortMode; label: string }[] = [
   { id: 'created', label: 'Creación' },
   { id: 'name', label: 'Nombre (A–Z)' },
   { id: 'end', label: 'Fecha límite' },
+  { id: 'manual', label: 'Manual (arrastrar)' },
 ]
 
 export function HabitsView() {
@@ -60,9 +62,17 @@ export function HabitsView() {
       case 'end':
         // Fecha límite más próxima primero; los indefinidos, al final.
         return a.sort((x, y) => (x.endDate ?? Infinity) - (y.endDate ?? Infinity))
+      case 'manual':
+        return a.sort((x, y) => (x.order ?? x.createdAt) - (y.order ?? y.createdAt))
       default:
         return a.sort((x, y) => x.createdAt - y.createdAt)
     }
+  }
+
+  // Arrastrar un hábito fija su posición: el criterio pasa a ser manual.
+  async function handleReorder(ids: string[]) {
+    await reorderHabits(ids)
+    if (habitSort !== 'manual') changeHabitSort('manual')
   }
 
   const active = sortActive(habits.filter((h) => !habitEnded(h)))
@@ -179,9 +189,18 @@ export function HabitsView() {
               <SortMenu value={habitSort} options={HABIT_SORT_OPTIONS} onChange={changeHabitSort} label="Ordenar hábitos" />
             </div>
           )}
-          {active.map((h) => (
-            <HabitCard key={h.id} habit={h} onManage={() => openHabit(h.id)} />
-          ))}
+          <SortableList
+            ids={active.map((h) => h.id)}
+            onReorder={(ids) => void handleReorder(ids)}
+            onDropOnList={(listId, habitId) => void updateHabit(habitId, { listId })}
+            className="space-y-2"
+          >
+            {active.map((h) => (
+              <SortableItem key={h.id} id={h.id}>
+                <HabitCard habit={h} onManage={() => openHabit(h.id)} />
+              </SortableItem>
+            ))}
+          </SortableList>
         </div>
       )}
 

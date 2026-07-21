@@ -96,4 +96,23 @@ db.version(6)
     }
   })
 
+// Orden manual (arrastrar y soltar) de tareas y hábitos. Los registros
+// existentes heredan su fecha de creación como posición: así el orden manual
+// arranca igual que "más antiguas primero" y cada valor es único.
+db.version(7)
+  .stores({
+    tasks: 'id, listId, dueAt, updatedAt, order, *tagIds',
+    habits: 'id, endDate, order',
+  })
+  .upgrade(async (tx) => {
+    for (const table of ['tasks', 'habits'] as const) {
+      await tx
+        .table(table)
+        .toCollection()
+        .modify((r) => {
+          r.order ??= r.createdAt
+        })
+    }
+  })
+
 export { db }

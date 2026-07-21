@@ -377,7 +377,8 @@ export function QuestsView() {
               </div>
             ) : (
               <ForgeRow
-                placeholder={`¿Cuál es tu gran gesta del mes? (p. ej. "Terminar el curso de…")`}
+                caption="Gran misión del mes"
+                placeholder="¿Cuál es tu gran gesta?"
                 ariaLabel="Gran misión del mes"
                 theme={theme}
                 onCreate={(title) => void createQuest(monthKey, 0, title)}
@@ -525,19 +526,27 @@ export function QuestsView() {
   )
 }
 
-/** Fila de entrada para forjar una misión (estilo "añadir tarea personalizada"). */
+/**
+ * Fila de entrada para forjar una misión. Minimalista: el contexto (semana y
+ * rango) vive en una etiqueta pequeña arriba, el campo lleva un placeholder
+ * corto que nunca se corta, y "Forjar" solo aparece cuando ya hay texto.
+ */
 function ForgeRow({
+  caption,
   placeholder,
   ariaLabel,
   theme,
   onCreate,
 }: {
+  /** Etiqueta contextual sobre el campo (p. ej. "Semana 3 · 15 – 21 jul"). */
+  caption?: string
   placeholder: string
   ariaLabel: string
   theme: MonthTheme
   onCreate: (title: string) => void
 }) {
   const [title, setTitle] = useState('')
+  const hasText = title.trim().length > 0
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -548,24 +557,36 @@ function ForgeRow({
   }
 
   return (
-    <form onSubmit={submit} className="flex items-center gap-2 rounded-xl border border-dashed border-line/15 px-3 py-2">
-      <span className="text-lg text-ink-faint" aria-hidden="true">
-        +
-      </span>
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder={placeholder}
-        aria-label={ariaLabel}
-        className="min-w-0 flex-1 border-none bg-transparent text-sm text-ink placeholder-ink-faint outline-none focus:shadow-none"
-      />
-      <button
-        type="submit"
-        className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-        style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
-      >
-        Forjar
-      </button>
+    <form
+      onSubmit={submit}
+      className="rounded-xl border border-dashed border-line/15 px-3 py-2.5 transition-colors focus-within:border-line/30"
+    >
+      {caption && (
+        <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold tracking-wide text-ink-faint uppercase">
+          <SwordIcon className="size-3" /> {caption}
+        </p>
+      )}
+      <div className="flex items-center gap-2">
+        <span className="shrink-0 text-base leading-none text-ink-faint" aria-hidden="true">
+          +
+        </span>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
+          className="min-w-0 flex-1 border-none bg-transparent text-sm text-ink placeholder-ink-faint outline-none focus:shadow-none"
+        />
+        {hasText && (
+          <button
+            type="submit"
+            className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+            style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
+          >
+            Forjar
+          </button>
+        )}
+      </div>
     </form>
   )
 }
@@ -743,7 +764,8 @@ function WeeklyQuestRow({
     }
     return (
       <ForgeRow
-        placeholder={`Forjar misión · Semana ${week} (${rangeLabel})…`}
+        caption={`Semana ${week} · ${rangeLabel}`}
+        placeholder="Nombra tu misión…"
         ariaLabel={`Misión de la semana ${week}`}
         theme={theme}
         onCreate={onCreate}

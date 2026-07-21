@@ -138,6 +138,8 @@ class PomodoroEngine {
     listId?: string | null
     habitId?: string | null
   }): Promise<void> {
+    // Termina limpiamente cualquier sesión en curso (registra su foco) antes de empezar.
+    await this.finalizeActive()
     const s = await getSettings()
     const totalMs = Math.max(1, s.pomodoroFocusMin) * 60_000
     // Sesión nueva: cualquier pausa manual del sonido ambiental queda olvidada.
@@ -153,7 +155,7 @@ class PomodoroEngine {
       linkTaskId: link?.taskId ?? null,
       linkListId: link?.listId ?? null,
       linkHabitId: link?.habitId ?? null,
-      pomodorosDone: this.state.status === 'idle' ? this.state.pomodorosDone : 0,
+      pomodorosDone: 0,
     }
     if (s.soundEnabled) startAmbient(s.ambientSound, s.ambientVolume)
     this.startTicking()
@@ -251,6 +253,29 @@ class PomodoroEngine {
     const totalMs = this.state.totalMs
     this.state = { ...fresh(totalMs), pomodorosDone: 0 }
     this.publish()
+  }
+
+  /**
+   * Cierra la sesión activa por interrupción (arrancar otra): si va en foco,
+   * registra los minutos reales acumulados. No avanza de fase ni notifica.
+   */
+  private async finalizeActive(): Promise<void> {
+    if (this.state.status === 'idle') return
+    if (this.state.phase === 'focus') {
+      const remainingMs =
+        this.state.status === 'running' ? Math.max(0, this.state.endsAt - Date.now()) : this.state.remainingMs
+      const focusMinutes = Math.max(0, Math.round((this.state.totalMs - remainingMs) / 60_000))
+      if (focusMinutes >= 1) {
+        await this.recordSession(focusMinutes, false)
+        // Integración RPG: 1 XP por minuto de foco real (spec §8).
+        const listId = await this.resolveListId()
+        await applyXp(focusMinutes, listId, { touchStreak: false })
+        emitToast({ title: `Sesión de foco: ${focusMinutes} min`, body: `+${focusMinutes} XP · guardado` })
+      }
+    }
+    stopAmbient()
+    this.stopTicking()
+    this.state.status = 'idle'
   }
 
   private async completePhase(natural: boolean): Promise<void> {

@@ -169,34 +169,37 @@ a {
 
 /*
  * Bordes "espejo líquido": lo que se acerca a una barra pegajosa se difumina de
- * forma progresiva en vez de cruzar el borde con el texto nítido. Una capa con
- * backdrop-filter y máscara en degradado hace que el blur se desvanezca.
+ * forma progresiva en vez de cruzar el borde con el texto nítido.
+ *
+ * IMPORTANTE: estas capas deben ser HERMANAS de la barra, nunca hijas. Un
+ * elemento con backdrop-filter crea un "backdrop root", y una capa anidada
+ * dentro de él sólo muestrearía la propia barra (vacía) en vez de la página.
  */
-.edge-blur-bottom::after {
-  content: '';
+.veil-down,
+.veil-up {
   position: absolute;
   inset-inline: 0;
-  top: 100%;
-  height: 32px;
   pointer-events: none;
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--t-glass) 30%, transparent), transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* Bajo el header: nítido pegado a la barra, limpio 36px más abajo. */
+.veil-down {
+  top: 100%;
+  height: 36px;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--t-glass) 35%, transparent), transparent);
   -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
   mask-image: linear-gradient(to bottom, #000, transparent);
 }
 
-/* Igual, pero hacia arriba: para la barra inferior de añadir tarea. */
-.edge-blur-up::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
+/* Sobre la barra de añadir tarea: cubre su hueco y se desvanece hacia arriba. */
+.veil-up {
+  top: -28px;
+  bottom: 0;
   background: linear-gradient(to top, color-mix(in srgb, var(--t-glass) 55%, transparent), transparent);
-  -webkit-mask-image: linear-gradient(to top, #000 45%, transparent);
-  mask-image: linear-gradient(to top, #000 45%, transparent);
+  -webkit-mask-image: linear-gradient(to top, #000 40%, transparent);
+  mask-image: linear-gradient(to top, #000 40%, transparent);
 }
 
 /*

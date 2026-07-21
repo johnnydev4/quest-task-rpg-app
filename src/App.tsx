@@ -524,7 +524,10 @@ export default function App() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="edge-blur-bottom sticky top-0 z-10 border-b border-line/5 glass-bar pt-[env(safe-area-inset-top)]">
+        {/* Contenedor pegajoso SIN backdrop-filter: la capa de difuminado debe ser
+            hermana del header, no hija, o no vería la página que pasa por detrás. */}
+        <div className="sticky top-0 z-10">
+        <header className="border-b border-line/5 glass-bar pt-[env(safe-area-inset-top)]">
           <div className={`mx-auto flex w-full ${contentMax} items-center gap-3 px-4 py-4 sm:px-6`}>
             <button
               onClick={() => setDrawerOpen(true)}
@@ -640,6 +643,8 @@ export default function App() {
             </div>
           </div>
         </header>
+          <div className="veil-down" aria-hidden="true" />
+        </div>
 
         <main className={`mx-auto w-full ${contentMax} flex-1 space-y-6 px-4 py-5 sm:px-6`}>
           {view.kind === 'quests' ? (
@@ -745,7 +750,8 @@ export default function App() {
         </main>
 
         {isTaskView && (
-          <div className="edge-blur-up sticky bottom-0 z-10">
+          <div className="sticky bottom-0 z-10">
+            <div className="veil-up" aria-hidden="true" />
             <div className="relative mx-auto w-full max-w-7xl px-4 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
               <QuickAdd
                 placeholder={

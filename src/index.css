@@ -161,74 +161,18 @@ a {
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
 }
 
-.glass-bar {
-  background-color: color-mix(in srgb, var(--t-glass) 78%, transparent);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-}
-
 /*
- * Bordes "espejo líquido": lo que se acerca a una barra pegajosa se difumina de
- * forma progresiva en vez de cruzar el borde con el texto nítido.
+ * Barras pegajosas (header, sidebar, barra de añadir tarea): el cristal va en
+ * la BARRA misma, no en capas aparte. Lo que scrollea por debajo se difumina al
+ * pasar bajo ella, que es el efecto "glassmorphism header".
  *
- * Dos reglas que hacen o rompen el efecto:
- * 1. Las capas deben ser HERMANAS de la barra, nunca hijas: un elemento con
- *    backdrop-filter crea un "backdrop root", y una capa anidada dentro sólo
- *    muestrearía la propia barra (vacía) en vez de la página.
- * 2. Nada de mask-image sobre backdrop-filter: iOS Safari lo ignora y la capa
- *    desaparece. El degradado se consigue apilando capas de distinta altura,
- *    cada una con su blur, que se suman donde se solapan.
+ * Nada de capas extra ni mask-image: una capa aparte se ve como una franja
+ * suelta, e iOS Safari ignora backdrop-filter cuando hay mask-image.
  */
-.veil-down,
-.veil-up {
-  position: absolute;
-  inset-inline: 0;
-  pointer-events: none;
-}
-
-.veil-down::before,
-.veil-down::after,
-.veil-up::before,
-.veil-up::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  backdrop-filter: blur(8px) saturate(140%);
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
-}
-
-/* Bajo el header: muy difuso pegado a la barra, limpio 36px más abajo. */
-.veil-down {
-  top: 100%;
-  height: 36px;
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--t-glass) 40%, transparent), transparent);
-}
-
-.veil-down::before {
-  top: 0;
-  height: 36px;
-}
-
-.veil-down::after {
-  top: 0;
-  height: 16px;
-}
-
-/* Sobre la barra de añadir tarea: cubre su hueco y se aclara hacia arriba. */
-.veil-up {
-  top: -32px;
-  bottom: 0;
-  background: linear-gradient(to top, color-mix(in srgb, var(--t-glass) 60%, transparent), transparent);
-}
-
-.veil-up::before {
-  top: 0;
-  bottom: 0;
-}
-
-.veil-up::after {
-  top: 18px;
-  bottom: 0;
+.glass-bar {
+  background-color: color-mix(in srgb, var(--t-glass) 60%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
 
 /*

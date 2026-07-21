@@ -49,9 +49,9 @@ export function QuickAdd({ placeholder, onAdd }: QuickAddProps) {
           placeholder={placeholder}
           aria-label="Añadir tarea"
           enterKeyHint="done"
-          // Sin backdrop-filter (glass-input): va anidado dentro de la barra de
-          // cristal, e iOS ignora el blur anidado dejando el control plano.
-          className="min-w-0 flex-1 rounded-xl border border-line/10 glass-input px-4 py-3 text-sm text-ink placeholder-ink-faint shadow-lg outline-none transition-colors focus:border-accent-500/60"
+          // glass-panel (con blur propio): el contenedor de alrededor es
+          // transparente, así que aquí no hay anidamiento que iOS ignore.
+          className="min-w-0 flex-1 rounded-xl border border-line/10 glass-panel px-4 py-3 text-sm text-ink placeholder-ink-faint shadow-lg outline-none transition-colors focus:border-accent-500/60"
         />
         <button
           type="submit"

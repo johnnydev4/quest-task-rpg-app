@@ -745,8 +745,10 @@ export default function App() {
         </main>
 
         {isTaskView && (
-          <div className="sticky bottom-0 z-10 border-t border-line/5 glass-bar">
-            <div className="mx-auto w-full max-w-7xl px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+          // Sin barra alrededor: el contenedor es transparente y sólo flotan el
+          // campo y el botón, que son los que llevan el cristal.
+          <div className="sticky bottom-0 z-10">
+            <div className="mx-auto w-full max-w-7xl px-4 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
               <QuickAdd
                 placeholder={
                   view.kind === 'today'

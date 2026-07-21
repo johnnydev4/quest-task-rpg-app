@@ -19,12 +19,49 @@ function mmss(ms: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+// Interpreta lo que el usuario escribe en el reloj: "mm:ss", solo minutos
+// ("25") o incluso segundos sueltos. Devuelve ms, o null si no es un número.
+function parseClock(input: string): number | null {
+  const t = input.trim()
+  if (!t) return null
+  if (t.includes(':')) {
+    const [mPart, sPart] = t.split(':')
+    const m = Number.parseInt(mPart, 10)
+    const s = Number.parseInt(sPart, 10)
+    if (Number.isNaN(m) && Number.isNaN(s)) return null
+    return ((Number.isNaN(m) ? 0 : m) * 60 + (Number.isNaN(s) ? 0 : s)) * 1000
+  }
+  const mins = Number.parseFloat(t)
+  if (Number.isNaN(mins)) return null
+  return Math.round(mins * 60_000)
+}
+
 const selectClass =
   'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink outline-none focus:border-accent-500/60'
 
-function Ring({ progress, label, sub }: { progress: number; label: string; sub: string }) {
+function Ring({
+  progress,
+  label,
+  sub,
+  onEdit,
+}: {
+  progress: number
+  label: string
+  sub: string
+  // Presente ⇒ el reloj es editable: clic al valor y escribir el nuevo tiempo.
+  onEdit?: (ms: number) => void
+}) {
   const r = 110
   const c = 2 * Math.PI * r
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+
+  function commit() {
+    setEditing(false)
+    const ms = parseClock(draft)
+    if (ms != null && onEdit) onEdit(ms)
+  }
+
   return (
     <div className="relative flex items-center justify-center">
       <svg width="260" height="260" viewBox="0 0 260 260" className="-rotate-90">
@@ -42,7 +79,37 @@ function Ring({ progress, label, sub }: { progress: number; label: string; sub: 
         />
       </svg>
       <div className="absolute flex flex-col items-center gap-1">
-        <span className="font-mono text-5xl font-bold text-ink tabular-nums">{label}</span>
+        {editing ? (
+          <input
+            autoFocus
+            type="text"
+            inputMode="numeric"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onFocus={(e) => e.target.select()}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commit()
+              else if (e.key === 'Escape') setEditing(false)
+            }}
+            aria-label="Editar el tiempo del reloj"
+            className="w-40 rounded-lg border border-accent-500/60 bg-transparent text-center font-mono text-5xl font-bold text-ink tabular-nums outline-none"
+          />
+        ) : onEdit ? (
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(label)
+              setEditing(true)
+            }}
+            title="Toca para editar el tiempo"
+            className="rounded-lg font-mono text-5xl font-bold text-ink tabular-nums transition-colors hover:text-accent-300"
+          >
+            {label}
+          </button>
+        ) : (
+          <span className="font-mono text-5xl font-bold text-ink tabular-nums">{label}</span>
+        )}
         <span className="text-sm text-ink-muted">{sub}</span>
       </div>
     </div>
@@ -310,6 +377,7 @@ export function StudyView() {
           progress={progress}
           label={mmss(timer.remainingMs)}
           sub={linkedTask?.title ?? linkedHabit?.title ?? 'Sesión de estudio'}
+          onEdit={(ms) => pomodoro.setRemaining(ms)}
         />
         <div className="flex items-center gap-1.5" aria-label={`${timer.pomodorosDone} pomodoros completados`}>
           {Array.from({ length: Math.max(4, timer.pomodorosDone) }).map((_, i) => (
@@ -405,7 +473,12 @@ export function StudyView() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-center gap-6 rounded-2xl border border-line/5 glass-panel px-6 py-8">
-        <Ring progress={0} label={mmss(settings.pomodoroFocusMin * 60_000)} sub="Listo para enfocar" />
+        <Ring
+          progress={0}
+          label={mmss(settings.pomodoroFocusMin * 60_000)}
+          sub="Listo para enfocar"
+          onEdit={(ms) => void updateSettings({ pomodoroFocusMin: Math.max(1, Math.round(ms / 60_000)) })}
+        />
         <button
           onClick={() =>
             pomodoro.start({

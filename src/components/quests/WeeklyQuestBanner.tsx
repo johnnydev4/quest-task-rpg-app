@@ -19,6 +19,15 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
   const acceptKey = `quest-reto-aceptado-${monthKey}`
   const [declined, setDeclined] = useState(() => localStorage.getItem(declineKey) === '1')
   const [accepted, setAccepted] = useState(() => localStorage.getItem(acceptKey) === '1')
+
+  // Cerrar el banner de una misión ya conquistada (por semana). Reaparece en
+  // una semana nueva o el mes siguiente; entrar a Misiones sigue disponible.
+  const dismissKey = `quest-banner-cerrado-${monthKey}-w${week}`
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(dismissKey) === '1')
+  function dismiss() {
+    localStorage.setItem(dismissKey, '1')
+    setDismissed(true)
+  }
   function decline() {
     localStorage.setItem(declineKey, '1')
     setDeclined(true)
@@ -76,13 +85,29 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
     )
   }
 
+  // Conquistada y cerrada por el usuario: fuera de Hoy hasta la próxima semana.
+  if (quest.completed && dismissed) return null
+
   const done = steps.filter((s) => s.completed).length
 
   return (
-    <button
-      onClick={onOpen}
-      className="relative w-full overflow-hidden rounded-2xl border p-4 text-left transition-transform hover:scale-[1.01] active:scale-100"
-      style={{
+    <div className="relative w-full">
+      {quest.completed && (
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Cerrar misión conquistada"
+          className="absolute top-2 right-2 z-10 flex size-7 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/10 hover:text-ink"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+      <button
+        onClick={onOpen}
+        className="relative w-full overflow-hidden rounded-2xl border p-4 text-left transition-transform hover:scale-[1.01] active:scale-100"
+        style={{
         borderColor: `${theme.colorA}80`,
         // Cristal líquido teñido con el color del mes: más opaco pero translúcido, con blur del fondo.
         background: `linear-gradient(120deg, ${theme.colorA}7a, ${theme.colorB}47 72%)`,
@@ -123,6 +148,7 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
           </div>
         )}
       </div>
-    </button>
+      </button>
+    </div>
   )
 }

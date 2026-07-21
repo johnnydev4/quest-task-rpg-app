@@ -115,4 +115,17 @@ db.version(7)
     }
   })
 
+// Corrige duraciones de pomodoro que quedaron desviadas (foco 27 / descanso 7)
+// por pruebas previas: los valores correctos son 25 y 5 minutos.
+db.version(8).upgrade(async (tx) => {
+  const s = (await tx.table('settings').get('app')) as
+    | { pomodoroFocusMin?: number; pomodoroShortBreakMin?: number }
+    | undefined
+  if (!s) return
+  const patch: Record<string, number> = {}
+  if (s.pomodoroFocusMin === 27) patch.pomodoroFocusMin = 25
+  if (s.pomodoroShortBreakMin === 7) patch.pomodoroShortBreakMin = 5
+  if (Object.keys(patch).length > 0) await tx.table('settings').update('app', patch)
+})
+
 export { db }

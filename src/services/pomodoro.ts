@@ -201,6 +201,20 @@ class PomodoroEngine {
     this.publish()
   }
 
+  /**
+   * Fija el tiempo restante de la fase en curso (editar el reloj a mano).
+   * Solo con sesión activa; en marcha recalcula el fin real para que aplique ya.
+   */
+  setRemaining(ms: number): void {
+    if (this.state.status === 'idle') return
+    const clamped = Math.max(1000, Math.round(ms))
+    this.state.remainingMs = clamped
+    // El anillo mide progreso contra totalMs: nunca dejar el restante por encima.
+    this.state.totalMs = Math.max(this.state.totalMs, clamped)
+    if (this.state.status === 'running') this.state.endsAt = Date.now() + clamped
+    this.publish()
+  }
+
   pause(): void {
     if (this.state.status !== 'running') return
     this.state.status = 'paused'

@@ -524,7 +524,7 @@ export default function App() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 border-b border-line/5 glass-bar pt-[env(safe-area-inset-top)]">
+        <header className="edge-blur-bottom sticky top-0 z-10 border-b border-line/5 glass-bar pt-[env(safe-area-inset-top)]">
           <div className={`mx-auto flex w-full ${contentMax} items-center gap-3 px-4 py-4 sm:px-6`}>
             <button
               onClick={() => setDrawerOpen(true)}
@@ -745,8 +745,8 @@ export default function App() {
         </main>
 
         {isTaskView && (
-          <div className="sticky bottom-0 z-10">
-            <div className="mx-auto w-full max-w-7xl px-4 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+          <div className="edge-blur-up sticky bottom-0 z-10">
+            <div className="relative mx-auto w-full max-w-7xl px-4 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
               <QuickAdd
                 placeholder={
                   view.kind === 'today'

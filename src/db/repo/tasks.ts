@@ -3,7 +3,7 @@ import { db } from '../db'
 import type { Priority, Task } from '../types'
 import { xpForPriority } from '../../lib/xp'
 import { emitCompletion, emitToast } from '../../lib/events'
-import { allowsNext, nextOccurrence, ruleForNext } from '../../lib/recurrence'
+import { allowsNext, firstDayOfWeekOnOrAfter, nextOccurrence, ruleForNext } from '../../lib/recurrence'
 import { startOfToday } from '../../lib/dates'
 import { applyXp } from './progress'
 import { recordDeletion } from './tombstones'
@@ -51,6 +51,25 @@ export async function updateTask(
   const full: Partial<Task> = { ...patch }
   // El XP siempre refleja la prioridad vigente (incluido quitarla → XP base).
   if (patch.priority !== undefined) full.xpValue = xpForPriority(patch.priority)
+
+  // Al cambiar los días de una repetición semanal, la instancia pendiente se
+  // realinea a la ocurrencia más cercana DESDE HOY: si hoy es lunes y añades
+  // el lunes, la tarea baja a Hoy en vez de seguir apuntando a mañana.
+  const days = patch.recurrenceRule?.daysOfWeek
+  if (patch.recurrenceRule !== undefined && days && days.length > 0) {
+    const task = await db.tasks.get(id)
+    const dueAt = patch.dueAt !== undefined ? patch.dueAt : (task?.dueAt ?? null)
+    const hasTime = patch.dueHasTime ?? task?.dueHasTime ?? false
+    let aligned = firstDayOfWeekOnOrAfter(startOfToday(), days)
+    if (hasTime && dueAt !== null) {
+      const prev = new Date(dueAt)
+      const withTime = new Date(aligned)
+      withTime.setHours(prev.getHours(), prev.getMinutes(), 0, 0)
+      aligned = withTime.getTime()
+    }
+    if (aligned !== dueAt) full.dueAt = aligned
+  }
+
   await db.tasks.update(id, { ...full, updatedAt: Date.now(), syncStatus: 'pending' })
 }
 
@@ -59,7 +78,11 @@ async function spawnNextOccurrence(task: Task): Promise<void> {
   const rule = task.recurrenceRule
   if (!rule) return
   const base = task.dueAt ?? startOfToday()
-  const next = nextOccurrence(base, rule)
+  // Completar una ocurrencia ATRASADA no debe engendrar otra atrasada: se
+  // avanza hasta la primera ocurrencia que caiga hoy o más adelante.
+  let next = nextOccurrence(base, rule)
+  const sod = startOfToday()
+  while (next < sod) next = nextOccurrence(next, rule)
   if (!allowsNext(rule, next)) return
 
   const now = Date.now()
@@ -141,19 +164,6 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
     touchStreak: completed,
   })
   if (completed) emitCompletion({ ...result, kind: 'task' })
-}
-
-/**
- * Al abrir la app (y al cambiar de día con ella abierta): toda recurrente
- * pendiente que quedó atrasada salta sola a su ocurrencia más cercana desde
- * hoy, para que las diarias siempre aparezcan en la pestaña Hoy.
- */
-export async function rollOverdueRecurringTasks(): Promise<void> {
-  const sod = startOfToday()
-  const stuck = (await db.tasks.toArray()).filter(
-    (t) => !t.completed && t.recurrenceRule !== null && t.dueAt !== null && t.dueAt < sod,
-  )
-  for (const t of stuck) await skipOverdueToNearest(t.id)
 }
 
 /**

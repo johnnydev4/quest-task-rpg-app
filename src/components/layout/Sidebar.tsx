@@ -77,7 +77,7 @@ export function Sidebar({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2.5 px-3 pt-1 pb-5">
+      <div className="flex shrink-0 items-center gap-2.5 px-3 pt-1 pb-5">
         <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent-400 to-accent-600">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
             <path d="M5 14l7-7 7 7" />
@@ -87,9 +87,14 @@ export function Sidebar({
         <span className="text-lg font-bold text-ink lg:text-base">Quest</span>
       </div>
 
-      <PlayerCard />
+      <div className="shrink-0">
+        <PlayerCard />
+      </div>
 
-      <nav className="flex flex-col gap-0.5" aria-label="Vistas">
+      {/* Desde "Hoy" hasta las etiquetas todo va en una sola zona con scroll:
+          en móvil el menú completo no cabe en pantalla y quedaba cortado. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Vistas">
         <NavItem
           active={view.kind === 'today'}
           onClick={() => onSelect({ kind: 'today' })}
@@ -175,7 +180,7 @@ export function Sidebar({
         />
       </nav>
 
-      <div className="mt-5 mb-1 flex items-center justify-between px-3">
+      <div className="mt-5 mb-1 flex shrink-0 items-center justify-between px-3">
         <span className="text-sm font-semibold tracking-wide text-ink-faint uppercase lg:text-xs">Listas</span>
         <button
           onClick={onNewList}
@@ -188,7 +193,7 @@ export function Sidebar({
         </button>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
+      <div className="flex flex-col gap-0.5">
         {lists.map((list) => (
           <div key={list.id} className="group relative">
             <NavItem
@@ -259,6 +264,7 @@ export function Sidebar({
             ))}
           </>
         )}
+      </div>
       </div>
 
       {/* En móvil el texto y el engranaje son más grandes (objetivo táctil cómodo); en escritorio, compactos */}

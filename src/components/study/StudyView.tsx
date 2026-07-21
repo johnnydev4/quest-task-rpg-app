@@ -87,7 +87,6 @@ function DurationStepper({
   min: number
   max: number
 }) {
-  const clamp = (v: number) => Math.max(min, Math.min(max, v))
   // Cristal SIN backdrop-filter (glass-input): anidado dentro del panel, iOS lo
   // pintaba opaco. Botones grandes táctiles (40px móvil / 44px escritorio).
   const stepBtn =
@@ -100,15 +99,16 @@ function DurationStepper({
         <button type="button" onClick={() => adjustDuration(settingKey, -step, min, max)} aria-label={`Reducir ${label}`} className={stepBtn}>
           −
         </button>
-        <input
-          type="number"
-          value={value}
-          min={min}
-          max={max}
-          onChange={(e) => updateSettings({ [settingKey]: clamp(Number(e.target.value) || min) })}
+        {/* Solo lectura: escribir aquí no reprogramaba la fase en curso, así que
+            el valor cambiaba en pantalla pero no en el temporizador. Se ajusta
+            únicamente con − y +, que sí aplican al instante. */}
+        <span
+          role="status"
           aria-label={`Minutos de ${label}`}
-          className="w-12 [appearance:textfield] border-none bg-transparent text-center text-xl font-bold text-ink outline-none lg:w-14 lg:text-2xl [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-        />
+          className="w-12 text-center text-xl font-bold text-ink tabular-nums select-none lg:w-14 lg:text-2xl"
+        >
+          {value}
+        </span>
         <button type="button" onClick={() => adjustDuration(settingKey, step, min, max)} aria-label={`Aumentar ${label}`} className={stepBtn}>
           +
         </button>

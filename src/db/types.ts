@@ -208,6 +208,8 @@ export interface HabitLog {
   dateKey: string
   /** XP otorgado (para restarlo exacto si se desmarca). */
   xp: number
+  /** Momento exacto del cumplimiento (ms). Registros antiguos: usar createdAt. */
+  completedAt?: number
   createdAt: number
   updatedAt: number
   syncStatus: SyncStatus

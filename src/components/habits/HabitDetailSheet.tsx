@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import { deleteHabit, updateHabit } from '../../db/repo/habits'
-import { startOfDayOffset } from '../../lib/dates'
+import { formatDateTime, startOfDayOffset } from '../../lib/dates'
 import { emitToast } from '../../lib/events'
 import { pomodoro } from '../../services/pomodoro'
 import { ConfirmButton } from '../ui/ConfirmButton'
@@ -21,6 +21,12 @@ const POMODORO_PRESETS = [10, 15, 25, 45, 60, 90]
 export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClose: () => void }) {
   const habit = useLiveQuery(() => db.habits.get(habitId), [habitId])
   const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
+  // Último cumplimiento con su hora exacta (los registros viejos solo tienen createdAt).
+  const lastDone = useLiveQuery(async () => {
+    const logs = await db.habitLogs.where('habitId').equals(habitId).toArray()
+    const stamps = logs.map((l) => l.completedAt ?? l.createdAt)
+    return stamps.length > 0 ? Math.max(...stamps) : null
+  }, [habitId])
   const [title, setTitle] = useState<string | null>(null)
   const [calOpen, setCalOpen] = useState(false)
 
@@ -210,7 +216,10 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
         </div>
 
         {/* Eliminar */}
-        <div className="flex justify-end border-t border-line/5 pt-3">
+        <div className="flex items-center justify-between gap-3 border-t border-line/5 pt-3">
+          <span className="min-w-0 text-xs text-ink-faint">
+            {lastDone ? `Último cumplimiento: ${formatDateTime(lastDone)}` : 'Aún sin cumplimientos'}
+          </span>
           <ConfirmButton
             label="Eliminar hábito"
             confirmLabel="¿Seguro? Toca de nuevo"

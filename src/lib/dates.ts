@@ -20,6 +20,7 @@ export function formatDue(dueAt: number): string {
   if (dueAt >= startOfToday() && dueAt < startOfDayOffset(1)) return 'Hoy'
   if (dueAt >= startOfDayOffset(1) && dueAt < startOfDayOffset(2)) return 'Mañana'
   if (dueAt >= startOfDayOffset(-1) && dueAt < startOfToday()) return 'Ayer'
+  if (dueAt >= startOfDayOffset(-2) && dueAt < startOfDayOffset(-1)) return 'Anteayer'
   const withYear = new Date(dueAt).getFullYear() !== new Date().getFullYear()
   return new Intl.DateTimeFormat('es', {
     day: 'numeric',

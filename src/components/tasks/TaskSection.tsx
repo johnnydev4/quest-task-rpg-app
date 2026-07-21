@@ -10,6 +10,8 @@ interface TaskSectionProps {
   onOpen: (id: string) => void
   collapsible?: boolean
   showMoveToToday?: boolean
+  /** Acciones de una repetición vencida: saltar a hoy y eliminar. */
+  showOverdueActions?: boolean
   /** Contenido extra al inicio de la lista (p. ej. los hábitos de hoy). */
   leading?: ReactNode
   /** Omite la etiqueta "Hoy" en cada tarea (redundante en la pestaña Hoy). */
@@ -26,6 +28,7 @@ export function TaskSection({
   onOpen,
   collapsible = false,
   showMoveToToday = false,
+  showOverdueActions = false,
   leading,
   hideTodayChip = false,
   action,
@@ -80,6 +83,7 @@ export function TaskSection({
               tagsById={tagsById}
               onOpen={onOpen}
               showMoveToToday={showMoveToToday}
+              showOverdueActions={showOverdueActions}
               hideTodayChip={hideTodayChip}
             />
           ))}

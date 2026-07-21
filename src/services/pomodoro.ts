@@ -5,7 +5,7 @@ import { getSettings } from '../db/repo/settings'
 import { applyXp } from '../db/repo/progress'
 import { localDateKey } from '../lib/dates'
 import { emitToast } from '../lib/events'
-import { playPhaseChange } from '../lib/sound'
+import { playBreakEnd, playPhaseChange } from '../lib/sound'
 import { notificationService } from './notifications'
 import { setAmbientSuspended, startAmbient, stopAmbient } from './ambient'
 
@@ -263,7 +263,11 @@ class PomodoroEngine {
       this.state.pomodorosDone += 1
     }
 
-    if (s.soundEnabled) playPhaseChange(s.soundVolume)
+    // Foco→descanso: aviso suave. Descanso→foco: alerta más marcada.
+    if (s.soundEnabled) {
+      if (wasFocus) playPhaseChange(s.soundVolume)
+      else playBreakEnd(s.soundVolume)
+    }
     const nextPhase: PomodoroPhase = wasFocus
       ? this.state.pomodorosDone % Math.max(1, s.pomodoroLongBreakEvery) === 0
         ? 'long'

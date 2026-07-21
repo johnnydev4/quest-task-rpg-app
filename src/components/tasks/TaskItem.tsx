@@ -30,6 +30,11 @@ interface TaskItemProps {
   onOpen: (id: string) => void
   /** Muestra el botón "Hoy" para reprogramar tareas vencidas sin fricción (spec §2: no punitivo). */
   showMoveToToday?: boolean
+  /**
+   * Repetición vencida en la sección "Vencidas" de Hoy: saltar a hoy o
+   * eliminar (completar ya se hace con la casilla).
+   */
+  showOverdueActions?: boolean
   /** En la pestaña Hoy la etiqueta "Hoy" es redundante: se omite (queda solo la hora si tiene). */
   hideTodayChip?: boolean
 }
@@ -129,6 +134,7 @@ export function TaskItem({
   tagsById,
   onOpen,
   showMoveToToday = false,
+  showOverdueActions = false,
   hideTodayChip = false,
 }: TaskItemProps) {
   const settings = useSettings()
@@ -262,6 +268,26 @@ export function TaskItem({
           </span>
         )}
       </button>
+      {showOverdueActions && !task.completed && (
+        <span className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={() => void skipOverdueToNearest(task.id)}
+            aria-label="Saltar a hoy"
+            title="Saltar a hoy"
+            className="flex size-8 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
+          >
+            <ForwardIcon className="size-4" />
+          </button>
+          <button
+            onClick={() => void deleteTask(task.id)}
+            aria-label="Eliminar tarea"
+            title="Eliminar"
+            className="flex size-8 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-danger/10 hover:text-danger"
+          >
+            <TrashIcon className="size-4" />
+          </button>
+        </span>
+      )}
       {showMoveToToday && overdue && !task.completed && (
         <button
           onClick={() => updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false })}

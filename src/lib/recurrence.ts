@@ -44,6 +44,17 @@ export function nextOccurrence(fromMs: number, rule: RecurrenceRule): number {
   return d.getTime()
 }
 
+/**
+ * Primer día (a partir de `fromMs` INCLUSIVE) que cae en `daysOfWeek`.
+ * Devuelve medianoche local de ese día.
+ */
+export function firstDayOfWeekOnOrAfter(fromMs: number, daysOfWeek: number[]): number {
+  const d = new Date(fromMs)
+  d.setHours(0, 0, 0, 0)
+  for (let i = 0; i < 7 && !daysOfWeek.includes(d.getDay()); i++) d.setDate(d.getDate() + 1)
+  return d.getTime()
+}
+
 /** ¿La recurrencia permite crear la siguiente ocurrencia en `nextMs`? */
 export function allowsNext(rule: RecurrenceRule, nextMs: number): boolean {
   if (rule.end.type === 'count') return rule.end.remaining > 0

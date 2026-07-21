@@ -86,6 +86,7 @@ export async function toggleHabitToday(habitId: string): Promise<void> {
     habitId,
     dateKey: todayKey,
     xp,
+    completedAt: now,
     createdAt: now,
     updatedAt: now,
     syncStatus: 'pending',

@@ -7,7 +7,7 @@ import { startOfDayOffset, startOfToday } from './lib/dates'
 import { sortCompleted, sortPending, TASK_SORT_OPTIONS, type TaskSortMode } from './lib/taskSort'
 import { levelFromXp, STAT_XP_BASE } from './lib/level'
 import { SortMenu } from './components/ui/SortMenu'
-import { createTask, rollOverdueRecurringTasks } from './db/repo/tasks'
+import { createTask } from './db/repo/tasks'
 import { getOrCreateTag } from './db/repo/tags'
 import { emitConfigOpened, onCompletion, onConfigOpened } from './lib/events'
 import type { QuickParseResult } from './lib/quickParse'
@@ -143,15 +143,6 @@ export default function App() {
   useEffect(() => {
     startReminderScheduler()
     startAutoSync()
-  }, [])
-
-  // Recurrentes atrasadas → saltan solas a su próxima ocurrencia desde hoy
-  // (así las diarias siempre están en Hoy). Al abrir y cada 10 min por si la
-  // app queda abierta cruzando la medianoche.
-  useEffect(() => {
-    void rollOverdueRecurringTasks()
-    const t = setInterval(() => void rollOverdueRecurringTasks(), 10 * 60_000)
-    return () => clearInterval(t)
   }, [])
 
   // Al cambiar de pestaña: volver al inicio y cerrar el detalle de tarea que
@@ -290,6 +281,7 @@ export default function App() {
     tasks: ReturnType<typeof sortPending>
     collapsible?: boolean
     showMoveToToday?: boolean
+    showOverdueActions?: boolean
     hideTodayChip?: boolean
   }[] = []
 
@@ -298,6 +290,19 @@ export default function App() {
 
   if (view.kind === 'today') {
     sections = [
+      {
+        // Repeticiones que se quedaron sin cumplir en días anteriores: no
+        // vuelven solas a Hoy. Aquí se decide saltarlas, completarlas o
+        // eliminarlas; hasta entonces no retoman su ciclo normal.
+        key: 'overdue',
+        title: 'Vencidas',
+        tasks: sortPending(
+          displayPending.filter((t) => t.recurrenceRule !== null && t.dueAt !== null && t.dueAt < sod),
+          taskSort,
+        ),
+        collapsible: true,
+        showOverdueActions: true,
+      },
       {
         // Hoy muestra SOLO lo de hoy: las tareas vencidas de días anteriores
         // no aparecen aquí (viven en "Todas", donde se pueden reprogramar).
@@ -371,7 +376,7 @@ export default function App() {
   const isEmpty = sections.every((s) => s.tasks.length === 0)
   // El menú de orden se ancla a la fila del título de la primera sección con
   // tareas (p. ej. "Hoy"), como el de la vista de hábitos junto a "Activos".
-  const firstSectionWithTasks = sections.findIndex((s) => s.tasks.length > 0)
+  const firstSectionWithTasks = sections.findIndex((s) => s.tasks.length > 0 && s.key !== 'overdue')
   const taskSortMenu = (
     <SortMenu value={taskSort} options={TASK_SORT_OPTIONS} onChange={changeTaskSort} label="Ordenar tareas" />
   )
@@ -692,6 +697,7 @@ export default function App() {
                     onOpen={setDetailId}
                     collapsible={s.collapsible}
                     showMoveToToday={s.showMoveToToday}
+                    showOverdueActions={s.showOverdueActions}
                     hideTodayChip={s.hideTodayChip}
                     action={i === firstSectionWithTasks ? taskSortMenu : undefined}
                     // Los hábitos de hoy viven dentro de la propia sección "Hoy"

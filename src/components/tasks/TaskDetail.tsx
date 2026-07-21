@@ -900,6 +900,12 @@ function TaskForm({
       <div className="flex items-center gap-2 px-1 pt-1">
         <span className="flex-1 text-center text-xs text-ink-faint">
           Creada el {formatDateTime(task.createdAt)}
+          {task.completed && task.completedAt !== null && (
+            <>
+              <br />
+              Completada el {formatDateTime(task.completedAt)}
+            </>
+          )}
         </span>
         <DeleteTaskButton
           onDelete={async () => {

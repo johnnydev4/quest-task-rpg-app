@@ -109,6 +109,20 @@ export function playPhaseChange(volume: number): void {
   playTone(audio, { type: 'sine', from: 880, delay: 0.18, dur: 0.45, peak: v * 0.2 })
 }
 
+/**
+ * Alerta de fin de descanso (corto o largo): tres toques ascendentes y algo más
+ * presentes que el aviso de foco→descanso, porque hay que volver al trabajo.
+ */
+export function playBreakEnd(volume: number): void {
+  const audio = getCtx()
+  if (!audio || volume <= 0) return
+  const v = Math.min(1, volume)
+  const notes = [784, 988, 1319]
+  notes.forEach((freq, i) => {
+    playTone(audio, { type: 'triangle', from: freq, delay: i * 0.22, dur: 0.32, peak: v * 0.32 })
+  })
+}
+
 /** Arpegio ascendente (C-E-G-C) con brillo final: la recompensa "especial" del level-up. */
 export function playLevelUp(volume: number): void {
   const audio = getCtx()

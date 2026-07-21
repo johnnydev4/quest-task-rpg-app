@@ -183,6 +183,19 @@ a {
 }
 
 /*
+ * Igual que .glass-bar pero flotante: la cabecera es una tarjeta redondeada
+ * separada del sidebar en vez de una barra a todo el ancho. Mismo cristal y
+ * difusión, con una outer shadow más leve.
+ */
+.glass-bar-float {
+  background-color: color-mix(in srgb, var(--t-glass) 42%, transparent);
+  backdrop-filter: blur(20px) saturate(200%);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent),
+    0 4px 14px -10px color-mix(in srgb, #000000 45%, transparent);
+}
+
+/*
  * Controles de formulario (inputs, selects) en cristal: translúcidos con brillo
  * superior. Sin backdrop-filter a propósito: anidado dentro de un panel que ya
  * lo usa, iOS Safari lo ignora y el control se ve opaco/plano.

@@ -524,8 +524,9 @@ export default function App() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 border-b border-line/5 glass-bar pt-[env(safe-area-inset-top)]">
-          <div className={`mx-auto flex w-full ${contentMax} items-center gap-3 px-4 py-4 sm:px-6`}>
+        <header className="sticky top-0 z-10 px-3 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] sm:px-4">
+          <div className={`mx-auto w-full ${contentMax} overflow-hidden rounded-2xl border border-line/10 glass-bar-float`}>
+          <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6">
             <button
               onClick={() => setDrawerOpen(true)}
               aria-label="Abrir menú"
@@ -577,7 +578,7 @@ export default function App() {
               const color = currentList.color ?? 'var(--color-accent-500)'
               const pct = Math.min(100, Math.round((stat.intoLevel / stat.needed) * 100))
               return (
-                <div className={`mx-auto w-full ${contentMax} px-4 pb-3 sm:px-6`}>
+                <div className="px-4 pb-3 sm:px-6">
                   <div className="flex items-center gap-2">
                     <span
                       className="shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold"
@@ -602,7 +603,7 @@ export default function App() {
               )
             })()}
           {/* Barra de XP compacta en móvil (en escritorio vive en la sidebar) */}
-          <div className={`mx-auto w-full ${contentMax} px-4 pb-3 sm:px-6 lg:hidden`}>
+          <div className="px-4 pb-3 sm:px-6 lg:hidden">
             <div className="flex items-center gap-2">
               <span className="rounded-md bg-accent-500/15 px-1.5 py-0.5 text-[11px] font-bold text-accent-300">
                 Nv {level}
@@ -638,6 +639,7 @@ export default function App() {
               )}
               {streak > 0 && <span className="text-[11px] font-medium text-warn">🔥 {streak}</span>}
             </div>
+          </div>
           </div>
         </header>
 

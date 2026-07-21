@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import type { Tag, Task } from '../../../db/types'
 import { updateTask } from '../../../db/repo/tasks'
-import { createTag } from '../../../db/repo/tags'
+import { createTag, deleteTag } from '../../../db/repo/tags'
 import { PALETTE } from '../../../lib/colors'
 
 interface TagSectionProps {
@@ -9,15 +9,32 @@ interface TagSectionProps {
   tags: Tag[]
 }
 
-/** Etiquetas reutilizables: toca para poner/quitar; crea nuevas al vuelo. */
+/** Etiquetas reutilizables: toca para poner/quitar; la × la borra de todas las tareas. */
 export function TagSection({ task, tags }: TagSectionProps) {
   const [newName, setNewName] = useState('')
+  // Doble toque en la ×: el primero arma el borrado, se desarma a los 3 s.
+  const [armedId, setArmedId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!armedId) return
+    const t = setTimeout(() => setArmedId(null), 3000)
+    return () => clearTimeout(t)
+  }, [armedId])
 
   function toggle(tagId: string) {
     const tagIds = task.tagIds.includes(tagId)
       ? task.tagIds.filter((id) => id !== tagId)
       : [...task.tagIds, tagId]
     updateTask(task.id, { tagIds })
+  }
+
+  function remove(tagId: string) {
+    if (armedId === tagId) {
+      deleteTag(tagId)
+      setArmedId(null)
+    } else {
+      setArmedId(tagId)
+    }
   }
 
   async function addTag(e: FormEvent) {
@@ -36,20 +53,39 @@ export function TagSection({ task, tags }: TagSectionProps) {
       <div className="flex flex-wrap gap-1.5">
         {tags.map((tag) => {
           const active = task.tagIds.includes(tag.id)
+          const armed = armedId === tag.id
           return (
-            <button
+            <span
               key={tag.id}
-              type="button"
-              onClick={() => toggle(tag.id)}
-              aria-pressed={active}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                active ? 'text-ink' : 'border-line/10 text-ink-muted hover:bg-ink/5'
+              className={`inline-flex items-center gap-1 rounded-full border pl-2.5 pr-1 py-1 text-xs font-medium transition-colors ${
+                armed
+                  ? 'border-danger/60 bg-danger/15 text-danger'
+                  : active
+                    ? 'text-ink'
+                    : 'border-line/10 text-ink-muted'
               }`}
-              style={active ? { backgroundColor: `${tag.color}33`, borderColor: `${tag.color}66`, color: tag.color } : undefined}
+              style={!armed && active ? { backgroundColor: `${tag.color}33`, borderColor: `${tag.color}66`, color: tag.color } : undefined}
             >
-              <span className="size-1.5 rounded-full" style={{ backgroundColor: tag.color }} aria-hidden="true" />
-              {tag.name}
-            </button>
+              <button
+                type="button"
+                onClick={() => toggle(tag.id)}
+                aria-pressed={active}
+                className="inline-flex items-center gap-1.5 rounded-full hover:opacity-80"
+              >
+                {!armed && <span className="size-1.5 rounded-full" style={{ backgroundColor: tag.color }} aria-hidden="true" />}
+                {armed ? '¿Borrar?' : tag.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => remove(tag.id)}
+                aria-label={armed ? `Confirmar borrar etiqueta ${tag.name}` : `Borrar etiqueta ${tag.name}`}
+                className="inline-flex size-4 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-ink/10"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="size-3">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </span>
           )
         })}
         {tags.length === 0 && <span className="text-xs text-ink-faint">Aún no hay etiquetas.</span>}

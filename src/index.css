@@ -146,18 +146,21 @@ a {
 /*
  * Liquid Glass (estética iOS): paneles translúcidos con blur y saturación,
  * un brillo interior sutil arriba, y tinte configurable vía --t-glass.
+ *
+ * NO escribir -webkit-backdrop-filter a mano: al encontrarlo, Lightning CSS
+ * (el minificador del build) colapsa ambas y publica SOLO la versión -webkit-,
+ * asi que el blur desaparecia en Chrome y Firefox de escritorio y sólo se veía
+ * en Safari/iOS. Dejando sólo la propiedad estándar, el build emite las dos.
  */
 .glass-panel {
   background-color: color-mix(in srgb, var(--t-glass) 55%, transparent);
   backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
 }
 
 .glass-strong {
   background-color: color-mix(in srgb, var(--t-glass) 90%, transparent);
   backdrop-filter: blur(28px) saturate(150%);
-  -webkit-backdrop-filter: blur(28px) saturate(150%);
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
 }
 
@@ -174,7 +177,6 @@ a {
      por debajo, el texto que pasa detrás se vuelve legible. */
   background-color: color-mix(in srgb, var(--t-glass) 42%, transparent);
   backdrop-filter: blur(20px) saturate(200%);
-  -webkit-backdrop-filter: blur(20px) saturate(200%);
   box-shadow:
     inset 0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent),
     0 8px 24px -12px color-mix(in srgb, #000000 60%, transparent);
@@ -208,7 +210,6 @@ a {
     transparent var(--fill, 50%)
   );
   backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
   box-shadow:
     inset 0 1px 2px 0 color-mix(in srgb, #000000 16%, transparent),
     inset 0 1px 0 0 color-mix(in srgb, #ffffff 6%, transparent);

@@ -172,10 +172,15 @@ async function pull(userId: string): Promise<void> {
 }
 
 let syncing = false
+let pendingRetry = false
 
 export async function syncNow(): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: 'Supabase no está configurado' }
-  if (syncing) return { ok: true }
+  if (syncing) {
+    // Ya hay una sync en curso: reintenta al terminar para no perder este disparo.
+    pendingRetry = true
+    return { ok: true }
+  }
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -194,7 +199,26 @@ export async function syncNow(): Promise<{ ok: boolean; error?: string }> {
     return { ok: false, error: e instanceof Error ? e.message : 'Error de sincronización' }
   } finally {
     syncing = false
+    if (pendingRetry) {
+      pendingRetry = false
+      scheduleSync(0)
+    }
   }
+}
+
+let syncTimer: ReturnType<typeof setTimeout> | undefined
+
+/**
+ * Sincroniza poco después de la última escritura (debounce): cada llamada
+ * reinicia el temporizador para agrupar ráfagas de cambios en una sola sync.
+ */
+export function scheduleSync(delay = 3000): void {
+  if (!supabase) return
+  clearTimeout(syncTimer)
+  syncTimer = setTimeout(() => {
+    if (!navigator.onLine) return
+    void syncNow()
+  }, delay)
 }
 
 export function lastSyncAt(): number | null {
@@ -212,6 +236,13 @@ export function startAutoSync(): void {
     if (event === 'SIGNED_IN') void syncNow()
   })
   window.addEventListener('online', () => void syncNow())
+  // Cualquier escritura local (hooks de Dexie en db.ts) dispara un sync con debounce.
+  window.addEventListener('quest:changed', () => scheduleSync())
+  // Flush al ocultar/cerrar la pestaña para no perder cambios recientes.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') void syncNow()
+  })
+  window.addEventListener('pagehide', () => void syncNow())
   setInterval(() => {
     if (!navigator.onLine) return
     void countPending().then((n) => {

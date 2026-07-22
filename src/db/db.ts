@@ -128,4 +128,34 @@ db.version(8).upgrade(async (tx) => {
   if (Object.keys(patch).length > 0) await tx.table('settings').update('app', patch)
 })
 
+// Disparo de sincronización con debounce: cualquier escritura en una tabla
+// sincronizada emite `quest:changed` en window. sync.ts se suscribe y llama a
+// scheduleSync(); el evento evita un ciclo de imports db<->sync.
+const SYNCED_TABLES = [
+  'lists',
+  'tasks',
+  'subtasks',
+  'comments',
+  'tags',
+  'reminders',
+  'studySessions',
+  'attachments',
+  'profile',
+  'quests',
+  'questSteps',
+  'habits',
+  'habitLogs',
+  'settings',
+] as const
+
+if (typeof window !== 'undefined') {
+  const notify = () => window.dispatchEvent(new CustomEvent('quest:changed'))
+  for (const name of SYNCED_TABLES) {
+    const hook = db.table(name).hook as (event: string, subscriber: () => void) => void
+    hook('creating', notify)
+    hook('updating', notify)
+    hook('deleting', notify)
+  }
+}
+
 export { db }

@@ -443,13 +443,14 @@ export function QuestsView() {
             <GemIcon className="size-4" /> Recompensa
           </h3>
           <div className="mt-3 flex items-center gap-3">
-            <span
-              className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-md"
-              style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
+            <img
+              src="/xp-gem.png"
+              alt=""
+              draggable={false}
               aria-hidden="true"
-            >
-              <GemIcon className="size-6" />
-            </span>
+              className="size-12 shrink-0 select-none object-contain"
+              style={{ filter: `drop-shadow(0 3px 9px ${theme.colorA}59)` }}
+            />
             <div>
               <p className="text-2xl font-black text-ink">+{MONTHLY_QUEST_XP} XP</p>
               <p className="text-xs text-ink-muted">Experiencia al conquistar la gesta del mes</p>

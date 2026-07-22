@@ -449,7 +449,9 @@ export function QuestsView() {
               draggable={false}
               aria-hidden="true"
               className="size-12 shrink-0 select-none object-contain"
-              style={{ filter: `drop-shadow(0 3px 9px ${theme.colorA}59)` }}
+              style={{
+                filter: `drop-shadow(0 0 10px ${theme.colorA}66) drop-shadow(0 3px 7px ${theme.colorA}40)`,
+              }}
             />
             <div>
               <p className="text-2xl font-black text-ink">+{MONTHLY_QUEST_XP} XP</p>

@@ -62,6 +62,47 @@ export function makeBuckets(range: StatsRange, customFrom?: number, customTo?: n
   return buckets
 }
 
+export interface FocusTaskOption {
+  id: string
+  title: string
+  minutes: number
+}
+
+/** Tareas con sesiones de foco registradas en el rango, ordenadas por minutos. */
+export function focusTaskOptions(
+  sessions: StudySession[],
+  tasks: Task[],
+  from: number,
+  to: number,
+): FocusTaskOption[] {
+  const titleById = new Map(tasks.map((t) => [t.id, t.title]))
+  const totals = new Map<string, number>()
+  for (const s of sessions) {
+    if (s.kind !== 'focus' || !s.taskId) continue
+    if (s.startedAt < from || s.startedAt >= to) continue
+    if (!titleById.has(s.taskId)) continue
+    totals.set(s.taskId, (totals.get(s.taskId) ?? 0) + s.focusMinutes)
+  }
+  return [...totals.entries()]
+    .map(([id, minutes]) => ({ id, title: titleById.get(id) ?? 'Tarea', minutes }))
+    .sort((a, b) => b.minutes - a.minutes)
+}
+
+/** Minutos de foco de una tarea concreta, desglosados por cubeta (fecha). */
+export function focusForTaskPerBucket(
+  buckets: Bucket[],
+  sessions: StudySession[],
+  taskId: string,
+): { label: string; minutos: number }[] {
+  const focus = sessions.filter((s) => s.kind === 'focus' && s.taskId === taskId)
+  return buckets.map((b) => ({
+    label: b.label,
+    minutos: focus
+      .filter((s) => s.startedAt >= b.from && s.startedAt < b.to)
+      .reduce((sum, s) => sum + s.focusMinutes, 0),
+  }))
+}
+
 export interface StatsData {
   tasksPerBucket: { label: string; tareas: number }[]
   focusPerBucket: { label: string; minutos: number }[]

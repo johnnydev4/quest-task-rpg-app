@@ -19,7 +19,13 @@ import {
 import { db } from '../../db/db'
 import { FlameIcon } from '../ui/icons'
 import { useProfile } from '../../lib/useProfile'
-import { computeStats, makeBuckets, type StatsRange } from '../../lib/statsData'
+import {
+  computeStats,
+  focusForTaskPerBucket,
+  focusTaskOptions,
+  makeBuckets,
+  type StatsRange,
+} from '../../lib/statsData'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
 
 function cssVar(name: string): string {
@@ -55,6 +61,7 @@ export default function StatsView() {
   const [range, setRange] = useState<StatsRange>('7d')
   const [customFrom, setCustomFrom] = useState(startOfDayOffset(-13))
   const [customTo, setCustomTo] = useState(startOfToday())
+  const [focusTaskId, setFocusTaskId] = useState<string>('')
 
   const tasks = useLiveQuery(() => db.tasks.toArray(), []) ?? []
   const sessions = useLiveQuery(() => db.studySessions.toArray(), []) ?? []
@@ -62,10 +69,28 @@ export default function StatsView() {
   const tags = useLiveQuery(() => db.tags.toArray(), []) ?? []
   const { level, streak } = useProfile()
 
-  const stats = useMemo(() => {
-    const buckets = makeBuckets(range, customFrom, customTo)
-    return computeStats(buckets, tasks, sessions, lists, tags)
-  }, [range, customFrom, customTo, tasks, sessions, lists, tags])
+  const buckets = useMemo(() => makeBuckets(range, customFrom, customTo), [range, customFrom, customTo])
+
+  const stats = useMemo(
+    () => computeStats(buckets, tasks, sessions, lists, tags),
+    [buckets, tasks, sessions, lists, tags],
+  )
+
+  // Tareas con foco registrado en el rango, para el selector de pomodoro por tarea.
+  const taskOptions = useMemo(() => {
+    const from = buckets[0]?.from ?? 0
+    const to = buckets.at(-1)?.to ?? Date.now()
+    return focusTaskOptions(sessions, tasks, from, to)
+  }, [buckets, sessions, tasks])
+
+  // La tarea elegida deja de tener datos al cambiar el rango: se limpia sola.
+  const selectedTaskId = taskOptions.some((o) => o.id === focusTaskId) ? focusTaskId : ''
+
+  const focusByTask = useMemo(
+    () => (selectedTaskId ? focusForTaskPerBucket(buckets, sessions, selectedTaskId) : []),
+    [buckets, sessions, selectedTaskId],
+  )
+  const focusByTaskTotal = focusByTask.reduce((sum, b) => sum + b.minutos, 0)
 
   const accent = cssVar('--t-accent-500')
   const grid = 'color-mix(in srgb, currentColor 8%, transparent)'
@@ -181,6 +206,48 @@ export default function StatsView() {
               />
             </ComposedChart>
           </ResponsiveContainer>
+        </Card>
+
+        <Card title="Pomodoro por tarea" className="lg:col-span-2">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <select
+              value={selectedTaskId}
+              onChange={(e) => setFocusTaskId(e.target.value)}
+              aria-label="Elegir tarea"
+              className="max-w-full rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink"
+            >
+              <option value="">Elige una tarea…</option>
+              {taskOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.title} · {o.minutes} min
+                </option>
+              ))}
+            </select>
+            {selectedTaskId && (
+              <span className="text-xs text-ink-faint">
+                {focusByTaskTotal} min de foco en el periodo
+              </span>
+            )}
+          </div>
+          {taskOptions.length === 0 ? (
+            <p className="py-8 text-center text-sm text-ink-faint">
+              Vincula un pomodoro a una tarea para ver aquí su tiempo de foco por fecha.
+            </p>
+          ) : !selectedTaskId ? (
+            <p className="py-8 text-center text-sm text-ink-faint">
+              Elige una tarea para ver su tiempo de pomodoro por fecha.
+            </p>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={focusByTask}>
+                <CartesianGrid stroke={grid} vertical={false} />
+                <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(128,128,128,0.08)' }} />
+                <Bar dataKey="minutos" name="Minutos de foco" fill={accent} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </Card>
 
         <Card title="Tareas completadas">

@@ -21,8 +21,8 @@ import { FlameIcon } from '../ui/icons'
 import { useProfile } from '../../lib/useProfile'
 import {
   computeStats,
-  focusForTaskPerBucket,
-  focusTaskOptions,
+  focusEntityOptions,
+  focusForEntityPerBucket,
   makeBuckets,
   type StatsRange,
 } from '../../lib/statsData'
@@ -61,9 +61,10 @@ export default function StatsView() {
   const [range, setRange] = useState<StatsRange>('7d')
   const [customFrom, setCustomFrom] = useState(startOfDayOffset(-13))
   const [customTo, setCustomTo] = useState(startOfToday())
-  const [focusTaskId, setFocusTaskId] = useState<string>('')
+  const [focusEntityKey, setFocusEntityKey] = useState<string>('')
 
   const tasks = useLiveQuery(() => db.tasks.toArray(), []) ?? []
+  const habits = useLiveQuery(() => db.habits.toArray(), []) ?? []
   const sessions = useLiveQuery(() => db.studySessions.toArray(), []) ?? []
   const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
   const tags = useLiveQuery(() => db.tags.toArray(), []) ?? []
@@ -76,21 +77,23 @@ export default function StatsView() {
     [buckets, tasks, sessions, lists, tags],
   )
 
-  // Tareas con foco registrado en el rango, para el selector de pomodoro por tarea.
-  const taskOptions = useMemo(() => {
+  // Tareas y hábitos con foco registrado en el rango, para el selector de pomodoro.
+  const entityOptions = useMemo(() => {
     const from = buckets[0]?.from ?? 0
     const to = buckets.at(-1)?.to ?? Date.now()
-    return focusTaskOptions(sessions, tasks, from, to)
-  }, [buckets, sessions, tasks])
+    return focusEntityOptions(sessions, tasks, habits, from, to)
+  }, [buckets, sessions, tasks, habits])
 
-  // La tarea elegida deja de tener datos al cambiar el rango: se limpia sola.
-  const selectedTaskId = taskOptions.some((o) => o.id === focusTaskId) ? focusTaskId : ''
+  // El elemento elegido deja de tener datos al cambiar el rango: se limpia solo.
+  const selectedKey = entityOptions.some((o) => o.key === focusEntityKey) ? focusEntityKey : ''
 
-  const focusByTask = useMemo(
-    () => (selectedTaskId ? focusForTaskPerBucket(buckets, sessions, selectedTaskId) : []),
-    [buckets, sessions, selectedTaskId],
+  const focusByEntity = useMemo(
+    () => (selectedKey ? focusForEntityPerBucket(buckets, sessions, selectedKey) : []),
+    [buckets, sessions, selectedKey],
   )
-  const focusByTaskTotal = focusByTask.reduce((sum, b) => sum + b.minutos, 0)
+  const focusByEntityTotal = focusByEntity.reduce((sum, b) => sum + b.minutos, 0)
+  const taskOpts = entityOptions.filter((o) => o.kind === 'task')
+  const habitOpts = entityOptions.filter((o) => o.kind === 'habit')
 
   const accent = cssVar('--t-accent-500')
   const grid = 'color-mix(in srgb, currentColor 8%, transparent)'
@@ -208,38 +211,51 @@ export default function StatsView() {
           </ResponsiveContainer>
         </Card>
 
-        <Card title="Pomodoro por tarea" className="lg:col-span-2">
+        <Card title="Pomodoro por tarea o hábito" className="lg:col-span-2">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <select
-              value={selectedTaskId}
-              onChange={(e) => setFocusTaskId(e.target.value)}
-              aria-label="Elegir tarea"
+              value={selectedKey}
+              onChange={(e) => setFocusEntityKey(e.target.value)}
+              aria-label="Elegir tarea o hábito"
               className="max-w-full rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink"
             >
-              <option value="">Elige una tarea…</option>
-              {taskOptions.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.title} · {o.minutes} min
-                </option>
-              ))}
+              <option value="">Elige una tarea o hábito…</option>
+              {taskOpts.length > 0 && (
+                <optgroup label="Tareas">
+                  {taskOpts.map((o) => (
+                    <option key={o.key} value={o.key}>
+                      {o.title} · {o.minutes} min
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {habitOpts.length > 0 && (
+                <optgroup label="Hábitos">
+                  {habitOpts.map((o) => (
+                    <option key={o.key} value={o.key}>
+                      {o.title} · {o.minutes} min
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
-            {selectedTaskId && (
+            {selectedKey && (
               <span className="text-xs text-ink-faint">
-                {focusByTaskTotal} min de foco en el periodo
+                {focusByEntityTotal} min de foco en el periodo
               </span>
             )}
           </div>
-          {taskOptions.length === 0 ? (
+          {entityOptions.length === 0 ? (
             <p className="py-8 text-center text-sm text-ink-faint">
-              Vincula un pomodoro a una tarea para ver aquí su tiempo de foco por fecha.
+              Vincula un pomodoro a una tarea o hábito para ver aquí su tiempo de foco por fecha.
             </p>
-          ) : !selectedTaskId ? (
+          ) : !selectedKey ? (
             <p className="py-8 text-center text-sm text-ink-faint">
-              Elige una tarea para ver su tiempo de pomodoro por fecha.
+              Elige una tarea o hábito para ver su tiempo de pomodoro por fecha.
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={focusByTask}>
+              <BarChart data={focusByEntity}>
                 <CartesianGrid stroke={grid} vertical={false} />
                 <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />

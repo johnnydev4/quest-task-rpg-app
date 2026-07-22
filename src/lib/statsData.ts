@@ -1,4 +1,4 @@
-import type { List, StudySession, Tag, Task } from '../db/types'
+import type { Habit, List, StudySession, Tag, Task } from '../db/types'
 import { PRIORITY_LABEL } from './priority'
 
 export type StatsRange = '7d' | '30d' | '12m' | 'custom'
@@ -62,39 +62,55 @@ export function makeBuckets(range: StatsRange, customFrom?: number, customTo?: n
   return buckets
 }
 
-export interface FocusTaskOption {
-  id: string
+export type FocusEntityKind = 'task' | 'habit'
+
+export interface FocusEntityOption {
+  /** Clave compuesta `task:<id>` o `habit:<id>` para distinguir tarea de hábito. */
+  key: string
+  kind: FocusEntityKind
   title: string
   minutes: number
 }
 
-/** Tareas con sesiones de foco registradas en el rango, ordenadas por minutos. */
-export function focusTaskOptions(
+/** Tareas y hábitos con sesiones de foco registradas en el rango, ordenados por minutos. */
+export function focusEntityOptions(
   sessions: StudySession[],
   tasks: Task[],
+  habits: Habit[],
   from: number,
   to: number,
-): FocusTaskOption[] {
-  const titleById = new Map(tasks.map((t) => [t.id, t.title]))
+): FocusEntityOption[] {
+  const taskTitle = new Map(tasks.map((t) => [t.id, t.title]))
+  const habitTitle = new Map(habits.map((h) => [h.id, h.title]))
   const totals = new Map<string, number>()
   for (const s of sessions) {
-    if (s.kind !== 'focus' || !s.taskId) continue
+    if (s.kind !== 'focus') continue
     if (s.startedAt < from || s.startedAt >= to) continue
-    if (!titleById.has(s.taskId)) continue
-    totals.set(s.taskId, (totals.get(s.taskId) ?? 0) + s.focusMinutes)
+    let key: string | null = null
+    if (s.taskId && taskTitle.has(s.taskId)) key = `task:${s.taskId}`
+    else if (s.habitId && habitTitle.has(s.habitId)) key = `habit:${s.habitId}`
+    if (!key) continue
+    totals.set(key, (totals.get(key) ?? 0) + s.focusMinutes)
   }
   return [...totals.entries()]
-    .map(([id, minutes]) => ({ id, title: titleById.get(id) ?? 'Tarea', minutes }))
+    .map(([key, minutes]) => {
+      const [kind, id] = key.split(':') as [FocusEntityKind, string]
+      const title = (kind === 'task' ? taskTitle.get(id) : habitTitle.get(id)) ?? 'Sin nombre'
+      return { key, kind, title, minutes }
+    })
     .sort((a, b) => b.minutes - a.minutes)
 }
 
-/** Minutos de foco de una tarea concreta, desglosados por cubeta (fecha). */
-export function focusForTaskPerBucket(
+/** Minutos de foco de una tarea o hábito concreto, desglosados por cubeta (fecha). */
+export function focusForEntityPerBucket(
   buckets: Bucket[],
   sessions: StudySession[],
-  taskId: string,
+  entityKey: string,
 ): { label: string; minutos: number }[] {
-  const focus = sessions.filter((s) => s.kind === 'focus' && s.taskId === taskId)
+  const [kind, id] = entityKey.split(':') as [FocusEntityKind, string]
+  const focus = sessions.filter(
+    (s) => s.kind === 'focus' && (kind === 'task' ? s.taskId === id : s.habitId === id),
+  )
   return buckets.map((b) => ({
     label: b.label,
     minutos: focus

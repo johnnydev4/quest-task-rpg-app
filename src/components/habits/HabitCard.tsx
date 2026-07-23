@@ -145,7 +145,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
   return (
     <SwipeToDelete onDelete={() => void deleteHabit(habit.id)} className="rounded-2xl">
     <div
-      className={`glass-strong relative overflow-hidden rounded-2xl border ${compact ? 'px-3 py-1.5' : 'px-3 py-2'} ${ended ? 'opacity-70' : ''}`}
+      className={`glass-habit relative overflow-hidden rounded-2xl border ${compact ? 'px-3 py-1.5' : 'px-3 py-2'} ${ended ? 'opacity-70' : ''}`}
       onContextMenu={(e) => {
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })

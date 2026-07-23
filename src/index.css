@@ -166,7 +166,7 @@ a {
 
 /* Tarjeta de hábito: liquid glass un pelín más opaco que .glass-strong. */
 .glass-habit {
-  background-color: color-mix(in srgb, var(--t-glass) 96%, transparent);
+  background-color: color-mix(in srgb, var(--t-glass) 99%, transparent);
   backdrop-filter: blur(28px) saturate(150%);
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
 }

@@ -3,7 +3,7 @@ import type { List, Tag } from '../../db/types'
 import type { View } from '../../lib/view'
 import { useOnlineStatus } from '../../lib/useOnlineStatus'
 import { useSettings } from '../../lib/useSettings'
-import { playHoverTick } from '../../lib/sound'
+import { playSidebarHover } from '../../lib/sound'
 import { reorderLists } from '../../db/repo/lists'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { PlayerCard } from '../rpg/PlayerCard'
@@ -46,7 +46,7 @@ function NavItem({
       onMouseEnter={() => {
         // Tic ASMR sutil solo en dispositivos con puntero (escritorio).
         if (settings.soundEnabled && window.matchMedia('(hover: hover)').matches) {
-          playHoverTick(settings.soundVolume)
+          playSidebarHover(settings.soundVolume)
         }
       }}
       aria-current={active ? 'page' : undefined}

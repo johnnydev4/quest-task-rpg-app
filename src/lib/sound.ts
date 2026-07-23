@@ -100,6 +100,26 @@ export function playHoverTick(volume: number): void {
   playTone(audio, { type: 'sine', from: 940, to: 760, dur: 0.055, peak: v })
 }
 
+let lastSidebarHoverAt = 0
+
+/**
+ * Tic ASMR para el menú lateral, distinto al de las tareas: más grave y con una
+ * caída suave (dos sinusoides afinadas una octava) para una sensación más
+ * "acolchada". Limitado a uno cada 90 ms para que recorrer el menú no ametralle.
+ * Mudo hasta el primer gesto del usuario (política de autoplay).
+ */
+export function playSidebarHover(volume: number): void {
+  const now = performance.now()
+  if (now - lastSidebarHoverAt < 90) return
+  lastSidebarHoverAt = now
+  const audio = getCtx()
+  if (!audio || volume <= 0) return
+  const v = Math.min(1, volume) * 0.09
+  const base = 320 + Math.random() * 40
+  playTone(audio, { type: 'sine', from: base, to: base * 0.7, dur: 0.07, peak: v })
+  playTone(audio, { type: 'sine', from: base * 2, to: base * 1.4, dur: 0.045, peak: v * 0.35 })
+}
+
 /** Aviso suave de cambio de fase del Pomodoro (foco ⇄ descanso). */
 export function playPhaseChange(volume: number): void {
   const audio = getCtx()

@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import type { List, Tag } from '../../db/types'
 import type { View } from '../../lib/view'
 import { useOnlineStatus } from '../../lib/useOnlineStatus'
+import { useSettings } from '../../lib/useSettings'
+import { playHoverTick } from '../../lib/sound'
 import { reorderLists } from '../../db/repo/lists'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { PlayerCard } from '../rpg/PlayerCard'
@@ -37,9 +39,16 @@ function NavItem({
   fadeMetaOnHover?: boolean
 }) {
   const metaFade = fadeMetaOnHover ? ' transition-opacity group-hover:opacity-0' : ''
+  const settings = useSettings()
   return (
     <button
       onClick={onClick}
+      onMouseEnter={() => {
+        // Tic ASMR sutil solo en dispositivos con puntero (escritorio).
+        if (settings.soundEnabled && window.matchMedia('(hover: hover)').matches) {
+          playHoverTick(settings.soundVolume)
+        }
+      }}
       aria-current={active ? 'page' : undefined}
       className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-base font-medium transition-colors lg:gap-2.5 lg:py-2 lg:text-sm ${
         active ? 'bg-accent-500/15 text-accent-300' : 'text-ink-dim hover:bg-ink/5 hover:text-ink'

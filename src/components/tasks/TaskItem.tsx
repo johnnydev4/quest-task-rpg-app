@@ -45,7 +45,9 @@ const chipBase = 'inline-flex items-center gap-1 rounded-full border px-1.5 py-p
 /** Menú contextual (clic derecho) de una tarea: Hoy, prioridad, completar, fecha y lista. */
 function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: number; onClose: () => void }) {
   const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
-  const inToday = task.dueAt !== null && task.dueAt < startOfDayOffset(1)
+  // "En Hoy" = vence exactamente hoy. Las vencidas (fecha anterior) NO están en
+  // Hoy, así que ofrecen "Agregar a Hoy", no "Quitar de Hoy".
+  const inToday = task.dueAt !== null && task.dueAt >= startOfToday() && task.dueAt < startOfDayOffset(1)
   // Recurrente atrasada: puede saltar a su ocurrencia más cercana desde hoy.
   const overdueRecurring =
     task.recurrenceRule !== null && task.dueAt !== null && task.dueAt < startOfToday() && !task.completed

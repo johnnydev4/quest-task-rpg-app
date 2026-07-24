@@ -37,9 +37,12 @@
   --t-surface-800: #161a23;
   --t-surface-700: #1f2430;
   --t-ink: #ffffff;
-  --t-ink-dim: #cbd2dc;
-  --t-ink-muted: #9aa3b2;
-  --t-ink-faint: #6b7280;
+  /* Las tintas apagadas se acercan a la tinta plena según --t-ink-lift, que JS
+     sube cuando el fondo elegido pelea con el tema (ver lib/bgContrast.ts). */
+  --t-ink-lift: 0%;
+  --t-ink-dim: color-mix(in srgb, #ffffff var(--t-ink-lift), #cbd2dc);
+  --t-ink-muted: color-mix(in srgb, #ffffff var(--t-ink-lift), #9aa3b2);
+  --t-ink-faint: color-mix(in srgb, #ffffff var(--t-ink-lift), #6b7280);
   --t-line: #ffffff;
   --t-warn: #fbbf24;
   --t-danger: #fb7185;
@@ -54,6 +57,9 @@
   /* Liquid Glass: el tinte se mezcla con la superficie base. JS lo sobreescribe. */
   --t-glass-tint: var(--t-surface-800);
   --t-glass: color-mix(in srgb, var(--t-glass-tint) 38%, var(--t-surface-800));
+  /* Multiplicador de opacidad del cristal (1 = base). JS lo sube si el fondo
+     personalizado deja poco contraste bajo los paneles. */
+  --t-glass-op: 1;
 }
 
 :root[data-theme='light'] {
@@ -62,10 +68,10 @@
   --t-surface-800: #ffffff;
   --t-surface-700: #eef0f4;
   --t-ink: #0b1220;
-  --t-ink-dim: #334155;
+  --t-ink-dim: color-mix(in srgb, #0b1220 var(--t-ink-lift), #334155);
   /* Oscurecidos para superar el contraste AA sobre superficies claras y cristal claro */
-  --t-ink-muted: #475569;
-  --t-ink-faint: #64748b;
+  --t-ink-muted: color-mix(in srgb, #0b1220 var(--t-ink-lift), #475569);
+  --t-ink-faint: color-mix(in srgb, #0b1220 var(--t-ink-lift), #64748b);
   --t-line: #0f1117;
   --t-warn: #b45309;
   --t-danger: #e11d48;
@@ -153,20 +159,20 @@ a {
  * en Safari/iOS. Dejando sólo la propiedad estándar, el build emite las dos.
  */
 .glass-panel {
-  background-color: color-mix(in srgb, var(--t-glass) 55%, transparent);
+  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(55% * var(--t-glass-op))), transparent);
   backdrop-filter: blur(18px) saturate(150%);
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
 }
 
 .glass-strong {
-  background-color: color-mix(in srgb, var(--t-glass) 90%, transparent);
+  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(90% * var(--t-glass-op))), transparent);
   backdrop-filter: blur(28px) saturate(150%);
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
 }
 
 /* Tarjeta de hábito: liquid glass un pelín más opaco que .glass-strong. */
 .glass-habit {
-  background-color: color-mix(in srgb, var(--t-glass) 99%, transparent);
+  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(99% * var(--t-glass-op))), transparent);
   backdrop-filter: blur(28px) saturate(150%);
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
 }
@@ -182,7 +188,7 @@ a {
 .glass-bar {
   /* 42% de tinte: por encima el cristal parece macizo y el efecto desaparece;
      por debajo, el texto que pasa detrás se vuelve legible. */
-  background-color: color-mix(in srgb, var(--t-glass) 42%, transparent);
+  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(42% * var(--t-glass-op))), transparent);
   backdrop-filter: blur(20px) saturate(200%);
   box-shadow:
     inset 0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent),
@@ -195,7 +201,7 @@ a {
  * difusión, con una outer shadow más leve.
  */
 .glass-bar-float {
-  background-color: color-mix(in srgb, var(--t-glass) 42%, transparent);
+  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(42% * var(--t-glass-op))), transparent);
   backdrop-filter: blur(20px) saturate(200%);
   box-shadow:
     inset 0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent),
@@ -208,7 +214,7 @@ a {
  * lo usa, iOS Safari lo ignora y el control se ve opaco/plano.
  */
 .glass-input {
-  background-color: color-mix(in srgb, var(--t-glass) 45%, transparent);
+  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(45% * var(--t-glass-op))), transparent);
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 6%, transparent);
 }
 

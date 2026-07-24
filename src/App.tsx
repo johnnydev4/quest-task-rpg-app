@@ -12,7 +12,8 @@ import { getOrCreateTag } from './db/repo/tags'
 import { emitConfigOpened, onCompletion, onConfigOpened } from './lib/events'
 import type { QuickParseResult } from './lib/quickParse'
 import { playCompletion, playLevelUp } from './lib/sound'
-import { applyTheme } from './lib/theme'
+import { applyBackgroundContrast } from './lib/bgContrast'
+import { applyTheme, resolveDark } from './lib/theme'
 import { useProfile } from './lib/useProfile'
 import { useSettings } from './lib/useSettings'
 import { startReminderScheduler } from './services/reminderScheduler'
@@ -157,19 +158,24 @@ export default function App() {
     setDetailId(null)
   }, [view])
 
-  // Tema, acento y tinte del cristal globales e instantáneos (spec §10).
-  useEffect(() => {
-    applyTheme(settings.theme, settings.accentColor, settings.glassTint)
-    if (settings.theme !== 'system') return
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const listener = () => applyTheme(settings.theme, settings.accentColor, settings.glassTint)
-    mq.addEventListener('change', listener)
-    return () => mq.removeEventListener('change', listener)
-  }, [settings.theme, settings.accentColor, settings.glassTint])
-
   // Fondo personalizado pre-difuminado (bitmap estático: no cuesta nada componerlo).
   const bgBlob = useLiveQuery(async () => (await db.appMedia.get('bg'))?.blob ?? null, []) ?? null
-  const bgUrl = useBlurredBackground(bgBlob, settings.bgBlur)
+  const { url: bgUrl, lum: bgLum } = useBlurredBackground(bgBlob, settings.bgBlur)
+
+  // Tema, acento y tinte del cristal globales e instantáneos (spec §10). El
+  // contraste del fondo va en el mismo efecto: depende del tema resuelto, así
+  // que debe recalcularse también cuando el sistema cambia de claro a oscuro.
+  useEffect(() => {
+    const apply = () => {
+      applyTheme(settings.theme, settings.accentColor, settings.glassTint)
+      applyBackgroundContrast(bgLum, resolveDark(settings.theme))
+    }
+    apply()
+    if (settings.theme !== 'system') return
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [settings.theme, settings.accentColor, settings.glassTint, bgLum])
 
   // Recompensa inmediata: sonido, vibración y celebración de level-up (spec §7).
   useEffect(
@@ -497,7 +503,15 @@ export default function App() {
       {bgUrl && (
         <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
           <img src={bgUrl} alt="" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-surface-900/50" />
+          {/* Velo de opacidad adaptativa: se calcula desde la luminancia real de
+              la imagen para que el sustrato acompañe al tema (lib/bgContrast.ts). */}
+          <div
+            className="absolute inset-0 transition-[background-color] duration-300"
+            style={{
+              background:
+                'var(--t-bg-scrim, color-mix(in srgb, var(--t-surface-900) 50%, transparent))',
+            }}
+          />
         </div>
       )}
       {/* Sidebar fija en escritorio */}

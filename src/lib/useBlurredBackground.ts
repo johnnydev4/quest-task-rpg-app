@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { measureLuminance, type BgLuminance } from './bgContrast'
 
 /**
  * Pre-difumina la imagen de fondo UNA vez en un canvas y devuelve una URL
@@ -69,7 +70,9 @@ function blurByRescale(
   ctx.drawImage(src, 0, 0, sw, sh, -bleed, -bleed, canvas.width + bleed * 2, canvas.height + bleed * 2)
 }
 
-async function makeBlurred(blob: Blob, blurPx: number): Promise<string> {
+type Blurred = { url: string; lum: BgLuminance | null }
+
+async function makeBlurred(blob: Blob, blurPx: number): Promise<Blurred> {
   const bitmap = await createImageBitmap(blob)
   try {
     const maxW = 1600
@@ -78,7 +81,7 @@ async function makeBlurred(blob: Blob, blurPx: number): Promise<string> {
     canvas.width = Math.max(1, Math.round(bitmap.width * scale))
     canvas.height = Math.max(1, Math.round(bitmap.height * scale))
     const ctx = canvas.getContext('2d')
-    if (!ctx) return URL.createObjectURL(blob)
+    if (!ctx) return { url: URL.createObjectURL(blob), lum: measureLuminance(bitmap) }
     if (blurPx <= 0) {
       ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
     } else if (typeof ctx.filter === 'string') {
@@ -90,21 +93,28 @@ async function makeBlurred(blob: Blob, blurPx: number): Promise<string> {
       // iOS Safari: sin ctx.filter → difuminado por re-escalado.
       blurByRescale(bitmap, canvas, ctx, blurPx)
     }
+    // Se mide sobre el canvas ya difuminado: es exactamente lo que verá el ojo.
+    const lum = measureLuminance(canvas)
     const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82))
-    return URL.createObjectURL(out ?? blob)
+    return { url: URL.createObjectURL(out ?? blob), lum }
   } finally {
     bitmap.close()
   }
 }
 
-export function useBlurredBackground(blob: Blob | null, blurPx: number): string | null {
-  const [url, setUrl] = useState<string | null>(null)
+const EMPTY: Blurred | { url: null; lum: null } = { url: null, lum: null }
+
+export function useBlurredBackground(
+  blob: Blob | null,
+  blurPx: number,
+): { url: string | null; lum: BgLuminance | null } {
+  const [state, setState] = useState<{ url: string | null; lum: BgLuminance | null }>(EMPTY)
   // URL que se está mostrando ahora mismo; la conservamos hasta tener el reemplazo.
   const currentUrl = useRef<string | null>(null)
 
   useEffect(() => {
     if (!blob) {
-      setUrl(null)
+      setState(EMPTY)
       if (currentUrl.current) {
         URL.revokeObjectURL(currentUrl.current)
         currentUrl.current = null
@@ -114,23 +124,23 @@ export function useBlurredBackground(blob: Blob | null, blurPx: number): string 
     let cancelled = false
     // Pequeño debounce: el slider de difusión no regenera en cada pixel.
     const timer = setTimeout(async () => {
-      let objectUrl: string
+      let next: Blurred
       try {
-        objectUrl = await makeBlurred(blob, blurPx)
+        next = await makeBlurred(blob, blurPx)
       } catch {
-        objectUrl = URL.createObjectURL(blob)
+        next = { url: URL.createObjectURL(blob), lum: null }
       }
       if (cancelled) {
         // Esta difusión ya no interesa y su bitmap nunca se mostró: se descarta.
-        URL.revokeObjectURL(objectUrl)
+        URL.revokeObjectURL(next.url)
         return
       }
       // Reemplazo atómico: recién ahora que la nueva imagen está lista revocamos
       // la anterior. Así NUNCA hay un instante con la URL mostrada ya revocada
       // (en iOS Safari eso hacía desaparecer el fondo al mover la difusión).
       const previous = currentUrl.current
-      currentUrl.current = objectUrl
-      setUrl(objectUrl)
+      currentUrl.current = next.url
+      setState(next)
       if (previous) URL.revokeObjectURL(previous)
     }, 150)
     // La limpieza solo cancela el trabajo pendiente; no toca la URL visible.
@@ -150,5 +160,5 @@ export function useBlurredBackground(blob: Blob | null, blurPx: number): string 
     }
   }, [])
 
-  return url
+  return state
 }

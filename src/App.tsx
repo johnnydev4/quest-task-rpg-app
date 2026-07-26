@@ -38,6 +38,7 @@ import { QuestsView } from './components/quests/QuestsView'
 import { WeeklyQuestBanner } from './components/quests/WeeklyQuestBanner'
 import { HabitsView } from './components/habits/HabitsView'
 import { HabitsToday, useTodayHabits } from './components/habits/HabitsToday'
+import { FlameIcon } from './components/ui/icons'
 import { pomodoro } from './services/pomodoro'
 
 // Recharts es pesado: se carga solo al entrar a Estadísticas.
@@ -651,7 +652,11 @@ export default function App() {
                   +{xpGain.xp}
                 </span>
               )}
-              {streak > 0 && <span className="text-[11px] font-medium text-warn">🔥 {streak}</span>}
+              {streak > 0 && (
+                <span className="flex items-center gap-1 text-[11px] font-medium text-warn">
+                  <FlameIcon className="size-3" /> {streak}
+                </span>
+              )}
             </div>
           </div>
           </div>

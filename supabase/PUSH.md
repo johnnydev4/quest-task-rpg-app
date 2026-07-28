@@ -14,8 +14,9 @@ Piezas:
 
 ## 1. Tablas
 
-En Supabase Dashboard → SQL Editor, ejecuta `supabase/schema.sql`. Si ya lo
-habías corrido antes, basta con pegar el bloque final ("Web Push").
+En Supabase Dashboard → SQL Editor, ejecuta `supabase/schema.sql` entero. Es
+re-ejecutable: aunque ya lo hubieras corrido antes para la sincronización,
+volver a pasarlo no rompe nada.
 
 ## 2. Claves VAPID
 

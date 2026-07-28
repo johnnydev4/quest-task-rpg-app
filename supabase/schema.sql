@@ -1,5 +1,9 @@
--- Esquema de sincronización de Quest (Fase 9).
+-- Esquema de sincronización de Quest (Fase 9) + Web Push.
 -- Ejecutar en: Supabase Dashboard → SQL Editor → New query → pegar y Run.
+--
+-- El script es re-ejecutable: cada política se borra antes de crearse, porque
+-- Postgres no admite `create policy if not exists` y al correrlo dos veces
+-- fallaba con "policy ... already exists".
 
 -- Una única tabla de sincronización: cada fila es una entidad local (jsonb)
 -- con last-write-wins por updated_at y tombstones (deleted=true).
@@ -15,19 +19,23 @@ create table if not exists public.sync_items (
 
 alter table public.sync_items enable row level security;
 
+drop policy if exists "usuarios ven solo lo suyo" on public.sync_items;
 create policy "usuarios ven solo lo suyo"
   on public.sync_items for select
   using (auth.uid() = user_id);
 
+drop policy if exists "usuarios insertan solo lo suyo" on public.sync_items;
 create policy "usuarios insertan solo lo suyo"
   on public.sync_items for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "usuarios actualizan solo lo suyo" on public.sync_items;
 create policy "usuarios actualizan solo lo suyo"
   on public.sync_items for update
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "usuarios borran solo lo suyo" on public.sync_items;
 create policy "usuarios borran solo lo suyo"
   on public.sync_items for delete
   using (auth.uid() = user_id);
@@ -40,18 +48,22 @@ insert into storage.buckets (id, name, public)
 values ('attachments', 'attachments', false)
 on conflict (id) do nothing;
 
+drop policy if exists "adjuntos: leer propios" on storage.objects;
 create policy "adjuntos: leer propios"
   on storage.objects for select
   using (bucket_id = 'attachments' and auth.uid()::text = (storage.foldername(name))[1]);
 
+drop policy if exists "adjuntos: subir propios" on storage.objects;
 create policy "adjuntos: subir propios"
   on storage.objects for insert
   with check (bucket_id = 'attachments' and auth.uid()::text = (storage.foldername(name))[1]);
 
+drop policy if exists "adjuntos: actualizar propios" on storage.objects;
 create policy "adjuntos: actualizar propios"
   on storage.objects for update
   using (bucket_id = 'attachments' and auth.uid()::text = (storage.foldername(name))[1]);
 
+drop policy if exists "adjuntos: borrar propios" on storage.objects;
 create policy "adjuntos: borrar propios"
   on storage.objects for delete
   using (bucket_id = 'attachments' and auth.uid()::text = (storage.foldername(name))[1]);
@@ -75,19 +87,23 @@ create table if not exists public.push_subscriptions (
 
 alter table public.push_subscriptions enable row level security;
 
+drop policy if exists "push: ver propias" on public.push_subscriptions;
 create policy "push: ver propias"
   on public.push_subscriptions for select
   using (auth.uid() = user_id);
 
+drop policy if exists "push: crear propias" on public.push_subscriptions;
 create policy "push: crear propias"
   on public.push_subscriptions for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "push: actualizar propias" on public.push_subscriptions;
 create policy "push: actualizar propias"
   on public.push_subscriptions for update
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "push: borrar propias" on public.push_subscriptions;
 create policy "push: borrar propias"
   on public.push_subscriptions for delete
   using (auth.uid() = user_id);

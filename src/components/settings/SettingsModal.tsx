@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { ThemeMode } from '../../db/types'
@@ -10,6 +10,7 @@ import { ACCENT_PRESETS } from '../../lib/theme'
 import { exportData, importData } from '../../services/backup'
 import { notificationService } from '../../services/notifications'
 import { cloudConfigured } from '../../services/supabase'
+import { webPush, webPushConfigured } from '../../services/webPush'
 import { Modal } from '../ui/Modal'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -18,6 +19,76 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <h3 className="text-xs font-semibold tracking-wide text-ink-faint uppercase">{title}</h3>
       {children}
     </section>
+  )
+}
+
+/**
+ * Avisos con la app CERRADA (Web Push). Sin esto, los recordatorios solo suenan
+ * mientras Quest está abierta: quien los dispara es un temporizador de la
+ * pestaña, que el sistema mata al cerrar la app. Con push suscrito, es el
+ * servidor quien avisa a la hora exacta aunque el móvil esté bloqueado.
+ */
+function BackgroundPushSettings() {
+  const [active, setActive] = useState<boolean | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    void webPush.isActive().then((v) => alive && setActive(v))
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  async function toggle() {
+    setBusy(true)
+    setError(null)
+    if (active) {
+      await webPush.unsubscribe()
+      setActive(false)
+    } else {
+      const result = await webPush.subscribe()
+      if (!result.ok) setError(result.error ?? 'No se pudo activar')
+      setActive(result.ok)
+    }
+    setBusy(false)
+  }
+
+  if (!webPushConfigured || !webPush.isSupported()) {
+    return (
+      <p className="text-[11px] text-ink-faint">
+        Los avisos llegan solo con Quest abierta. Para recibirlos con la app cerrada hay que
+        configurar la nube y las claves de push (ver <code>supabase/PUSH.md</code>).
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-2 rounded-xl border border-line/10 glass-input p-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="space-y-0.5">
+          <span className="block text-sm font-medium text-ink">Avisos con la app cerrada</span>
+          <span className="block text-[11px] text-ink-muted">
+            {active
+              ? 'Este dispositivo recibirá los recordatorios aunque no estés usando Quest.'
+              : 'Ahora mismo solo suenan si tienes Quest abierta.'}
+          </span>
+        </span>
+        <button
+          onClick={() => void toggle()}
+          disabled={busy || active === null}
+          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${
+            active
+              ? 'border border-line/10 text-ink-dim hover:bg-ink/5'
+              : 'bg-accent-600 text-on-accent hover:bg-accent-500'
+          }`}
+        >
+          {busy ? 'Un momento…' : active ? 'Desactivar' : 'Activar'}
+        </button>
+      </div>
+      {error && <p className="text-[11px] text-warn">{error}</p>}
+    </div>
   )
 }
 
@@ -87,17 +158,20 @@ function NotificationsSettings() {
 
   if (permission === 'granted') {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-sm text-ink-dim">
-          <span className="size-2 rounded-full bg-ok" aria-hidden="true" />
-          Activadas: recordatorios, hábitos y pomodoro
-        </span>
-        <button
-          onClick={sendTest}
-          className="rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5"
-        >
-          {testSent ? '✓ Enviada' : 'Probar notificación'}
-        </button>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5 text-sm text-ink-dim">
+            <span className="size-2 rounded-full bg-ok" aria-hidden="true" />
+            Activadas: recordatorios, hábitos y pomodoro
+          </span>
+          <button
+            onClick={sendTest}
+            className="rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5"
+          >
+            {testSent ? '✓ Enviada' : 'Probar notificación'}
+          </button>
+        </div>
+        <BackgroundPushSettings />
       </div>
     )
   }

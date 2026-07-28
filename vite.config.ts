@@ -55,6 +55,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: 'index.html',
+        // Añade los handlers de Web Push (`push` y `notificationclick`) al SW
+        // generado, para recibir avisos con la app cerrada. Ver public/push-sw.js.
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

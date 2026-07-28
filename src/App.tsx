@@ -18,6 +18,7 @@ import { useProfile } from './lib/useProfile'
 import { useSettings } from './lib/useSettings'
 import { startReminderScheduler } from './services/reminderScheduler'
 import { startAutoSync } from './services/sync'
+import { startPushHeartbeat } from './services/webPush'
 import { Sidebar } from './components/layout/Sidebar'
 import { QuickAdd } from './components/tasks/QuickAdd'
 import { TaskSection } from './components/tasks/TaskSection'
@@ -150,6 +151,9 @@ export default function App() {
   useEffect(() => {
     startReminderScheduler()
     startAutoSync()
+    // Latido de push: mientras la app esté abierta, el servidor no manda avisos
+    // a este dispositivo (los da el scheduler de arriba) y así no se duplican.
+    startPushHeartbeat()
   }, [])
 
   // Al cambiar de pestaña: volver al inicio y cerrar el detalle de tarea que

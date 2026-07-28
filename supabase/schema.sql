@@ -55,3 +55,55 @@ create policy "adjuntos: actualizar propios"
 create policy "adjuntos: borrar propios"
   on storage.objects for delete
   using (bucket_id = 'attachments' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- ---------------------------------------------------------------------------
+-- Web Push: avisos con la app cerrada (ver supabase/PUSH.md)
+-- ---------------------------------------------------------------------------
+
+-- Una fila por dispositivo suscrito. `last_seen_at` lo refresca la app abierta:
+-- la Edge Function salta los dispositivos vistos hace poco para no duplicar el
+-- aviso que ya está dando el temporizador in-app.
+create table if not exists public.push_subscriptions (
+  endpoint text primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  p256dh text not null,
+  auth text not null,
+  time_zone text not null default 'UTC',
+  last_seen_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+alter table public.push_subscriptions enable row level security;
+
+create policy "push: ver propias"
+  on public.push_subscriptions for select
+  using (auth.uid() = user_id);
+
+create policy "push: crear propias"
+  on public.push_subscriptions for insert
+  with check (auth.uid() = user_id);
+
+create policy "push: actualizar propias"
+  on public.push_subscriptions for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "push: borrar propias"
+  on public.push_subscriptions for delete
+  using (auth.uid() = user_id);
+
+create index if not exists push_subscriptions_user_idx
+  on public.push_subscriptions (user_id);
+
+-- Registro de avisos ya enviados, para no repetir el mismo push cada minuto.
+-- Sin políticas a propósito: solo la Edge Function (service role) lo toca.
+create table if not exists public.push_sent (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  dedupe_key text not null,
+  sent_at timestamptz not null default now(),
+  primary key (user_id, dedupe_key)
+);
+
+alter table public.push_sent enable row level security;
+
+create index if not exists push_sent_sent_at_idx on public.push_sent (sent_at);

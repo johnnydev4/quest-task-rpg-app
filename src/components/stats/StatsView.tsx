@@ -17,8 +17,10 @@ import {
   YAxis,
 } from 'recharts'
 import { db } from '../../db/db'
-import { FlameIcon } from '../ui/icons'
+import { FlameIcon, PinIcon, PinOffIcon } from '../ui/icons'
 import { useProfile } from '../../lib/useProfile'
+import { useSettings } from '../../lib/useSettings'
+import { updateSettings } from '../../db/repo/settings'
 import {
   computeStats,
   focusEntityOptions,
@@ -61,7 +63,11 @@ export default function StatsView() {
   const [range, setRange] = useState<StatsRange>('7d')
   const [customFrom, setCustomFrom] = useState(startOfDayOffset(-13))
   const [customTo, setCustomTo] = useState(startOfToday())
-  const [focusEntityKey, setFocusEntityKey] = useState<string>('')
+  // null = sin elección manual esta sesión → se usa el elemento fijado (si hay).
+  const [focusOverride, setFocusOverride] = useState<string | null>(null)
+
+  const settings = useSettings()
+  const pinnedKey = settings.pinnedFocusEntityKey ?? ''
 
   const tasks = useLiveQuery(() => db.tasks.toArray(), []) ?? []
   const habits = useLiveQuery(() => db.habits.toArray(), []) ?? []
@@ -84,8 +90,21 @@ export default function StatsView() {
     return focusEntityOptions(sessions, tasks, habits, from, to)
   }, [buckets, sessions, tasks, habits])
 
+  // Elección manual de esta sesión, o el elemento fijado si no se tocó el selector.
+  const effectiveKey = focusOverride ?? pinnedKey
   // El elemento elegido deja de tener datos al cambiar el rango: se limpia solo.
-  const selectedKey = entityOptions.some((o) => o.key === focusEntityKey) ? focusEntityKey : ''
+  const selectedKey = entityOptions.some((o) => o.key === effectiveKey) ? effectiveKey : ''
+  const isPinned = selectedKey !== '' && selectedKey === pinnedKey
+
+  function togglePin() {
+    if (isPinned) {
+      // Desfijar: sigue visible en esta sesión, pero deja de persistir.
+      setFocusOverride(selectedKey)
+      void updateSettings({ pinnedFocusEntityKey: null })
+    } else if (selectedKey) {
+      void updateSettings({ pinnedFocusEntityKey: selectedKey })
+    }
+  }
 
   const focusByEntity = useMemo(
     () => (selectedKey ? focusForEntityPerBucket(buckets, sessions, selectedKey) : []),
@@ -215,7 +234,7 @@ export default function StatsView() {
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <select
               value={selectedKey}
-              onChange={(e) => setFocusEntityKey(e.target.value)}
+              onChange={(e) => setFocusOverride(e.target.value)}
               aria-label="Elegir tarea o hábito"
               className="max-w-full rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink"
             >
@@ -240,9 +259,28 @@ export default function StatsView() {
               )}
             </select>
             {selectedKey && (
-              <span className="text-xs text-ink-faint">
-                {focusByEntityTotal} min de foco en el periodo
-              </span>
+              <>
+                <button
+                  onClick={togglePin}
+                  aria-pressed={isPinned}
+                  title={
+                    isPinned
+                      ? 'Desfijar: dejará de aparecer al abrir Estadísticas'
+                      : 'Fijar: aparecerá al abrir Estadísticas'
+                  }
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    isPinned
+                      ? 'border-accent-500/50 bg-accent-500/15 text-accent-300'
+                      : 'border-line/10 text-ink-muted hover:bg-ink/5'
+                  }`}
+                >
+                  {isPinned ? <PinOffIcon className="size-3.5" /> : <PinIcon className="size-3.5" />}
+                  {isPinned ? 'Desfijar' : 'Fijar'}
+                </button>
+                <span className="text-xs text-ink-faint">
+                  {focusByEntityTotal} min de foco en el periodo
+                </span>
+              </>
             )}
           </div>
           {entityOptions.length === 0 ? (

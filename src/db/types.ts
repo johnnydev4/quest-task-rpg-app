@@ -256,6 +256,8 @@ export interface Settings {
   pomodoroShortBreakMin: number
   pomodoroLongBreakMin: number
   pomodoroLongBreakEvery: number
+  /** Tarea/hábito fijado en Estadísticas (`task:<id>`/`habit:<id>`); null = ninguno. */
+  pinnedFocusEntityKey?: string | null
   updatedAt: number
   /** Los ajustes de personalización SÍ se sincronizan (tema, colores, sonidos…). */
   syncStatus?: SyncStatus

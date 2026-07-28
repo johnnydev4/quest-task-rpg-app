@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pomodoroShortBreakMin: 5,
   pomodoroLongBreakMin: 15,
   pomodoroLongBreakEvery: 4,
+  pinnedFocusEntityKey: null,
   updatedAt: 0,
   syncStatus: 'synced',
 }

@@ -262,7 +262,7 @@ function AgendaList({
 }) {
   let lastMonthKey = ''
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       {days.map((ms) => {
         const d = new Date(ms)
         const key = dayKeyOf(d)
@@ -312,21 +312,19 @@ function AgendaDayRow({
       <button
         onClick={() => onSelect(dayMs)}
         aria-label={`${weekday} ${d.getDate()} — ${pending} pendientes. Toca para ver o crear`}
-        className="flex w-full items-stretch gap-3 rounded-xl px-1 py-1 text-left transition-colors hover:bg-ink/5"
+        className={`flex w-full items-stretch gap-3 rounded-xl border glass-habit p-2 text-left transition-colors hover:border-accent-500/40 ${
+          isToday ? 'border-accent-500/50' : 'border-line/10'
+        }`}
       >
         <span
           className={`flex size-12 shrink-0 flex-col items-center justify-center rounded-full ${
-            isToday ? 'bg-accent-600 text-on-accent' : 'text-ink-dim'
+            isToday ? 'bg-accent-600 text-on-accent' : 'bg-ink/5 text-ink-dim'
           }`}
         >
           <span className="text-[10px] font-medium uppercase leading-none">{weekday}</span>
           <span className="text-lg font-bold leading-tight">{d.getDate()}</span>
         </span>
-        <span
-          className={`flex min-w-0 flex-1 flex-col justify-center gap-1 border-b py-2 ${
-            isToday ? 'border-accent-500/40' : 'border-line/5'
-          }`}
-        >
+        <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
           {tasks.length === 0 ? (
             <>
               <span className="text-sm text-ink-dim">No hay nada planeado</span>

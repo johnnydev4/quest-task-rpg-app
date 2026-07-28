@@ -312,7 +312,7 @@ function AgendaDayRow({
       <button
         onClick={() => onSelect(dayMs)}
         aria-label={`${weekday} ${d.getDate()} — ${pending} pendientes. Toca para ver o crear`}
-        className={`flex w-full items-stretch gap-3 rounded-xl border glass-strong p-2 text-left transition-colors hover:border-accent-500/40 ${
+        className={`flex w-full items-stretch gap-3 rounded-xl border glass-panel p-2 text-left transition-colors hover:border-accent-500/40 ${
           isToday ? 'border-accent-500/50' : 'border-line/10'
         }`}
       >

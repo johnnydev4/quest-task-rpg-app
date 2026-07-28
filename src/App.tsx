@@ -621,8 +621,10 @@ export default function App() {
                 </div>
               )
             })()}
-          {/* Barra de XP compacta en móvil (en escritorio vive en la sidebar) */}
-          <div className="px-4 pb-3 sm:px-6 lg:hidden">
+          {/* Barra de XP compacta en móvil (en escritorio vive en la sidebar).
+              Dentro de una lista se oculta: ahí manda la barra de la lista y
+              dos barras seguidas se leen fatal en pantalla pequeña. */}
+          <div className={`px-4 pb-3 sm:px-6 lg:hidden ${currentList ? 'hidden' : ''}`}>
             <div className="flex items-center gap-2">
               <span className="rounded-md bg-accent-500/15 px-1.5 py-0.5 text-[11px] font-bold text-accent-300">
                 Nv {level}

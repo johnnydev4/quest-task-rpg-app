@@ -67,7 +67,7 @@ async function check(): Promise<void> {
       await db.reminders.update(reminder.id, { dismissed: true })
       continue
     }
-    await notificationService.notify('⏰ Recordatorio', task.title)
+    await notificationService.notify('Recordatorio', task.title)
     const fired = reminder.firedCount + 1
     if (fired <= reminder.repeatCount) {
       await db.reminders.update(reminder.id, {

@@ -112,7 +112,7 @@ function dueReminders(
       userId,
       // `remindAt` cambia en cada repetición, así que cada disparo es único.
       dedupeKey: `r:${row.id}:${r.remindAt}`,
-      title: '⏰ Recordatorio',
+      title: 'Recordatorio',
       body: task.title ?? 'Tarea pendiente',
       tag: `reminder-${row.id}`,
     })

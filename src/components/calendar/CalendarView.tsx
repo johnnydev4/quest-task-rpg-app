@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Task } from '../../db/types'
@@ -30,9 +30,16 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
   // Rango de meses renderizados alrededor del actual.
   const [range, setRange] = useState({ back: 0, forward: 5 })
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const [mode, setMode] = useState<'month' | 'agenda'>(() =>
+    localStorage.getItem('calendar-view-mode') === 'agenda' ? 'agenda' : 'month',
+  )
   const tasks = useLiveQuery(() => db.tasks.toArray(), []) ?? []
   const lists = useLiveQuery(() => db.lists.toArray(), [])
   const settings = useSettings()
+
+  useEffect(() => {
+    localStorage.setItem('calendar-view-mode', mode)
+  }, [mode])
 
   // Color efectivo de la tarea, igual que en la lista de tareas: el suyo manda
   // y, si no tiene, hereda el de su lista.
@@ -42,6 +49,7 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
   }, [lists])
 
   const currentMonthRef = useRef<HTMLElement>(null)
+  const todayRowRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const prevHeightRef = useRef<number | null>(null)
 
@@ -71,6 +79,25 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
     }
     return map
   }, [tasks])
+
+  // Días aplanados para la vista de lista: desde hoy hacia adelante (o desde el
+  // primer mes cargado si se pidieron días anteriores) hasta el final del rango.
+  const agendaDays = useMemo(() => {
+    const midnight = new Date()
+    midnight.setHours(0, 0, 0, 0)
+    const from = range.back === 0 ? midnight.getTime() : months[0]
+    const list: number[] = []
+    for (const ms of months) {
+      const first = new Date(ms)
+      const count = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
+      for (let i = 1; i <= count; i++) {
+        const d = new Date(first)
+        d.setDate(i)
+        if (d.getTime() >= from) list.push(d.getTime())
+      }
+    }
+    return list
+  }, [months, range.back])
 
   // Scroll infinito hacia abajo: al acercarse al final, añade más meses.
   useEffect(() => {
@@ -113,6 +140,38 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
 
   return (
     <div className="space-y-6">
+      {/* Selector de vista: cuadrícula mensual o lista de días */}
+      <div className="flex justify-center">
+        <div className="inline-flex rounded-full border border-line/10 glass-input p-0.5 text-xs font-medium">
+          <button
+            onClick={() => setMode('month')}
+            aria-pressed={mode === 'month'}
+            className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-colors ${
+              mode === 'month' ? 'bg-accent-600 text-on-accent' : 'text-ink-muted hover:text-ink-dim'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M3 10h18M8 3v4M16 3v4M9 14h.01M15 14h.01M9 18h.01M15 18h.01" />
+            </svg>
+            Mes
+          </button>
+          <button
+            onClick={() => setMode('agenda')}
+            aria-pressed={mode === 'agenda'}
+            className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-colors ${
+              mode === 'agenda' ? 'bg-accent-600 text-on-accent' : 'text-ink-muted hover:text-ink-dim'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
+              <path d="M8 6h13M8 12h13M8 18h13" />
+              <path d="M3 6h.01M3 12h.01M3 18h.01" />
+            </svg>
+            Lista
+          </button>
+        </div>
+      </div>
+
       <button
         onClick={loadPrevious}
         className="mx-auto flex items-center gap-1.5 rounded-full border border-line/10 px-4 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink-dim"
@@ -120,31 +179,47 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
           <path d="M18 15l-6-6-6 6" />
         </svg>
-        Meses anteriores
+        {mode === 'agenda' ? 'Días anteriores' : 'Meses anteriores'}
       </button>
 
-      {months.map((ms) => {
-        const d = new Date(ms)
-        const isCurrent = `${d.getFullYear()}-${d.getMonth()}` === currentMonthKey
-        return (
-          <MonthGrid
-            key={ms}
-            ref={isCurrent ? currentMonthRef : undefined}
-            monthStart={ms}
-            tasksByDay={tasksByDay}
-            todayKey={todayKey}
-            colorOf={colorOf}
-            onSelectDay={setSelectedDay}
-          />
-        )
-      })}
+      {mode === 'agenda' ? (
+        <AgendaList
+          days={agendaDays}
+          tasksByDay={tasksByDay}
+          todayKey={todayKey}
+          colorOf={colorOf}
+          onSelectDay={setSelectedDay}
+          todayRef={todayRowRef}
+        />
+      ) : (
+        months.map((ms) => {
+          const d = new Date(ms)
+          const isCurrent = `${d.getFullYear()}-${d.getMonth()}` === currentMonthKey
+          return (
+            <MonthGrid
+              key={ms}
+              ref={isCurrent ? currentMonthRef : undefined}
+              monthStart={ms}
+              tasksByDay={tasksByDay}
+              todayKey={todayKey}
+              colorOf={colorOf}
+              onSelectDay={setSelectedDay}
+            />
+          )
+        })
+      )}
 
       {/* Centinela del scroll infinito */}
       <div ref={sentinelRef} className="h-2" aria-hidden="true" />
 
-      {/* Botón flotante para volver al mes actual */}
+      {/* Botón flotante para volver a hoy */}
       <button
-        onClick={() => currentMonthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        onClick={() =>
+          (mode === 'agenda' ? todayRowRef.current : currentMonthRef.current)?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          })
+        }
         className="fixed bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-line/10 glass-strong px-4 py-2 text-xs font-semibold text-accent-300 shadow-xl transition-colors hover:bg-ink/5"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
@@ -166,6 +241,116 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
           }}
         />
       )}
+    </div>
+  )
+}
+
+function AgendaList({
+  days,
+  tasksByDay,
+  todayKey,
+  colorOf,
+  onSelectDay,
+  todayRef,
+}: {
+  days: number[]
+  tasksByDay: Map<string, Task[]>
+  todayKey: string
+  colorOf: (t: Task) => string | null
+  onSelectDay: (ms: number) => void
+  todayRef: React.Ref<HTMLDivElement>
+}) {
+  let lastMonthKey = ''
+  return (
+    <div className="space-y-1">
+      {days.map((ms) => {
+        const d = new Date(ms)
+        const key = dayKeyOf(d)
+        const monthKey = `${d.getFullYear()}-${d.getMonth()}`
+        const showMonth = monthKey !== lastMonthKey
+        lastMonthKey = monthKey
+        return (
+          <Fragment key={key}>
+            {showMonth && (
+              <h2 className="px-1 pt-3 pb-1 text-base font-semibold text-ink">{monthLabel(ms)}</h2>
+            )}
+            <AgendaDayRow
+              ref={key === todayKey ? todayRef : undefined}
+              dayMs={ms}
+              tasks={tasksByDay.get(key) ?? []}
+              isToday={key === todayKey}
+              colorOf={colorOf}
+              onSelect={onSelectDay}
+            />
+          </Fragment>
+        )
+      })}
+    </div>
+  )
+}
+
+function AgendaDayRow({
+  dayMs,
+  tasks,
+  isToday,
+  colorOf,
+  onSelect,
+  ref,
+}: {
+  dayMs: number
+  tasks: Task[]
+  isToday: boolean
+  colorOf: (t: Task) => string | null
+  onSelect: (ms: number) => void
+  ref?: React.Ref<HTMLDivElement>
+}) {
+  const d = new Date(dayMs)
+  const weekday = WEEKDAYS[(d.getDay() + 6) % 7]
+  const pending = tasks.filter((t) => !t.completed).length
+  return (
+    <div ref={ref} className="scroll-mt-24">
+      <button
+        onClick={() => onSelect(dayMs)}
+        aria-label={`${weekday} ${d.getDate()} — ${pending} pendientes. Toca para ver o crear`}
+        className="flex w-full items-stretch gap-3 rounded-xl px-1 py-1 text-left transition-colors hover:bg-ink/5"
+      >
+        <span
+          className={`flex size-12 shrink-0 flex-col items-center justify-center rounded-full ${
+            isToday ? 'bg-accent-600 text-on-accent' : 'text-ink-dim'
+          }`}
+        >
+          <span className="text-[10px] font-medium uppercase leading-none">{weekday}</span>
+          <span className="text-lg font-bold leading-tight">{d.getDate()}</span>
+        </span>
+        <span
+          className={`flex min-w-0 flex-1 flex-col justify-center gap-1 border-b py-2 ${
+            isToday ? 'border-accent-500/40' : 'border-line/5'
+          }`}
+        >
+          {tasks.length === 0 ? (
+            <>
+              <span className="text-sm text-ink-dim">No hay nada planeado</span>
+              <span className="text-xs text-ink-faint">Tocar para crear</span>
+            </>
+          ) : (
+            tasks.map((t) => {
+              const c = colorOf(t)
+              return (
+                <span
+                  key={t.id}
+                  className={`truncate rounded-md px-2 py-1 text-sm leading-tight ${
+                    t.completed ? 'line-through opacity-50' : ''
+                  } ${c ? '' : 'bg-accent-500/15 text-accent-300'}`}
+                  style={c ? { backgroundColor: `color-mix(in srgb, ${c} 18%, transparent)`, color: c } : undefined}
+                >
+                  {t.dueHasTime && `${formatDueTime(t.dueAt!)} `}
+                  {t.title}
+                </span>
+              )
+            })
+          )}
+        </span>
+      </button>
     </div>
   )
 }

@@ -7,7 +7,7 @@
  * la app usa una sola tabla genérica, así que el filtrado fino se hace aquí.
  *
  * Variables de entorno (Dashboard → Edge Functions → Secrets):
- *   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
+ *   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, CRON_SECRET
  * SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY las inyecta la plataforma.
  */
 import webpush from 'npm:web-push@3.6.7'
@@ -18,6 +18,7 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')!
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!
 const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:quest@example.com'
+const CRON_SECRET = Deno.env.get('CRON_SECRET')
 
 /** Margen tras el cual se considera que la app NO está abierta en ese dispositivo. */
 const IDLE_MS = 2 * 60_000
@@ -26,7 +27,11 @@ const MAX_LATE_MS = 12 * 60 * 60_000
 /** Los registros de deduplicación caducan; sin esto la tabla crece sin fin. */
 const DEDUPE_TTL_DAYS = 30
 
-webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
+// Con claves ausentes esto lanza; se protege para que el error salga en la
+// respuesta HTTP (diagnosticable) y no como un fallo de arranque opaco.
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
+}
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
@@ -183,10 +188,40 @@ async function send(sub: Subscription, payload: Pending): Promise<void> {
   }
 }
 
+/**
+ * Solo pg_cron debe poder disparar pushes. Se prefiere un secreto propio
+ * (`CRON_SECRET`) en vez de la service role key: Supabase convive con dos
+ * formatos de clave (la JWT clásica y las nuevas `sb_secret_...`) y comparar
+ * contra la equivocada daba un 401 imposible de diagnosticar desde fuera.
+ */
+function authorized(req: Request): boolean {
+  if (CRON_SECRET && req.headers.get('x-cron-secret') === CRON_SECRET) return true
+  // Compatibilidad con el montaje anterior, que mandaba la service role key.
+  return Boolean(SERVICE_ROLE_KEY) && req.headers.get('Authorization') === `Bearer ${SERVICE_ROLE_KEY}`
+}
+
 Deno.serve(async (req) => {
-  // Solo la clave de servicio (la usa pg_cron); el anon key no debe poder disparar pushes.
-  if (req.headers.get('Authorization') !== `Bearer ${SERVICE_ROLE_KEY}`) {
+  if (!authorized(req)) {
+    // Sin este detalle en los logs, un 401 no dice cuál de los dos lados falla.
+    console.error('401: la llamada no venía autorizada', {
+      cronSecretConfigurado: Boolean(CRON_SECRET),
+      serviceRoleDisponible: Boolean(SERVICE_ROLE_KEY),
+      cabeceraCronRecibida: req.headers.has('x-cron-secret'),
+      cabeceraAuthRecibida: req.headers.has('Authorization'),
+    })
     return new Response('Unauthorized', { status: 401 })
+  }
+
+  const faltan = [
+    ['VAPID_PUBLIC_KEY', VAPID_PUBLIC_KEY],
+    ['VAPID_PRIVATE_KEY', VAPID_PRIVATE_KEY],
+    ['SUPABASE_URL', SUPABASE_URL],
+    ['SUPABASE_SERVICE_ROLE_KEY', SERVICE_ROLE_KEY],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name)
+  if (faltan.length) {
+    return new Response(`Faltan secrets: ${faltan.join(', ')}`, { status: 500 })
   }
 
   const now = new Date()

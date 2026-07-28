@@ -43,7 +43,14 @@ En Supabase Dashboard → Edge Functions → Secrets:
 VAPID_PUBLIC_KEY=<clave pública>
 VAPID_PRIVATE_KEY=<clave privada>
 VAPID_SUBJECT=mailto:tu@email.com
+CRON_SECRET=<cualquier cadena larga al azar>
 ```
+
+`CRON_SECRET` es la contraseña con la que el cron llama a la función; sirve
+cualquier cadena, por ejemplo la que devuelve `select gen_random_uuid();`.
+Antes se usaba la service role key para esto, pero Supabase convive con dos
+formatos de clave (la JWT clásica y las nuevas `sb_secret_...`) y era muy fácil
+copiar la que no era y quedarse con un 401 sin explicación.
 
 `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` las inyecta Supabase sola.
 
@@ -58,11 +65,14 @@ npx supabase functions deploy push-reminders --no-verify-jwt
 
 ## 5. Programarla cada minuto
 
-En SQL Editor, sustituyendo la URL del proyecto y la service role key:
+En SQL Editor, sustituyendo la URL del proyecto y el `CRON_SECRET` del paso 3:
 
 ```sql
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
+
+select cron.unschedule('quest-push-reminders')
+where exists (select 1 from cron.job where jobname = 'quest-push-reminders');
 
 select cron.schedule(
   'quest-push-reminders',
@@ -70,13 +80,24 @@ select cron.schedule(
   $$
   select net.http_post(
     url := 'https://TU-PROYECTO.supabase.co/functions/v1/push-reminders',
-    headers := '{"Content-Type":"application/json","Authorization":"Bearer TU_SERVICE_ROLE_KEY"}'::jsonb
+    headers := '{"Content-Type":"application/json","x-cron-secret":"TU_CRON_SECRET"}'::jsonb
   );
   $$
 );
 ```
 
 Para quitarlo: `select cron.unschedule('quest-push-reminders');`
+
+Para comprobar qué responde la función, `net.http_post` no devuelve el
+resultado en el acto; queda registrado aquí:
+
+```sql
+select created, status_code, left(content, 300) as respuesta
+from net._http_response order by created desc limit 10;
+```
+
+Un `401` significa que el `x-cron-secret` del cron no coincide con el secret;
+un `500` lista en el cuerpo qué secret falta.
 
 ## 6. Activarlo en el móvil
 

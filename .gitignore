@@ -20,3 +20,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Archivos de trabajo del CLI de Supabase (project ref, versiones, cache)
+supabase/.temp/

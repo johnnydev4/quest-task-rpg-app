@@ -227,6 +227,10 @@ export interface PlayerProfile {
   streakCount: number
   /** Último día con al menos una tarea completada, como 'YYYY-MM-DD' local. */
   lastActiveDate: string | null
+  /** Día al que corresponde `xpToday`, como 'YYYY-MM-DD' local. */
+  xpDay: string | null
+  /** XP ya ganado hoy, para el tope diario (ver `dailyXpCap`). */
+  xpToday: number
   achievements: string[]
   updatedAt: number
   syncStatus: SyncStatus

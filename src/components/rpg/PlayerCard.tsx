@@ -27,10 +27,13 @@ export function useXpGain(): { xp: number; key: number } | null {
 
 /** Tarjeta del jugador en la sidebar: nivel, título, barra de XP y racha. */
 export function PlayerCard() {
-  const { level, intoLevel, needed, streak } = useProfile()
+  const { level, intoLevel, needed, streak, dailyCap, xpToday } = useProfile()
   const gain = useXpGain()
 
   const pct = Math.min(100, Math.round((intoLevel / needed) * 100))
+  // Tope diario (desde nivel 3): barra fina aparte para no confundirla con la del nivel.
+  const dayPct = dailyCap ? Math.min(100, Math.round((xpToday / dailyCap) * 100)) : 0
+  const dayFull = dailyCap !== null && xpToday >= dailyCap
   // Porción de la barra que representa el XP recién ganado (destello temporal).
   const gainPct = gain ? Math.min(pct, Math.round((gain.xp / needed) * 100)) : 0
 
@@ -97,6 +100,25 @@ export function PlayerCard() {
           )}
         </span>
       </div>
+      {dailyCap !== null && (
+        <div className="mt-2 flex items-center gap-2 text-[11px] text-ink-faint">
+          <div
+            className="h-1 flex-1 overflow-hidden rounded-full bg-ink/5"
+            role="progressbar"
+            aria-valuenow={xpToday}
+            aria-valuemax={dailyCap}
+            aria-label="XP ganado hoy"
+          >
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${dayFull ? 'bg-warn' : 'bg-accent-400/70'}`}
+              style={{ width: `${dayPct}%` }}
+            />
+          </div>
+          <span className={dayFull ? 'font-medium text-warn' : ''}>
+            {dayFull ? 'Tope de hoy' : `${xpToday}/${dailyCap} hoy`}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

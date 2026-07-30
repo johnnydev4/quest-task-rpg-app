@@ -1,7 +1,9 @@
 import { db } from '../db'
 import type { PlayerProfile } from '../types'
 import { levelFromXp, STAT_XP_BASE } from '../../lib/level'
+import { dailyXpCap } from '../../lib/xp'
 import { localDateKey } from '../../lib/dates'
+import { emitToast } from '../../lib/events'
 
 const PROFILE_ID = 'me'
 
@@ -14,6 +16,8 @@ async function ensureProfile(): Promise<PlayerProfile> {
     totalXp: 0,
     streakCount: 0,
     lastActiveDate: null,
+    xpDay: null,
+    xpToday: 0,
     achievements: [],
     updatedAt: Date.now(),
     syncStatus: 'pending',
@@ -26,27 +30,39 @@ export interface XpResult {
   xp: number
   leveledUp: boolean
   newLevel: number
+  /** El tope diario recortó (total o parcialmente) el XP pedido. */
+  capped: boolean
 }
 
 /**
  * Aplica un delta de XP al perfil y al stat de la lista (si aplica).
  * Deltas negativos (des-completar) restan lo mismo que se otorgó: no se puede
  * "cultivar" XP alternando el checkbox. La racha solo avanza con tareas (touchStreak).
+ *
+ * Desde el nivel 3 hay un tope diario (`dailyXpCap`): lo que exceda se descarta,
+ * pero la acción sigue contando para la racha. Deshacer devuelve el margen del día.
  */
 export async function applyXp(
   delta: number,
   listId: string | null,
   opts: { touchStreak: boolean },
 ): Promise<XpResult> {
-  return db.transaction('rw', db.profile, db.lists, async () => {
+  const result = await db.transaction('rw', db.profile, db.lists, async () => {
     const profile = await ensureProfile()
+    const today = localDateKey()
     const before = levelFromXp(profile.totalXp).level
-    const totalXp = Math.max(0, profile.totalXp + delta)
+
+    // El contador del día se reinicia solo al cambiar de fecha local.
+    const usedToday = profile.xpDay === today ? profile.xpToday : 0
+    const cap = dailyXpCap(before)
+    const granted =
+      delta > 0 && cap !== null ? Math.max(0, Math.min(delta, cap - usedToday)) : delta
+
+    const totalXp = Math.max(0, profile.totalXp + granted)
     const after = levelFromXp(totalXp).level
 
     let { streakCount, lastActiveDate } = profile
     if (opts.touchStreak && delta > 0) {
-      const today = localDateKey()
       if (lastActiveDate !== today) {
         streakCount = lastActiveDate === localDateKey(-1) ? streakCount + 1 : 1
         lastActiveDate = today
@@ -59,14 +75,16 @@ export async function applyXp(
       level: after,
       streakCount,
       lastActiveDate,
+      xpDay: today,
+      xpToday: Math.max(0, usedToday + granted),
       updatedAt: Date.now(),
       syncStatus: 'pending',
     })
 
-    if (listId) {
+    if (listId && granted !== 0) {
       const list = await db.lists.get(listId)
       if (list) {
-        const statXp = Math.max(0, list.statXp + delta)
+        const statXp = Math.max(0, list.statXp + granted)
         await db.lists.update(listId, {
           statXp,
           statLevel: levelFromXp(statXp, STAT_XP_BASE).level,
@@ -76,6 +94,14 @@ export async function applyXp(
       }
     }
 
-    return { xp: delta, leveledUp: after > before, newLevel: after }
+    return { xp: granted, leveledUp: after > before, newLevel: after, capped: granted < delta }
   })
+
+  if (result.capped) {
+    emitToast({
+      title: 'Tope diario de XP',
+      body: 'Ya alcanzaste el máximo de hoy. Vuelve mañana para seguir subiendo.',
+    })
+  }
+  return result
 }

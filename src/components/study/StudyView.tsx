@@ -205,7 +205,7 @@ function Controls({ timer }: { timer: PomodoroSnapshot }) {
       <button onClick={() => pomodoro.skip()} className={btn}>
         Saltar fase
       </button>
-      <button onClick={() => pomodoro.reset()} className={btn}>
+      <button onClick={() => pomodoro.finish()} className={btn}>
         Terminar
       </button>
     </div>

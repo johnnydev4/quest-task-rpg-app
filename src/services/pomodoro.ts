@@ -278,6 +278,17 @@ class PomodoroEngine {
   }
 
   /**
+   * Termina la sesión: si va en foco, registra los minutos reales transcurridos
+   * (van a la barra pomodoro de la tarea/hábito vinculado) y vuelve al inicio.
+   */
+  async finish(): Promise<void> {
+    await this.finalizeActive()
+    const totalMs = this.state.totalMs
+    this.state = { ...fresh(totalMs), pomodorosDone: 0 }
+    this.publish()
+  }
+
+  /**
    * Cierra la sesión activa por interrupción (arrancar otra): si va en foco,
    * registra los minutos reales acumulados. No avanza de fase ni notifica.
    */

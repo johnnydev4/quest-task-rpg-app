@@ -85,6 +85,7 @@ export const MONTH_THEMES: MonthTheme[] = [
     motto: 'Fuerza y determinación: resiste y vence.',
     colorA: '#e11d48',
     colorB: '#7f1d1d',
+    bannerImage: '/creatures/manticore-banner.jpg',
   },
   {
     creature: 'Hipogrifo',

@@ -1,8 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   Line,
@@ -208,14 +206,16 @@ export default function StatsView() {
                 allowDecimals={false}
                 width={28}
               />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(128,128,128,0.08)' }} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(128,128,128,0.2)' }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar
+              <Line
                 yAxisId="minutos"
+                type="monotone"
                 dataKey="minutos"
                 name="Minutos de foco"
-                fill={accent}
-                radius={[4, 4, 0, 0]}
+                stroke={accent}
+                strokeWidth={2.5}
+                dot={{ r: 2.5 }}
               />
               <Line
                 yAxisId="tareas"
@@ -293,38 +293,38 @@ export default function StatsView() {
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={focusByEntity}>
+              <LineChart data={focusByEntity}>
                 <CartesianGrid stroke={grid} vertical={false} />
                 <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(128,128,128,0.08)' }} />
-                <Bar dataKey="minutos" name="Minutos de foco" fill={accent} radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(128,128,128,0.2)' }} />
+                <Line type="monotone" dataKey="minutos" name="Minutos de foco" stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
+              </LineChart>
             </ResponsiveContainer>
           )}
         </Card>
 
         <Card title="Tareas completadas">
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={stats.tasksPerBucket}>
+            <LineChart data={stats.tasksPerBucket}>
               <CartesianGrid stroke={grid} vertical={false} />
               <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
               <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(128,128,128,0.08)' }} />
-              <Bar dataKey="tareas" fill={accent} radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(128,128,128,0.2)' }} />
+              <Line type="monotone" dataKey="tareas" stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
+            </LineChart>
           </ResponsiveContainer>
         </Card>
 
         <Card title="Minutos de foco (modo estudio)">
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={stats.focusPerBucket}>
+            <LineChart data={stats.focusPerBucket}>
               <CartesianGrid stroke={grid} vertical={false} />
               <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
               <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(128,128,128,0.08)' }} />
-              <Bar dataKey="minutos" fill={accent} radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(128,128,128,0.2)' }} />
+              <Line type="monotone" dataKey="minutos" stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
+            </LineChart>
           </ResponsiveContainer>
         </Card>
 
@@ -396,16 +396,13 @@ export default function StatsView() {
             <p className="py-8 text-center text-sm text-ink-faint">Completa tareas con etiquetas para ver su distribución.</p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={stats.byTag} layout="vertical">
-                <XAxis type="number" tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} />
-                <YAxis type="category" dataKey="name" tick={axisTick} tickLine={false} axisLine={false} width={80} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(128,128,128,0.08)' }} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {stats.byTag.map((t) => (
-                    <Cell key={t.name} fill={t.color} />
-                  ))}
-                </Bar>
-              </BarChart>
+              <LineChart data={stats.byTag}>
+                <CartesianGrid stroke={grid} vertical={false} />
+                <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={false} interval={0} />
+                <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(128,128,128,0.2)' }} />
+                <Line type="monotone" dataKey="value" name="Tareas" stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
+              </LineChart>
             </ResponsiveContainer>
           )}
         </Card>

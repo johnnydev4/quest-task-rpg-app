@@ -412,7 +412,7 @@ export default function App() {
               : view.kind === 'study'
                 ? 'Pomodoro'
                 : view.kind === 'stats'
-                  ? 'Estadísticas'
+                  ? 'Stats'
                   : view.kind === 'list'
                     ? (currentList?.name ?? '')
                     : (currentTag?.name ?? '')

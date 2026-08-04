@@ -176,7 +176,7 @@ export function Sidebar({
         <NavItem
           active={view.kind === 'stats'}
           onClick={() => onSelect({ kind: 'stats' })}
-          label="Estadísticas"
+          label="Stats"
           icon={icon(<path d="M3 3v18h18M8 17V9m5 8V5m5 12v-6" />)}
         />
         <NavItem

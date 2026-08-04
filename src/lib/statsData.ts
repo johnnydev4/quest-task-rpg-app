@@ -20,6 +20,8 @@ function dayKey(d: Date): string {
 export function makeBuckets(range: StatsRange, customFrom?: number, customTo?: number): Bucket[] {
   const buckets: Bucket[] = []
   const dayFmt = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' })
+  // En vista Semana el eje muestra el nombre del día (p. ej. "lun 3").
+  const weekFmt = new Intl.DateTimeFormat('es', { weekday: 'short', day: 'numeric' })
   const monthFmt = new Intl.DateTimeFormat('es', { month: 'short' })
 
   if (range === '12m') {
@@ -56,7 +58,8 @@ export function makeBuckets(range: StatsRange, customFrom?: number, customTo?: n
     const from = cursor.getTime()
     const next = new Date(cursor)
     next.setDate(next.getDate() + 1)
-    buckets.push({ key: dayKey(cursor), label: dayFmt.format(cursor), from, to: next.getTime() })
+    const fmt = range === '7d' ? weekFmt : dayFmt
+    buckets.push({ key: dayKey(cursor), label: fmt.format(cursor), from, to: next.getTime() })
     cursor.setDate(cursor.getDate() + 1)
   }
   return buckets

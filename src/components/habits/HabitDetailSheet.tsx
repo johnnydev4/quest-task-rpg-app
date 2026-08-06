@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import { deleteHabit, updateHabit } from '../../db/repo/habits'
 import { formatDateTime, startOfDayOffset } from '../../lib/dates'
-import { emitToast } from '../../lib/events'
+import { emitOpenStudy, emitToast } from '../../lib/events'
 import { pomodoro } from '../../services/pomodoro'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { MiniCalendar } from '../ui/MiniCalendar'
@@ -165,7 +165,9 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
             <button
               type="button"
               onClick={() => {
-                void pomodoro.start({ habitId: habit.id, minimized: true })
+                // Abre la vista Estudio en pantalla completa (no minimizado).
+                void pomodoro.start({ habitId: habit.id })
+                emitOpenStudy()
                 emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · objetivo ${habit.pomodoroMinutes} min` })
                 onClose()
               }}

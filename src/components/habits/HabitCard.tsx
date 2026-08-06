@@ -4,7 +4,7 @@ import { db } from '../../db/db'
 import type { Habit } from '../../db/types'
 import { deleteHabit, toggleHabitToday, updateHabit } from '../../db/repo/habits'
 import { pomodoro } from '../../services/pomodoro'
-import { emitToast } from '../../lib/events'
+import { emitOpenStudy, emitToast } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
@@ -246,8 +246,9 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
         {habit.pomodoroMinutes != null && scheduledToday && !ended && !todayDone && (
           <button
             onClick={() => {
-              // Arranca ya minimizado: sin destello de pantalla completa (el start es async).
-              void pomodoro.start({ habitId: habit.id, minimized: true })
+              // Abre la vista Estudio en pantalla completa (no minimizado).
+              void pomodoro.start({ habitId: habit.id })
+              emitOpenStudy()
               emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · objetivo ${habit.pomodoroMinutes} min` })
             }}
             aria-label={`Empezar pomodoro de ${habit.pomodoroMinutes} minutos`}

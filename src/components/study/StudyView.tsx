@@ -456,7 +456,8 @@ export function StudyView() {
           onClick={() => pomodoro.setMinimized(true)}
           aria-label="Minimizar modo estudio"
           title="Minimizar: el temporizador sigue mientras usas la app"
-          className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 flex size-10 items-center justify-center rounded-xl border border-line/10 text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
+          // Arriba a la IZQUIERDA: los avisos (ToastStack) salen arriba a la derecha y tapaban este botón.
+          className="absolute top-[max(1rem,env(safe-area-inset-top))] left-4 flex size-10 items-center justify-center rounded-xl border border-line/10 text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5" aria-hidden="true">
             <path d="M4 14h6v6" />

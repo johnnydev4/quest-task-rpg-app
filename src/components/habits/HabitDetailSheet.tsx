@@ -165,7 +165,7 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
             <button
               type="button"
               onClick={() => {
-                void pomodoro.start({ habitId: habit.id }).then(() => pomodoro.setMinimized(true))
+                void pomodoro.start({ habitId: habit.id, minimized: true })
                 emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · objetivo ${habit.pomodoroMinutes} min` })
                 onClose()
               }}

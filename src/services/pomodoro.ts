@@ -159,6 +159,8 @@ class PomodoroEngine {
     taskId?: string | null
     listId?: string | null
     habitId?: string | null
+    /** Arranca la sesión ya minimizada (empezar desde una tarea/hábito, sin saltar a pantalla completa). */
+    minimized?: boolean
   }): Promise<void> {
     // Termina limpiamente cualquier sesión en curso (registra su foco) antes de empezar.
     await this.finalizeActive()
@@ -177,6 +179,7 @@ class PomodoroEngine {
       linkTaskId: link?.taskId ?? null,
       linkListId: link?.listId ?? null,
       linkHabitId: link?.habitId ?? null,
+      minimized: link?.minimized ?? false,
       pomodorosDone: 0,
     }
     if (s.soundEnabled) startAmbient(s.ambientSound, s.ambientVolume)

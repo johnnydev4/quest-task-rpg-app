@@ -246,8 +246,8 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
         {habit.pomodoroMinutes != null && scheduledToday && !ended && !todayDone && (
           <button
             onClick={() => {
-              // Esperar el start: es async y reinicia el estado (pisaría el minimized).
-              void pomodoro.start({ habitId: habit.id }).then(() => pomodoro.setMinimized(true))
+              // Arranca ya minimizado: sin destello de pantalla completa (el start es async).
+              void pomodoro.start({ habitId: habit.id, minimized: true })
               emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · objetivo ${habit.pomodoroMinutes} min` })
             }}
             aria-label={`Empezar pomodoro de ${habit.pomodoroMinutes} minutos`}

@@ -9,7 +9,7 @@ import { levelFromXp, STAT_XP_BASE } from './lib/level'
 import { SortMenu } from './components/ui/SortMenu'
 import { createTask, reorderTasks, updateTask } from './db/repo/tasks'
 import { getOrCreateTag } from './db/repo/tags'
-import { emitConfigOpened, onCompletion, onConfigOpened } from './lib/events'
+import { emitConfigOpened, onCompletion, onConfigOpened, onOpenStudy } from './lib/events'
 import type { QuickParseResult } from './lib/quickParse'
 import { playCompletion, playLevelUp } from './lib/sound'
 import { applyBackgroundContrast } from './lib/bgContrast'
@@ -130,6 +130,8 @@ export default function App() {
       }),
     [],
   )
+  // Iniciar un pomodoro desde una tarea/hábito abre la vista Estudio en pantalla completa.
+  useEffect(() => onOpenStudy(() => setView({ kind: 'study' })), [])
   const [listModal, setListModal] = useState<ListModalState>({ mode: 'closed' })
   const [editTagId, setEditTagId] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)

@@ -40,6 +40,19 @@ export function onConfigOpened(handler: (detail: ConfigOpenedDetail) => void): (
   return () => window.removeEventListener(CONFIG_EVENT, listener)
 }
 
+/** Pedido de ir a la vista Estudio (p. ej. al iniciar un pomodoro desde una tarea, que abra en pantalla completa). */
+const OPEN_STUDY_EVENT = 'quest:open-study'
+
+export function emitOpenStudy(): void {
+  window.dispatchEvent(new CustomEvent(OPEN_STUDY_EVENT))
+}
+
+export function onOpenStudy(handler: () => void): () => void {
+  const listener = () => handler()
+  window.addEventListener(OPEN_STUDY_EVENT, listener)
+  return () => window.removeEventListener(OPEN_STUDY_EVENT, listener)
+}
+
 export interface ToastDetail {
   title: string
   body?: string

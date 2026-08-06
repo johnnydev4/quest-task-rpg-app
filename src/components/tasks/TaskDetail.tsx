@@ -30,7 +30,7 @@ import { DayPicker } from '../habits/DayPicker'
 import { PRIORITIES, PRIORITY_LABEL, PRIORITY_SELECTED_CLASS } from '../../lib/priority'
 import { notificationService } from '../../services/notifications'
 import { pomodoro } from '../../services/pomodoro'
-import { emitToast } from '../../lib/events'
+import { emitOpenStudy, emitToast } from '../../lib/events'
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
 import { MiniCalendar } from '../ui/MiniCalendar'
@@ -1056,8 +1056,9 @@ function TaskForm({
                   <button
                     type="button"
                     onClick={() => {
-                      // Arranca ya minimizado: sin destello de pantalla completa (el start es async).
-                      void pomodoro.start({ taskId: task.id, minimized: true })
+                      // Abre la vista Estudio en pantalla completa (no minimizado).
+                      void pomodoro.start({ taskId: task.id })
+                      emitOpenStudy()
                       emitToast({ title: '🍅 Pomodoro iniciado', body: `${task.title} · objetivo ${task.pomodoroMinutes} min` })
                       closeSheet()
                     }}

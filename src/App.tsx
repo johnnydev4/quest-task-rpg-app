@@ -268,7 +268,8 @@ export default function App() {
     if (overdue.length === 0) return
     overdueNoticeShown.current = true
     localStorage.setItem(OVERDUE_NOTICE_KEY, day)
-    setOverdueNotice(sortPending(overdue, 'agenda'))
+    // Las más recientes primero: ayer arriba, lo más antiguo al final.
+    setOverdueNotice([...overdue].sort((a, b) => b.dueAt! - a.dueAt!))
   }, [view.kind, tasksRaw, tasks, sod])
   // Al salir de Hoy el aviso se retira (no reaparece: ya está marcado el día).
   useEffect(() => {

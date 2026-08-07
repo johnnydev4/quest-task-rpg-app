@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { Task } from '../../db/types'
 import { formatDue } from '../../lib/dates'
-import { moveOverdueToToday, skipOverdue } from '../../db/repo/tasks'
-import { ForwardIcon, HistoryIcon, SunIcon } from '../ui/icons'
+import { moveOverdueToToday, setTaskCompleted, skipOverdue } from '../../db/repo/tasks'
+import { CheckCircleIcon, ForwardIcon, HistoryIcon, SunIcon } from '../ui/icons'
 
 /**
  * Aviso diario de tareas vencidas: una vez al día, al entrar a Hoy, sube desde
@@ -66,13 +66,21 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
           {items.map((t, i) => (
             <li
               key={t.id}
-              className="flex items-center gap-2 rounded-xl px-2 py-1.5"
+              className="flex items-center gap-1.5 rounded-xl px-2 py-1.5"
               style={{ animation: 'sheet-up 0.3s ease-out both', animationDelay: `${120 + i * 70}ms` }}
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm text-ink">{t.title}</span>
                 <span className="block text-[11px] text-ink-faint">{t.dueAt !== null && formatDue(t.dueAt)}</span>
               </span>
+              <button
+                onClick={() => void handle((id) => setTaskCompleted(id, true), [t.id])}
+                aria-label={`Completar ${t.title}`}
+                title="Completar"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-ok/10 hover:text-ok"
+              >
+                <CheckCircleIcon className="size-4" />
+              </button>
               <button
                 onClick={() => void handle(skipOverdue, [t.id])}
                 aria-label={`Saltar ${t.title}`}

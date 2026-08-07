@@ -214,6 +214,23 @@ export async function skipOverdueToNearest(id: string): Promise<void> {
   }
 }
 
+/**
+ * "Saltar" una vencida (aviso diario): la recurrente pasa a su próxima
+ * ocurrencia; la puntual pierde la fecha y baja a "Sin fecha", así deja de
+ * arrastrarse por la lista de vencidas sin perderse.
+ */
+export async function skipOverdue(id: string): Promise<void> {
+  const task = await db.tasks.get(id)
+  if (!task || task.dueAt === null || task.dueAt >= startOfToday()) return
+  if (task.recurrenceRule !== null) await skipOverdueToNearest(id)
+  else await updateTask(id, { dueAt: null, dueHasTime: false })
+}
+
+/** Traer una vencida al día de hoy (sin hora). */
+export async function moveOverdueToToday(id: string): Promise<void> {
+  await updateTask(id, { dueAt: startOfToday(), dueHasTime: false })
+}
+
 export async function deleteTask(id: string): Promise<void> {
   await db.transaction(
     'rw',

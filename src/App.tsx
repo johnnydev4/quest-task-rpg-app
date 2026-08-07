@@ -1,9 +1,9 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db/db'
-import type { List, Tag } from './db/types'
+import type { List, Tag, Task } from './db/types'
 import type { View } from './lib/view'
-import { startOfDayOffset, startOfToday } from './lib/dates'
+import { localDateKey, startOfDayOffset, startOfToday } from './lib/dates'
 import { sortCompleted, sortPending, TASK_SORT_OPTIONS, type TaskSortMode } from './lib/taskSort'
 import { levelFromXp, STAT_XP_BASE } from './lib/level'
 import { SortMenu } from './components/ui/SortMenu'
@@ -23,6 +23,7 @@ import { Sidebar } from './components/layout/Sidebar'
 import { QuickAdd } from './components/tasks/QuickAdd'
 import { TaskSection } from './components/tasks/TaskSection'
 import { TaskDetail, TaskDetailContent } from './components/tasks/TaskDetail'
+import { OverdueDailyPopup } from './components/tasks/OverdueDailyPopup'
 import { useIsDesktop } from './lib/useMediaQuery'
 import { useBlurredBackground } from './lib/useBlurredBackground'
 import { ListModal } from './components/lists/ListModal'
@@ -46,6 +47,9 @@ import { pomodoro } from './services/pomodoro'
 const StatsView = lazy(() => import('./components/stats/StatsView'))
 
 type ListModalState = { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; listId: string }
+
+/** Día (YYYY-MM-DD) en que ya se mostró el aviso de vencidas. */
+const OVERDUE_NOTICE_KEY = 'quest-overdue-notice-day'
 
 // Trazos de cada vista (mismos que en el sidebar) para el icono del header.
 const HEADER_ICON_PATHS: Partial<Record<View['kind'], React.ReactNode>> = {
@@ -246,6 +250,30 @@ export default function App() {
   }, [taskLinger])
   // Para las listas en pantalla: las que "lingerean" siguen entre las pendientes.
   const displayPending = tasks.filter((t) => !t.completed || taskLinger.has(t.id))
+
+  // Aviso diario de vencidas: al entrar a Hoy, una sola vez por día y nunca
+  // antes de las 6am. Si no hay vencidas no se muestra ni se marca el día, así
+  // el aviso sigue disponible si alguna vence más tarde.
+  const [overdueNotice, setOverdueNotice] = useState<Task[] | null>(null)
+  const overdueNoticeShown = useRef(false)
+  useEffect(() => {
+    if (overdueNoticeShown.current || view.kind !== 'today' || tasksRaw === undefined) return
+    if (new Date().getHours() < 6) return
+    const day = localDateKey()
+    if (localStorage.getItem(OVERDUE_NOTICE_KEY) === day) {
+      overdueNoticeShown.current = true
+      return
+    }
+    const overdue = tasks.filter((t) => !t.completed && t.dueAt !== null && t.dueAt < sod)
+    if (overdue.length === 0) return
+    overdueNoticeShown.current = true
+    localStorage.setItem(OVERDUE_NOTICE_KEY, day)
+    setOverdueNotice(sortPending(overdue, 'agenda'))
+  }, [view.kind, tasksRaw, tasks, sod])
+  // Al salir de Hoy el aviso se retira (no reaparece: ya está marcado el día).
+  useEffect(() => {
+    if (view.kind !== 'today') setOverdueNotice(null)
+  }, [view.kind])
 
   const counts = useMemo(() => {
     const byList: Record<string, number> = {}
@@ -823,6 +851,9 @@ export default function App() {
         </aside>
       )}
 
+      {overdueNotice && view.kind === 'today' && (
+        <OverdueDailyPopup tasks={overdueNotice} onClose={() => setOverdueNotice(null)} />
+      )}
       <ToastStack />
       {/* Mini-temporizador flotante mientras la sesión está minimizada (en Estudio ya se ve la tarjeta) */}
       {view.kind !== 'study' && (

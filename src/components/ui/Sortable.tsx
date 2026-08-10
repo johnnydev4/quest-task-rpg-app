@@ -20,6 +20,13 @@ import { createContext, useContext, useMemo, useRef, type ReactNode } from 'reac
  * del día de la pestaña Hoy), pero también con el dedo: son áreas grandes de la
  * propia pantalla. La zona a la que ya pertenece la lista (`zoneId`) se ignora,
  * así arrastrar dentro de una sección sigue reordenando con normalidad.
+ *
+ * Con `selectedIds` (selección múltiple), agarrar un elemento marcado arrastra
+ * el grupo entero: los demás compañeros de ESTA lista se ocultan mientras dura
+ * el gesto, de modo que el cálculo de posiciones sigue siendo el de un único
+ * elemento, y al soltar el bloque aterriza junto. Los ids marcados que viven en
+ * otra lista (p. ej. hábitos junto a tareas) no se reordenan, pero sí viajan a
+ * la lista o zona de destino.
  */
 
 let dragActive = false
@@ -41,12 +48,14 @@ interface SortableListProps {
   /** Ids en el mismo orden en que se renderizan los hijos. */
   ids: string[]
   onReorder: (ids: string[]) => void
-  /** Soltar sobre una lista del menú lateral: mueve el elemento a esa lista. */
-  onDropOnList?: (listId: string, itemId: string) => void
-  /** Soltar sobre otra zona (`data-drop-zone`): mueve el elemento allí. */
-  onDropOnZone?: (zoneId: string, itemId: string) => void
+  /** Soltar sobre una lista del menú lateral: mueve allí todo lo arrastrado. */
+  onDropOnList?: (listId: string, itemIds: string[]) => void
+  /** Soltar sobre otra zona (`data-drop-zone`): mueve allí todo lo arrastrado. */
+  onDropOnZone?: (zoneId: string, itemIds: string[]) => void
   /** Zona a la que pertenece esta lista; soltar dentro de ella solo reordena. */
   zoneId?: string
+  /** Selección múltiple activa (ids de cualquier lista de la pantalla). */
+  selectedIds?: string[]
   disabled?: boolean
   className?: string
   children: ReactNode
@@ -58,6 +67,7 @@ export function SortableList({
   onDropOnList,
   onDropOnZone,
   zoneId,
+  selectedIds,
   disabled = false,
   className,
   children,
@@ -76,6 +86,8 @@ export function SortableList({
   zoneDropRef.current = onDropOnZone
   const ownZoneRef = useRef(zoneId)
   ownZoneRef.current = zoneId
+  const selectedRef = useRef(selectedIds)
+  selectedRef.current = selectedIds
 
   const ctx = useMemo<SortableCtx>(() => {
     const register = (id: string, el: HTMLElement | null) => {
@@ -90,6 +102,17 @@ export function SortableList({
       // Campos de formulario y zonas marcadas nunca inician un arrastre.
       if (from0?.closest('input, textarea, select, [data-no-drag]')) return
       if (!els.current.has(id)) return
+
+      // Selección múltiple: agarrar algo marcado arrastra todo lo marcado.
+      // `carried` es lo que se moverá (incluye ids de otras listas); `hidden`,
+      // los compañeros de ESTA lista que se apartan mientras dura el gesto.
+      const marked = selectedRef.current
+      const multi = !!marked && marked.length > 1 && marked.includes(id)
+      const carried = multi ? marked! : [id]
+      const hidden = new Set(
+        multi ? idsRef.current.filter((k) => k !== id && marked!.includes(k) && els.current.has(k)) : [],
+      )
+      const localGroup = multi ? idsRef.current.filter((k) => k === id || hidden.has(k)) : [id]
 
       const touch = e.pointerType !== 'mouse'
       // Las listas del menú lateral solo existen en escritorio; las zonas de la
@@ -124,7 +147,9 @@ export function SortableList({
         layout = idsRef.current
           .map((k) => {
             const el = els.current.get(k)
-            if (!el) return null
+            // Los compañeros ocultos no ocupan sitio: el reparto de huecos
+            // vuelve a ser el de arrastrar una sola fila.
+            if (!el || hidden.has(k)) return null
             const r = el.getBoundingClientRect()
             return { id: k, el, top: r.top + window.scrollY, h: r.height }
           })
@@ -197,13 +222,23 @@ export function SortableList({
       const startDrag = () => {
         started = true
         dragActive = true
+        for (const k of hidden) {
+          const el = els.current.get(k)
+          if (el) el.style.display = 'none'
+        }
         measure()
         const self = layout[from]
         if (!self) {
           started = false
           dragActive = false
+          for (const k of hidden) {
+            const el = els.current.get(k)
+            if (el) el.style.display = ''
+          }
           return
         }
+        // Contador sobre la fila agarrada: "llevo N".
+        if (carried.length > 1) self.el.setAttribute('data-drag-count', String(carried.length))
         document.body.style.userSelect = 'none'
         document.addEventListener('touchmove', preventScroll, { passive: false })
         self.el.style.transition = 'none'
@@ -239,6 +274,11 @@ export function SortableList({
           l.el.style.opacity = ''
           l.el.style.filter = ''
           l.el.style.pointerEvents = ''
+          l.el.removeAttribute('data-drag-count')
+        }
+        for (const k of hidden) {
+          const el = els.current.get(k)
+          if (el) el.style.display = ''
         }
         const listId = dropEl?.getAttribute('data-drop-list') ?? null
         const zone = dropEl?.getAttribute('data-drop-zone') ?? null
@@ -251,13 +291,13 @@ export function SortableList({
 
         if (!commit) return
         if (listId !== null && dropRef.current) {
-          dropRef.current(listId, id)
+          dropRef.current(listId, carried)
         } else if (zone !== null && zoneDropRef.current) {
-          zoneDropRef.current(zone, id)
+          zoneDropRef.current(zone, carried)
         } else if (newIndex !== from) {
-          const next = layout.map((l) => l.id)
-          next.splice(from, 1)
-          next.splice(newIndex, 0, id)
+          // El bloque entero aterriza junto, en el orden en que ya estaba.
+          const next = layout.map((l) => l.id).filter((k) => k !== id)
+          next.splice(newIndex, 0, ...localGroup)
           reorderRef.current(next)
         }
       }

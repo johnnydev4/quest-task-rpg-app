@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
+import { SelectionProvider } from './lib/selection'
 
 if (import.meta.env.PROD) {
   // Solo en producción: SW para offline. `autoUpdate` activa nuevas versiones al recargar.
@@ -16,6 +17,10 @@ if (import.meta.env.PROD) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    {/* La selección múltiple envuelve toda la app: la consultan filas muy
+        repartidas por el árbol (tareas, hábitos, cada lista arrastrable). */}
+    <SelectionProvider>
+      <App />
+    </SelectionProvider>
   </StrictMode>,
 )

@@ -8,8 +8,8 @@ import { sortCompleted, sortPending, TASK_SORT_OPTIONS, type TaskSortMode } from
 import { levelFromXp, STAT_XP_BASE } from './lib/level'
 import { SortMenu } from './components/ui/SortMenu'
 import { FilterMenu } from './components/ui/FilterMenu'
-import { createTask, reorderTasks, updateTask } from './db/repo/tasks'
-import { NO_DAY_SECTION, zoneToSectionId } from './db/repo/daySections'
+import { createTask, reorderTasks } from './db/repo/tasks'
+import { NO_DAY_SECTION } from './db/repo/daySections'
 import { getOrCreateTag } from './db/repo/tags'
 import { emitConfigOpened, onCompletion, onConfigOpened, onOpenStudy } from './lib/events'
 import type { QuickParseResult } from './lib/quickParse'
@@ -18,6 +18,8 @@ import { applyBackgroundContrast } from './lib/bgContrast'
 import { applyFontScale, applyTheme, resolveDark } from './lib/theme'
 import { useProfile } from './lib/useProfile'
 import { useSettings } from './lib/useSettings'
+import { useSelection } from './lib/selection'
+import { useBulkMove } from './lib/bulkMove'
 import { startReminderScheduler } from './services/reminderScheduler'
 import { startAutoSync } from './services/sync'
 import { startPushHeartbeat } from './services/webPush'
@@ -43,7 +45,7 @@ import { QuestsView } from './components/quests/QuestsView'
 import { WeeklyQuestBanner } from './components/quests/WeeklyQuestBanner'
 import { HabitsView } from './components/habits/HabitsView'
 import { HabitsDoneToday, PendingHabits, useTodayHabits } from './components/habits/HabitsToday'
-import { FlameIcon } from './components/ui/icons'
+import { CheckSquareIcon, FlameIcon } from './components/ui/icons'
 import { pomodoro } from './services/pomodoro'
 
 // Recharts es pesado: se carga solo al entrar a Estadísticas.
@@ -164,6 +166,9 @@ export default function App() {
   const [levelUp, setLevelUp] = useState<number | null>(null)
 
   const settings = useSettings()
+  // Selección múltiple: arrastrar una fila marcada mueve todas las marcadas.
+  const selection = useSelection()
+  const bulk = useBulkMove()
   const { level, intoLevel, needed, streak } = useProfile()
   const isDesktop = useIsDesktop()
   // Destello del XP recién ganado en la mini-barra del encabezado (móvil).
@@ -183,12 +188,15 @@ export default function App() {
     startPushHeartbeat()
   }, [])
 
-  // Al cambiar de pestaña: volver al inicio y cerrar el detalle de tarea que
-  // hubiera quedado abierto (en escritorio persistía entre pestañas).
+  // Al cambiar de pestaña: volver al inicio, cerrar el detalle de tarea que
+  // hubiera quedado abierto (en escritorio persistía entre pestañas) y soltar
+  // la selección, que dejaría de verse pero seguiría viajando en los arrastres.
+  const clearSelection = selection.clear
   useEffect(() => {
     window.scrollTo(0, 0)
     setDetailId(null)
-  }, [view])
+    clearSelection()
+  }, [view, clearSelection])
 
   // Fondo personalizado pre-difuminado (bitmap estático: no cuesta nada componerlo).
   const bgBlob = useLiveQuery(async () => (await db.appMedia.get('bg'))?.blob ?? null, []) ?? null
@@ -488,9 +496,30 @@ export default function App() {
   const isEmpty = sections.every((s) => s.tasks.length === 0)
   // El menú de orden se ancla a la fila del título de la primera sección con
   // tareas (p. ej. "Hoy"), como el de la vista de hábitos junto a "Activos".
-  const firstSectionWithTasks = sections.findIndex((s) => s.tasks.length > 0 && s.key !== 'overdue')
+  const firstSectionWithTasks = (() => {
+    const i = sections.findIndex((s) => s.tasks.length > 0 && s.key !== 'overdue')
+    // Hoy sin tareas sueltas pero con hábitos o momentos: la barra se ancla
+    // igual a la fila "Hoy", que es la que siempre está.
+    return i >= 0 ? i : sections.findIndex((s) => s.key === 'today')
+  })()
+  // Orden + entrada al modo selección: van juntos en la barra de cada vista.
   const taskSortMenu = (
-    <SortMenu value={taskSort} options={TASK_SORT_OPTIONS} onChange={changeTaskSort} label="Ordenar tareas" />
+    <div className="flex shrink-0 items-center gap-2">
+      <button
+        type="button"
+        onClick={() => (selection.active ? selection.clear() : selection.start())}
+        aria-pressed={selection.active}
+        className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+          selection.active
+            ? 'border-accent-500/40 bg-accent-500/10 text-accent-300'
+            : 'border-line/10 glass-input text-ink-dim hover:bg-ink/5 hover:text-ink'
+        }`}
+      >
+        <CheckSquareIcon className="size-3.5" />
+        <span className="hidden sm:inline">{selection.active ? 'Cancelar' : 'Seleccionar'}</span>
+      </button>
+      <SortMenu value={taskSort} options={TASK_SORT_OPTIONS} onChange={changeTaskSort} label="Ordenar tareas" />
+    </div>
   )
   // En "Todas" el orden y el filtro viven juntos en una barra propia, que sigue
   // ahí aunque el filtro deje el resultado vacío (si no, no habría cómo deshacerlo).
@@ -514,7 +543,7 @@ export default function App() {
       tagsById={tagsById}
       onOpen={setDetailId}
       onReorder={(ids) => void handleTaskReorder(ids)}
-      onMoveToList={(listId, taskId) => void updateTask(taskId, { listId })}
+      onMoveToList={(listId, ids) => bulk.toList(listId, ids, 'task')}
     />
   )
   const viewTitle =
@@ -858,14 +887,12 @@ export default function App() {
                       hideTodayChip={s.hideTodayChip}
                       action={i === firstSectionWithTasks ? taskSortMenu : undefined}
                       onReorder={s.key === 'done' ? undefined : (ids) => void handleTaskReorder(ids)}
-                      onMoveToList={(listId, taskId) => void updateTask(taskId, { listId })}
+                      onMoveToList={(listId, ids) => bulk.toList(listId, ids, 'task')}
                       // El bloque "Hoy" recoge lo que no pertenece a ningún momento
                       // del día y hace de zona para devolver ahí lo que se arrastre.
                       zoneId={s.key === 'today' ? NO_DAY_SECTION : undefined}
                       onDropOnZone={
-                        s.key === 'today'
-                          ? (zone, taskId) => void updateTask(taskId, { daySectionId: zoneToSectionId(zone) })
-                          : undefined
+                        s.key === 'today' ? (zone, ids) => bulk.toDayZone(zone, ids, 'task') : undefined
                       }
                       // Con momentos creados, "Hoy" se queda visible aunque no
                       // tenga nada: es la zona a la que devolver lo que salga de ellos.
@@ -940,7 +967,7 @@ export default function App() {
                     // En "Todas" el orden ya vive en la barra de arriba.
                     action={i === firstSectionWithTasks && view.kind !== 'all' ? taskSortMenu : undefined}
                     onReorder={s.key === 'done' ? undefined : (ids) => void handleTaskReorder(ids)}
-                    onMoveToList={(listId, taskId) => void updateTask(taskId, { listId })}
+                    onMoveToList={(listId, ids) => bulk.toList(listId, ids, 'task')}
                   />
                 ))
               )}
@@ -952,6 +979,34 @@ export default function App() {
           // Sin barra alrededor: el contenedor es transparente y sólo flotan el
           // campo y el botón, que son los que llevan el cristal.
           <div className="sticky bottom-0 z-10">
+            {/* Barra de la selección múltiple: recuerda qué se lleva y cómo
+                moverlo, y da la salida del modo. Flota sobre la captura rápida. */}
+            {selection.active && (
+              <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+                <div
+                  className="flex items-center gap-3 rounded-2xl border border-accent-500/30 glass-strong px-4 py-2.5"
+                  style={{ animation: 'menu-pop 0.14s ease-out both' }}
+                  role="status"
+                >
+                  <span className="shrink-0 text-sm font-semibold text-ink">
+                    {selection.count === 0
+                      ? 'Nada seleccionado'
+                      : `${selection.count} seleccionad${selection.count === 1 ? 'o' : 'os'}`}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-xs text-ink-faint">
+                    {selection.count === 0
+                      ? 'Marca tareas y hábitos para moverlos juntos'
+                      : 'Arrastra uno y se mueven todos'}
+                  </span>
+                  <button
+                    onClick={() => selection.clear()}
+                    className="shrink-0 rounded-lg border border-line/10 px-2.5 py-1.5 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
+                  >
+                    Listo
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="mx-auto w-full max-w-7xl px-4 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
               <QuickAdd
                 placeholder={

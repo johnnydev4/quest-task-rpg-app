@@ -7,6 +7,7 @@ import { pomodoro } from '../../services/pomodoro'
 import { emitOpenStudy, emitToast } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
+import { useSelection } from '../../lib/selection'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { CheckCircleIcon, ClockIcon, FlagIcon, FolderIcon, MoonIcon, TimerIcon, TrashIcon } from '../ui/icons'
@@ -114,6 +115,8 @@ function HabitContextMenu({
  * La palabra "Combo" solo aparece unos segundos al completar, con animación.
  */
 export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) {
+  const selection = useSelection()
+  const picked = selection.has(habit.id)
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const logsRaw = useLiveQuery(() => db.habitLogs.where('habitId').equals(habit.id).toArray(), [habit.id])
   const logsLoaded = logsRaw !== undefined
@@ -173,15 +176,31 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
         setMenu({ x: e.clientX, y: e.clientY })
       }}
       style={{
-        borderColor: `${color}66`,
+        borderColor: picked ? 'var(--color-accent-400)' : `${color}66`,
         background: rainbow
           ? `linear-gradient(125deg, #ef444430, #eab30820 35%, #22c55e18 60%, #a855f715)`
           : `linear-gradient(125deg, ${color}36, ${color}15 70%)`,
       }}
     >
       <div className="flex items-center gap-3">
-        {/* Check de hoy */}
-        {scheduledToday && !ended ? (
+        {/* En modo selección el check de hoy cede su sitio al de marcar. */}
+        {selection.active ? (
+          <button
+            onClick={() => selection.toggle(habit.id, 'habit')}
+            role="checkbox"
+            aria-checked={picked}
+            aria-label={picked ? 'Quitar de la selección' : 'Añadir a la selección'}
+            className={`flex shrink-0 items-center justify-center rounded-md border-2 transition-all ${
+              compact ? 'size-5' : 'size-6'
+            } ${picked ? 'border-accent-500 bg-accent-500' : 'border-ink-muted hover:border-accent-400'}`}
+          >
+            {picked && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+        ) : scheduledToday && !ended ? (
           <button
             onClick={() => void toggleHabitToday(habit.id)}
             aria-label={todayDone ? 'Desmarcar hoy' : `Cumplir hoy (+${nextXp} XP)`}
@@ -210,8 +229,12 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
 
         {/* Cuerpo */}
         <button
-          onClick={onManage}
-          disabled={!onManage}
+          onClick={(e) => {
+            // Ctrl/⌘+clic empieza una selección sin abrir la hoja del hábito.
+            if (selection.active || e.ctrlKey || e.metaKey) selection.toggle(habit.id, 'habit')
+            else onManage?.()
+          }}
+          disabled={!onManage && !selection.active}
           className="min-w-0 flex-1 text-left disabled:cursor-default"
         >
           <div className="flex items-center justify-between gap-2">

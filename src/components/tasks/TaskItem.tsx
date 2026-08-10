@@ -7,6 +7,7 @@ import { formatDue, formatDueTime, isOverdue, startOfDayOffset, startOfToday } f
 import { PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
 import { playHoverTick } from '../../lib/sound'
 import { useSettings } from '../../lib/useSettings'
+import { useSelection } from '../../lib/selection'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
@@ -163,6 +164,8 @@ export function TaskItem({
   hideTodayChip = false,
 }: TaskItemProps) {
   const settings = useSettings()
+  const selection = useSelection()
+  const picked = selection.has(task.id)
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const subtasks = useLiveQuery(() => db.subtasks.where('taskId').equals(task.id).toArray(), [task.id])
   const commentCount = useLiveQuery(() => db.comments.where('taskId').equals(task.id).count(), [task.id]) ?? 0
@@ -181,7 +184,9 @@ export function TaskItem({
   return (
     <SwipeToDelete onDelete={() => void deleteTask(task.id)}>
     <div
-      className="group flex items-center gap-3 rounded-xl border border-line/5 glass-panel px-3 py-1.5 transition-colors hover:border-line/15"
+      className={`group flex items-center gap-3 rounded-xl border glass-panel px-3 py-1.5 transition-colors ${
+        picked ? 'border-accent-400/60 bg-accent-500/10' : 'border-line/5 hover:border-line/15'
+      }`}
       onContextMenu={(e) => {
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
@@ -196,22 +201,49 @@ export function TaskItem({
       {barColor && (
         <span className="w-1 self-stretch rounded-full" style={{ backgroundColor: barColor }} aria-hidden="true" />
       )}
+      {/* En modo selección la casilla redonda de completar pasa a ser la
+          cuadrada de marcar: la fila se elige en vez de cumplirse. */}
+      {selection.active ? (
+        <button
+          onClick={() => selection.toggle(task.id, 'task')}
+          role="checkbox"
+          aria-checked={picked}
+          aria-label={picked ? 'Quitar de la selección' : 'Añadir a la selección'}
+          className={`flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200 ${
+            picked ? 'border-accent-500 bg-accent-500' : 'border-ink-muted hover:border-accent-400'
+          }`}
+        >
+          {picked && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </button>
+      ) : (
+        <button
+          onClick={() => setTaskCompleted(task.id, !task.completed)}
+          aria-label={task.completed ? 'Marcar como pendiente' : 'Completar tarea'}
+          className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200 ${
+            task.completed
+              ? 'check-pop border-accent-500 bg-accent-500'
+              : 'border-ink-muted hover:scale-110 hover:border-accent-400'
+          }`}
+        >
+          {task.completed && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </button>
+      )}
       <button
-        onClick={() => setTaskCompleted(task.id, !task.completed)}
-        aria-label={task.completed ? 'Marcar como pendiente' : 'Completar tarea'}
-        className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200 ${
-          task.completed
-            ? 'check-pop border-accent-500 bg-accent-500'
-            : 'border-ink-muted hover:scale-110 hover:border-accent-400'
-        }`}
+        onClick={(e) => {
+          // Ctrl/⌘+clic empieza una selección sin salir de la vista.
+          if (selection.active || e.ctrlKey || e.metaKey) selection.toggle(task.id, 'task')
+          else onOpen(task.id)
+        }}
+        className="min-w-0 flex-1 py-0.5 text-left"
       >
-        {task.completed && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
-            <path d="M5 13l4 4L19 7" />
-          </svg>
-        )}
-      </button>
-      <button onClick={() => onOpen(task.id)} className="min-w-0 flex-1 py-0.5 text-left">
         <p className={`truncate text-sm font-medium transition-colors ${task.completed ? 'text-ink-faint line-through' : 'text-ink'}`}>
           {task.title}
         </p>

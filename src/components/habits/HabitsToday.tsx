@@ -5,8 +5,9 @@ import type { Habit } from '../../db/types'
 import { emitConfigOpened, onConfigOpened } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { habitEnded, isScheduledToday } from '../../lib/habits'
-import { reorderHabits, updateHabit } from '../../db/repo/habits'
-import { zoneToSectionId } from '../../db/repo/daySections'
+import { reorderHabits } from '../../db/repo/habits'
+import { useBulkMove } from '../../lib/bulkMove'
+import { useSelection } from '../../lib/selection'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { HabitCard } from './HabitCard'
 import { HabitDetailSheet } from './HabitDetailSheet'
@@ -88,17 +89,18 @@ function useHabitSheet() {
  */
 export function PendingHabits({ habits, zoneId }: { habits: Habit[]; zoneId: string }) {
   const { openHabit, sheet } = useHabitSheet()
+  const selection = useSelection()
+  const bulk = useBulkMove()
   if (habits.length === 0) return null
   return (
     <>
       <SortableList
         ids={habits.map((h) => h.id)}
         onReorder={(ids) => void reorderHabits(ids)}
-        onDropOnList={(listId, habitId) => void updateHabit(habitId, { listId })}
-        onDropOnZone={(zone, habitId) =>
-          void updateHabit(habitId, { daySectionId: zoneToSectionId(zone) })
-        }
+        onDropOnList={(listId, ids) => bulk.toList(listId, ids, 'habit')}
+        onDropOnZone={(zone, ids) => bulk.toDayZone(zone, ids, 'habit')}
         zoneId={zoneId}
+        selectedIds={selection.ids}
         className="space-y-1.5"
       >
         {habits.map((h) => (

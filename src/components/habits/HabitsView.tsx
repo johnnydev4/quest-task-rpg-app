@@ -192,7 +192,9 @@ export function HabitsView() {
           <SortableList
             ids={active.map((h) => h.id)}
             onReorder={(ids) => void handleReorder(ids)}
-            onDropOnList={(listId, habitId) => void updateHabit(habitId, { listId })}
+            onDropOnList={(listId, ids) => {
+              for (const habitId of ids) void updateHabit(habitId, { listId })
+            }}
             className="space-y-2"
           >
             {active.map((h) => (

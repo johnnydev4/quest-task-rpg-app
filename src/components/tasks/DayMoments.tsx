@@ -5,9 +5,9 @@ import {
   deleteDaySection,
   moveDaySection,
   updateDaySection,
-  zoneToSectionId,
 } from '../../db/repo/daySections'
-import { updateTask } from '../../db/repo/tasks'
+import { useBulkMove } from '../../lib/bulkMove'
+import { useSelection } from '../../lib/selection'
 import { PendingHabits } from '../habits/HabitsToday'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
 import { SortableItem, SortableList } from '../ui/Sortable'
@@ -33,7 +33,7 @@ interface DayMomentsProps {
   tagsById: Map<string, Tag>
   onOpen: (id: string) => void
   onReorder: (ids: string[]) => void
-  onMoveToList: (listId: string, taskId: string) => void
+  onMoveToList: (listId: string, itemIds: string[]) => void
 }
 
 export function DayMoments({
@@ -150,7 +150,7 @@ interface DayMomentSectionProps {
   tagsById: Map<string, Tag>
   onOpen: (id: string) => void
   onReorder: (ids: string[]) => void
-  onMoveToList: (listId: string, taskId: string) => void
+  onMoveToList: (listId: string, itemIds: string[]) => void
 }
 
 function DayMomentSection({
@@ -167,6 +167,8 @@ function DayMomentSection({
 }: DayMomentSectionProps) {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [renaming, setRenaming] = useState(false)
+  const selection = useSelection()
+  const bulk = useBulkMove()
   // El plegado se guarda en la propia sección: se recuerda entre sesiones.
   const open = !section.collapsed
   const count = tasks.length + habits.length
@@ -247,8 +249,9 @@ function DayMomentSection({
             ids={tasks.map((t) => t.id)}
             onReorder={onReorder}
             onDropOnList={onMoveToList}
-            onDropOnZone={(zone, taskId) => void updateTask(taskId, { daySectionId: zoneToSectionId(zone) })}
+            onDropOnZone={(zone, ids) => bulk.toDayZone(zone, ids, 'task')}
             zoneId={section.id}
+            selectedIds={selection.ids}
             className="space-y-1.5"
           >
             {tasks.map((task) => (

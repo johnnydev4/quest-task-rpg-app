@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import type { List, Tag, Task } from '../../db/types'
+import { useSelection } from '../../lib/selection'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { TaskItem } from './TaskItem'
 
@@ -21,12 +22,12 @@ interface TaskSectionProps {
   action?: ReactNode
   /** Reordenar arrastrando; ausente = sección no arrastrable (completadas). */
   onReorder?: (ids: string[]) => void
-  /** Soltar sobre una lista del menú lateral (escritorio): mueve la tarea allí. */
-  onMoveToList?: (listId: string, taskId: string) => void
+  /** Soltar sobre una lista del menú lateral (escritorio): mueve allí lo arrastrado. */
+  onMoveToList?: (listId: string, itemIds: string[]) => void
   /** Momento del día que representa la sección: la convierte en zona de soltado. */
   zoneId?: string
-  /** Soltar en OTRO momento del día: mueve la tarea allí. */
-  onDropOnZone?: (zoneId: string, taskId: string) => void
+  /** Soltar en OTRO momento del día: mueve allí lo arrastrado. */
+  onDropOnZone?: (zoneId: string, itemIds: string[]) => void
   /** Pinta la sección aunque esté vacía (hace falta para poder soltar en ella). */
   alwaysShow?: boolean
   /** Texto guía cuando la sección está vacía. */
@@ -53,6 +54,7 @@ export function TaskSection({
   emptyHint,
 }: TaskSectionProps) {
   const [open, setOpen] = useState(!collapsible)
+  const selection = useSelection()
 
   if (tasks.length === 0 && !leading && !alwaysShow) return null
 
@@ -108,6 +110,7 @@ export function TaskSection({
             onDropOnList={onMoveToList}
             onDropOnZone={onDropOnZone}
             zoneId={zoneId}
+            selectedIds={selection.ids}
             className="space-y-1.5"
           >
             {tasks.map((task) => (

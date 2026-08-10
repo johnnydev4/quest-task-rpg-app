@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { parseQuickAdd, type QuickParseList, type QuickParseResult } from '../../lib/quickParse'
 import { FolderIcon } from '../ui/icons'
 
@@ -39,6 +39,23 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
     if (window.matchMedia('(pointer: coarse)').matches) inputRef.current?.blur()
   }
 
+  // Teclado: ↑ alterna la sugerencia de lista y Tab la acepta, sin soltar el
+  // campo. Tab sólo se intercepta si aún no está aceptada, para que después
+  // siga sirviendo para salir del input.
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (!suggestion || e.altKey || e.ctrlKey || e.metaKey) return
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setPickedListId(picked ? null : suggestion.id)
+    } else if (e.key === 'ArrowDown' && picked) {
+      e.preventDefault()
+      setPickedListId(null)
+    } else if (e.key === 'Tab' && !e.shiftKey && !picked) {
+      e.preventDefault()
+      setPickedListId(suggestion.id)
+    }
+  }
+
   return (
     <div className="space-y-1.5">
       {parsed && (parsed.chips.length > 0 || suggestion !== null) && (
@@ -66,6 +83,10 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
             >
               <FolderIcon className="size-3" />
               {picked ? suggestion.name : `Añadir a ${suggestion.name}`}
+              {/* Atajo sólo útil con teclado físico: se oculta en táctil. */}
+              <kbd className="ml-0.5 hidden rounded border border-current/30 px-1 text-[9px] font-normal opacity-70 [@media(pointer:fine)]:inline">
+                {picked ? '↓' : 'Tab'}
+              </kbd>
             </button>
           )}
         </div>
@@ -75,6 +96,7 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
           ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={onKeyDown}
           placeholder={placeholder}
           aria-label="Añadir tarea"
           enterKeyHint="done"

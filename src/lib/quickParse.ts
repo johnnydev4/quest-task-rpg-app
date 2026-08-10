@@ -16,6 +16,20 @@ export interface QuickParseResult {
   tagNames: string[]
   /** Resumen legible de lo detectado, para la vista previa bajo el input. */
   chips: string[]
+  /** Lista elegida por el usuario; null si no aceptó la sugerencia. */
+  listId: string | null
+  /**
+   * Nombre de lista mencionado en el texto ("Paga tarjeta finanzas"). A
+   * diferencia de la fecha no se aplica solo: se ofrece y el usuario decide.
+   * `title` es el título sin la mención, para usarlo si la acepta.
+   */
+  listSuggestion: { id: string; name: string; title: string } | null
+}
+
+/** Lista candidata para la detección por nombre. */
+export interface QuickParseList {
+  id: string
+  name: string
 }
 
 const DAY_NAMES: Record<string, number> = {
@@ -72,7 +86,55 @@ function fmtDate(d: Date): string {
   return new Intl.DateTimeFormat('es', { weekday: 'short', day: 'numeric', month: 'short' }).format(d)
 }
 
-export function parseQuickAdd(raw: string): QuickParseResult {
+const FOLD: Record<string, string> = {
+  á: 'a', à: 'a', ä: 'a', â: 'a',
+  é: 'e', è: 'e', ë: 'e', ê: 'e',
+  í: 'i', ì: 'i', ï: 'i', î: 'i',
+  ó: 'o', ò: 'o', ö: 'o', ô: 'o',
+  ú: 'u', ù: 'u', ü: 'u', û: 'u',
+  ñ: 'n', ç: 'c',
+}
+
+/** Minúsculas sin acentos, carácter a carácter para no alterar los índices. */
+function fold(t: string): string {
+  return t.toLowerCase().replace(/[áàäâéèëêíìïîóòöôúùüûñç]/g, (c) => FOLD[c] ?? c)
+}
+
+function escapeRe(t: string): string {
+  return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Busca el nombre de una lista mencionado como palabra suelta en el texto.
+ * Gana el nombre más largo (si hay "Casa" y "Casa de campo", manda el segundo).
+ * Devuelve el texto sin la mención para poder limpiar el título.
+ */
+function matchList(
+  s: string,
+  lists: QuickParseList[],
+): { list: QuickParseList; rest: string } | null {
+  const folded = fold(s)
+  let best: { list: QuickParseList; start: number; end: number } | null = null
+  for (const list of lists) {
+    const name = list.name.trim()
+    // Nombres de 1–2 letras dispararían falsos positivos constantes.
+    if (name.length < 3) continue
+    const re = new RegExp(
+      `(^|[^\\p{L}\\p{N}])(${escapeRe(fold(name)).replace(/\s+/g, '\\s+')})(?=[^\\p{L}\\p{N}]|$)`,
+      'u',
+    )
+    const m = folded.match(re)
+    if (!m || m.index === undefined) continue
+    const start = m.index + m[1].length
+    if (!best || m[2].length > best.end - best.start) {
+      best = { list, start, end: start + m[2].length }
+    }
+  }
+  if (!best) return null
+  return { list: best.list, rest: `${s.slice(0, best.start)} ${s.slice(best.end)}` }
+}
+
+export function parseQuickAdd(raw: string, lists: QuickParseList[] = []): QuickParseResult {
   let s = ` ${raw} `
   const chips: string[] = []
   const tagNames: string[] = []
@@ -237,13 +299,19 @@ export function parseQuickAdd(raw: string): QuickParseResult {
     dueAt = d.getTime()
   }
 
-  // 5) Título limpio: espacios y conectores colgantes.
-  const title = s
-    .replace(/\s+/g, ' ')
-    .replace(/[\s,.;:-]+$/g, '')
-    .replace(/^[\s,.;:-]+/g, '')
-    .replace(/\s+(el|a|de|para|en)$/i, '')
-    .trim()
+  // 5) Lista mencionada por su nombre: sólo se sugiere, nunca se aplica sola.
+  const listHit = matchList(s, lists)
+
+  // 6) Título limpio: espacios y conectores colgantes.
+  const cleanTitle = (t: string): string =>
+    t
+      .replace(/\s+/g, ' ')
+      .replace(/[\s,.;:-]+$/g, '')
+      .replace(/^[\s,.;:-]+/g, '')
+      .replace(/\s+(el|a|de|para|en)$/i, '')
+      .trim()
+
+  const title = cleanTitle(s)
 
   if (dueAt !== null) {
     chips.push(`📅 ${fmtDate(new Date(dueAt))}`)
@@ -263,12 +331,24 @@ export function parseQuickAdd(raw: string): QuickParseResult {
   }
   for (const t of tagNames) chips.push(`#${t}`)
 
+  const finalTitle = title || raw.trim()
+
   return {
-    title: title || raw.trim(),
+    title: finalTitle,
     dueAt,
     dueHasTime,
     recurrenceRule: rule,
     tagNames,
     chips,
+    listId: null,
+    listSuggestion: listHit
+      ? {
+          id: listHit.list.id,
+          name: listHit.list.name,
+          // Si el nombre de la lista era todo el texto ("finanzas"), el título
+          // sin la mención quedaría vacío: se conserva el original.
+          title: cleanTitle(listHit.rest) || finalTitle,
+        }
+      : null,
   }
 }

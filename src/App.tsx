@@ -300,13 +300,24 @@ export default function App() {
   // en vez de acumularse a la derecha. En móvil/tablet el w-full manda igual.
   const contentMax = 'max-w-7xl'
 
+  // Nombres detectables en la captura rápida; dentro de una lista se excluye la
+  // propia (sugerir la lista en la que ya estás no aporta nada).
+  const quickAddLists = useMemo(
+    () =>
+      lists
+        .filter((l) => !(view.kind === 'list' && l.id === view.listId))
+        .map((l) => ({ id: l.id, name: l.name })),
+    [lists, view],
+  )
+
   async function handleQuickAdd(parsed: QuickParseResult) {
     // Etiquetas detectadas en el texto (#tag) + la de la vista actual.
     const tagIds = view.kind === 'tag' ? [view.tagId] : []
     for (const name of parsed.tagNames) tagIds.push(await getOrCreateTag(name))
     await createTask({
       title: parsed.title,
-      listId: view.kind === 'list' ? view.listId : null,
+      // La lista sugerida por el texto sólo llega aquí si el usuario la aceptó.
+      listId: parsed.listId ?? (view.kind === 'list' ? view.listId : null),
       tagIds: [...new Set(tagIds)],
       // Lo detectado en el texto manda; si no hay nada, aplica el default de la
       // vista. Una tarea recurrente sin fecha no aparecería nunca en Hoy: se ancla a hoy.
@@ -819,6 +830,7 @@ export default function App() {
                           ? `Añadir con #${currentTag?.name ?? 'etiqueta'}…`
                           : 'Añadir tarea…'
                 }
+                lists={quickAddLists}
                 onAdd={handleQuickAdd}
               />
             </div>

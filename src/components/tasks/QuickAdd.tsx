@@ -1,8 +1,11 @@
 import { useMemo, useRef, useState, type FormEvent } from 'react'
-import { parseQuickAdd, type QuickParseResult } from '../../lib/quickParse'
+import { parseQuickAdd, type QuickParseList, type QuickParseResult } from '../../lib/quickParse'
+import { FolderIcon } from '../ui/icons'
 
 interface QuickAddProps {
   placeholder: string
+  /** Listas cuyo nombre puede detectarse en el texto ("Paga tarjeta finanzas"). */
+  lists?: QuickParseList[]
   onAdd: (parsed: QuickParseResult) => void
 }
 
@@ -11,16 +14,26 @@ interface QuickAddProps {
  * detección inteligente: "Gimnasio el lunes a las 8pm cada semana #salud".
  * Lo detectado se muestra como chips antes de guardar.
  */
-export function QuickAdd({ placeholder, onAdd }: QuickAddProps) {
+export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
   const [text, setText] = useState('')
+  // Lista aceptada por el usuario. Se compara con la sugerencia actual, así al
+  // seguir escribiendo (otra lista, o ninguna) la elección caduca sola.
+  const [pickedListId, setPickedListId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const parsed = useMemo(() => (text.trim() ? parseQuickAdd(text) : null), [text])
+  const parsed = useMemo(() => (text.trim() ? parseQuickAdd(text, lists ?? []) : null), [text, lists])
+  const suggestion = parsed?.listSuggestion ?? null
+  const picked = suggestion !== null && suggestion.id === pickedListId
 
   function submit(e: FormEvent) {
     e.preventDefault()
     if (!parsed || !parsed.title.trim()) return
-    onAdd(parsed)
+    onAdd(
+      picked && suggestion
+        ? { ...parsed, title: suggestion.title, listId: suggestion.id }
+        : parsed,
+    )
     setText('')
+    setPickedListId(null)
     // En táctil (smartphone), Enter añade la tarea Y esconde el teclado; en
     // escritorio el foco se queda para encadenar varias tareas seguidas.
     if (window.matchMedia('(pointer: coarse)').matches) inputRef.current?.blur()
@@ -28,7 +41,7 @@ export function QuickAdd({ placeholder, onAdd }: QuickAddProps) {
 
   return (
     <div className="space-y-1.5">
-      {parsed && parsed.chips.length > 0 && (
+      {parsed && (parsed.chips.length > 0 || suggestion !== null) && (
         <div className="flex flex-wrap items-center gap-1.5 px-1" aria-live="polite">
           <span className="text-[11px] text-ink-faint">Detectado:</span>
           {parsed.chips.map((chip) => (
@@ -39,6 +52,22 @@ export function QuickAdd({ placeholder, onAdd }: QuickAddProps) {
               {chip}
             </span>
           ))}
+          {suggestion && (
+            // La lista no se aplica sola: es un botón que el usuario acepta o no.
+            <button
+              type="button"
+              onClick={() => setPickedListId(picked ? null : suggestion.id)}
+              aria-pressed={picked}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                picked
+                  ? 'border-accent-500/60 bg-accent-500/25 text-accent-300'
+                  : 'border-line/25 bg-surface-700/60 text-ink-muted hover:border-accent-500/40 hover:text-accent-300'
+              }`}
+            >
+              <FolderIcon className="size-3" />
+              {picked ? suggestion.name : `Añadir a ${suggestion.name}`}
+            </button>
+          )}
         </div>
       )}
       <form onSubmit={submit} className="flex gap-2">

@@ -141,7 +141,7 @@ VITE_SUPABASE_ANON_KEY=TU_CLAVE_ANON`}</pre>
             </svg>
             Continuar con Google
           </button>
-          <div className="flex items-center gap-3 text-[11px] text-ink-faint">
+          <div className="flex items-center gap-3 text-[0.6875rem] text-ink-faint">
             <span className="h-px flex-1 bg-line/10" />o con tu correo<span className="h-px flex-1 bg-line/10" />
           </div>
           <input

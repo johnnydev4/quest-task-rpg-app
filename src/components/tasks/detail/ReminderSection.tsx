@@ -107,7 +107,7 @@ export function ReminderSection({ taskId, reminders }: ReminderSectionProps) {
           </button>
         )}
         {permission === 'denied' && (
-          <span className="text-[11px] text-ink-faint">Notificaciones del sistema bloqueadas; los avisos saldrán dentro de la app.</span>
+          <span className="text-[0.6875rem] text-ink-faint">Notificaciones del sistema bloqueadas; los avisos saldrán dentro de la app.</span>
         )}
       </div>
     </div>

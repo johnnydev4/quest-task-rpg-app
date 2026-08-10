@@ -183,7 +183,7 @@ function SheetOption({
       }`}
     >
       <span className={selected ? 'text-accent-300' : 'text-ink-muted'}>{icon}</span>
-      <span className="min-w-0 flex-1 truncate text-[15px] lg:text-sm">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-[0.9375rem] lg:text-sm">{label}</span>
       {hint && <span className="shrink-0 text-sm text-ink-faint lg:text-xs">{hint}</span>}
       {selected && (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="size-4.5 shrink-0 text-accent-300" aria-hidden="true">
@@ -292,7 +292,7 @@ function ReminderSheet({
             <path d="M16.5 15.2v1.3l.9.9" />
           </RowIcon>
         </span>
-        <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Elegir una fecha y una hora</span>
+        <span className="min-w-0 flex-1 text-[0.9375rem] text-ink lg:text-sm">Elegir una fecha y una hora</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`size-4 shrink-0 text-ink-faint transition-transform ${customOpen ? 'rotate-90' : ''}`} aria-hidden="true">
           <path d="M9 6l6 6-6 6" />
         </svg>
@@ -327,7 +327,7 @@ function ReminderSheet({
                       <path d="M12 7v5l3 2" />
                     </RowIcon>
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-[15px] text-ink lg:text-sm">
+                  <span className="min-w-0 flex-1 truncate text-[0.9375rem] text-ink lg:text-sm">
                     {formatDateTime(r.remindAt)}
                   </span>
                 </button>
@@ -366,7 +366,7 @@ function ReminderSheet({
         </button>
       )}
       {permission === 'denied' && (
-        <p className="mt-2 px-3 text-[11px] text-ink-faint">
+        <p className="mt-2 px-3 text-[0.6875rem] text-ink-faint">
           Notificaciones del sistema bloqueadas; los avisos saldrán dentro de la app.
         </p>
       )}
@@ -544,7 +544,7 @@ function Row({
       className="flex min-h-13 w-full items-center gap-3.5 border-b border-line/5 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-ink/5"
     >
       <span className={value ? 'text-accent-300' : 'text-ink-muted'}>{icon}</span>
-      <span className={`min-w-0 flex-1 truncate text-[15px] lg:text-sm ${value ? 'text-ink' : 'text-ink-muted'}`}>
+      <span className={`min-w-0 flex-1 truncate text-[0.9375rem] lg:text-sm ${value ? 'text-ink' : 'text-ink-muted'}`}>
         {label}
       </span>
       {value != null && (
@@ -721,7 +721,7 @@ function TaskForm({
             onChange={(e) => setNewSubtask(e.target.value)}
             placeholder="Añadir paso"
             aria-label="Añadir subtarea"
-            className="min-w-0 flex-1 border-none bg-transparent text-[15px] text-ink outline-none placeholder-accent-300 lg:text-sm"
+            className="min-w-0 flex-1 border-none bg-transparent text-[0.9375rem] text-ink outline-none placeholder-accent-300 lg:text-sm"
           />
         </form>
       </Group>
@@ -810,7 +810,7 @@ function TaskForm({
                 <path d="M4 22v-7" />
               </RowIcon>
             </span>
-            <span className="text-[15px] text-ink-muted lg:text-sm">Prioridad</span>
+            <span className="text-[0.9375rem] text-ink-muted lg:text-sm">Prioridad</span>
           </div>
           <div className="mt-2.5 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Prioridad">
             {PRIORITIES.map((p) => (
@@ -892,7 +892,7 @@ function TaskForm({
           rows={4}
           placeholder="Añadir nota"
           aria-label="Notas"
-          className="w-full resize-y border-none bg-transparent px-4 py-3.5 text-[15px] text-ink outline-none placeholder-ink-muted focus:shadow-none lg:text-sm"
+          className="w-full resize-y border-none bg-transparent px-4 py-3.5 text-[0.9375rem] text-ink outline-none placeholder-ink-muted focus:shadow-none lg:text-sm"
         />
       </Group>
 
@@ -964,7 +964,7 @@ function TaskForm({
                     <path d="M16 2v4M8 2v4M3 10h18" />
                   </RowIcon>
                 </span>
-                <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Elegir una fecha</span>
+                <span className="min-w-0 flex-1 text-[0.9375rem] text-ink lg:text-sm">Elegir una fecha</span>
                 {task.dueAt !== null && (
                   <span className="shrink-0 text-sm text-ink-faint lg:text-xs">{formatDue(task.dueAt)}</span>
                 )}
@@ -997,7 +997,7 @@ function TaskForm({
                         <path d="M12 7v5l3 2" />
                       </RowIcon>
                     </span>
-                    <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">Hora</span>
+                    <span className="min-w-0 flex-1 text-[0.9375rem] text-ink lg:text-sm">Hora</span>
                     <TimeSelect
                       value={timeValue}
                       onChange={setTime}
@@ -1160,7 +1160,7 @@ export function CustomMinutesInput({
 
   return (
     <div className={`flex min-h-13 items-center gap-3 rounded-xl px-3 ${current !== null ? 'text-accent-300' : ''}`}>
-      <span className={`min-w-0 flex-1 text-[15px] lg:text-sm ${current !== null ? 'text-accent-300' : 'text-ink'}`}>
+      <span className={`min-w-0 flex-1 text-[0.9375rem] lg:text-sm ${current !== null ? 'text-accent-300' : 'text-ink'}`}>
         Personalizado{current !== null ? ` · ${current} min` : ''}
       </span>
       <input
@@ -1281,7 +1281,7 @@ function SubtaskRow({ subtask }: { subtask: Subtask }) {
         onBlur={saveTitle}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
         aria-label="Título de subtarea"
-        className={`min-w-0 flex-1 border-none bg-transparent text-[15px] outline-none lg:text-sm ${
+        className={`min-w-0 flex-1 border-none bg-transparent text-[0.9375rem] outline-none lg:text-sm ${
           subtask.completed ? 'text-ink-faint line-through' : 'text-ink-dim'
         }`}
       />

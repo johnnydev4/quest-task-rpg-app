@@ -60,6 +60,8 @@
   /* Multiplicador de opacidad del cristal (1 = base). JS lo sube si el fondo
      personalizado deja poco contraste bajo los paneles. */
   --t-glass-op: 1;
+  /* Accesibilidad: escala del tamaño del texto (1 = normal). JS lo sobreescribe. */
+  --t-font-scale: 1;
 }
 
 :root[data-theme='light'] {
@@ -84,8 +86,16 @@
   --t-accent-700: #5b21b6;
 }
 
+/*
+ * Accesibilidad: el tamaño del texto se elige en Ajustes. Escalamos la raíz en
+ * vez de cada clase de texto porque TODO el diseño (tipografías, espaciados,
+ * alturas y radios de Tailwind) está en rem: así la interfaz crece o encoge
+ * entera y proporcionada, sin textos que desborden sus botones.
+ * `100%` respeta además el tamaño base que el usuario haya fijado en el navegador.
+ */
 html {
   font-family: var(--font-sans);
+  font-size: calc(100% * var(--t-font-scale));
 }
 
 body {
@@ -145,7 +155,8 @@ a {
   input,
   select,
   textarea {
-    font-size: 16px !important;
+    /* Nunca por debajo de 16px, pero si el usuario eligió texto grande, crece con él. */
+    font-size: max(16px, 1rem) !important;
   }
 }
 

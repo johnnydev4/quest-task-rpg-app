@@ -179,7 +179,7 @@ function DurationStepper({
         <button type="button" onClick={() => adjustDuration(settingKey, step, min, max)} aria-label={`Aumentar ${label}`} className={stepBtn}>
           +
         </button>
-        <span className="pl-0.5 text-[11px] text-ink-faint">min</span>
+        <span className="pl-0.5 text-[0.6875rem] text-ink-faint">min</span>
       </div>
     </div>
   )
@@ -499,7 +499,7 @@ export function StudyView() {
       </div>
 
       {linkSelectors}
-      <p className="text-[11px] text-ink-faint">
+      <p className="text-[0.6875rem] text-ink-faint">
         El temporizador siempre usa la duración configurada aquí. Si la tarea o el hábito vinculado
         tiene un objetivo de pomodoro, su barra se va llenando con tus minutos de foco.
       </p>

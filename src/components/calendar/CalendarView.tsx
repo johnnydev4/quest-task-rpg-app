@@ -321,7 +321,7 @@ function AgendaDayRow({
             isToday ? 'bg-accent-600 text-on-accent' : 'bg-ink/5 text-ink-dim'
           }`}
         >
-          <span className="text-[10px] font-medium uppercase leading-none">{weekday}</span>
+          <span className="text-[0.625rem] font-medium uppercase leading-none">{weekday}</span>
           <span className="text-lg font-bold leading-tight">{d.getDate()}</span>
         </span>
         <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
@@ -383,7 +383,7 @@ function MonthGrid({
       <h2 className="text-base font-semibold text-ink">{monthLabel(monthStart)}</h2>
       <div className="grid grid-cols-7 gap-1 px-0.5">
         {WEEKDAYS.map((w) => (
-          <span key={w} className="pb-0.5 text-center text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
+          <span key={w} className="pb-0.5 text-center text-[0.6875rem] font-semibold tracking-wide text-ink-faint uppercase">
             {w}
           </span>
         ))}
@@ -407,7 +407,7 @@ function MonthGrid({
               }`}
             >
               <span
-                className={`flex size-5 items-center justify-center rounded-full text-[11px] font-semibold ${
+                className={`flex size-5 items-center justify-center rounded-full text-[0.6875rem] font-semibold ${
                   isToday ? 'bg-accent-600 font-bold text-on-accent' : 'text-ink-dim'
                 }`}
               >
@@ -420,7 +420,7 @@ function MonthGrid({
                   return (
                     <span
                       key={t.id}
-                      className={`truncate rounded px-1 py-px text-[10px] leading-tight ${
+                      className={`truncate rounded px-1 py-px text-[0.625rem] leading-tight ${
                         t.completed ? 'line-through opacity-50' : ''
                       } ${c ? '' : 'bg-accent-500/15 text-accent-300'}`}
                       style={c ? { backgroundColor: `color-mix(in srgb, ${c} 18%, transparent)`, color: c } : undefined}
@@ -431,7 +431,7 @@ function MonthGrid({
                   )
                 })}
                 {dayTasks.length > 3 && (
-                  <span className="px-1 text-[10px] text-ink-faint">+{dayTasks.length - 3} más</span>
+                  <span className="px-1 text-[0.625rem] text-ink-faint">+{dayTasks.length - 3} más</span>
                 )}
               </span>
               <span className="flex flex-wrap items-center gap-0.5 md:hidden">
@@ -445,7 +445,7 @@ function MonthGrid({
                     />
                   )
                 })}
-                {dayTasks.length > 4 && <span className="text-[9px] text-ink-faint">+{dayTasks.length - 4}</span>}
+                {dayTasks.length > 4 && <span className="text-[0.5625rem] text-ink-faint">+{dayTasks.length - 4}</span>}
               </span>
             </button>
           )

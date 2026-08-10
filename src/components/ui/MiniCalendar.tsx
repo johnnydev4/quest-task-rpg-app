@@ -125,7 +125,7 @@ export function MiniCalendar({ value, onSelect }: MiniCalendarProps) {
       </div>
       <div ref={gridRef} className="grid grid-cols-7 gap-0.5 text-center">
         {WEEKDAYS.map((d) => (
-          <span key={d} className="py-1 text-[10px] font-semibold text-ink-faint">
+          <span key={d} className="py-1 text-[0.625rem] font-semibold text-ink-faint">
             {d}
           </span>
         ))}

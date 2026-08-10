@@ -13,7 +13,7 @@ import { emitConfigOpened, onCompletion, onConfigOpened, onOpenStudy } from './l
 import type { QuickParseResult } from './lib/quickParse'
 import { playCompletion, playLevelUp } from './lib/sound'
 import { applyBackgroundContrast } from './lib/bgContrast'
-import { applyTheme, resolveDark } from './lib/theme'
+import { applyFontScale, applyTheme, resolveDark } from './lib/theme'
 import { useProfile } from './lib/useProfile'
 import { useSettings } from './lib/useSettings'
 import { startReminderScheduler } from './services/reminderScheduler'
@@ -179,6 +179,7 @@ export default function App() {
   useEffect(() => {
     const apply = () => {
       applyTheme(settings.theme, settings.accentColor, settings.glassTint)
+      applyFontScale(settings.fontScale)
       applyBackgroundContrast(bgLum, resolveDark(settings.theme))
     }
     apply()
@@ -186,7 +187,7 @@ export default function App() {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)
-  }, [settings.theme, settings.accentColor, settings.glassTint, bgLum])
+  }, [settings.theme, settings.accentColor, settings.glassTint, settings.fontScale, bgLum])
 
   // Recompensa inmediata: sonido, vibración y celebración de level-up (spec §7).
   useEffect(
@@ -642,7 +643,7 @@ export default function App() {
                 <div className="px-4 pb-3 sm:px-6">
                   <div className="flex items-center gap-2">
                     <span
-                      className="shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold"
+                      className="shrink-0 rounded-md px-1.5 py-0.5 text-[0.6875rem] font-bold"
                       style={{ color, backgroundColor: `color-mix(in srgb, ${color} 18%, transparent)` }}
                     >
                       Nv {stat.level}
@@ -656,7 +657,7 @@ export default function App() {
                     >
                       <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
                     </div>
-                    <span className="shrink-0 text-[11px] text-ink-faint">
+                    <span className="shrink-0 text-[0.6875rem] text-ink-faint">
                       {stat.intoLevel}/{stat.needed} XP
                     </span>
                   </div>
@@ -668,7 +669,7 @@ export default function App() {
               dos barras seguidas se leen fatal en pantalla pequeña. */}
           <div className={`px-4 pb-3 sm:px-6 lg:hidden ${currentList ? 'hidden' : ''}`}>
             <div className="flex items-center gap-2">
-              <span className="rounded-md bg-accent-500/15 px-1.5 py-0.5 text-[11px] font-bold text-accent-300">
+              <span className="rounded-md bg-accent-500/15 px-1.5 py-0.5 text-[0.6875rem] font-bold text-accent-300">
                 Nv {level}
               </span>
               <div
@@ -696,12 +697,12 @@ export default function App() {
                 )}
               </div>
               {xpGain && (
-                <span key={xpGain.key} className="text-[11px] font-bold text-accent-300" style={{ animation: 'xp-float 1.4s ease-out both' }}>
+                <span key={xpGain.key} className="text-[0.6875rem] font-bold text-accent-300" style={{ animation: 'xp-float 1.4s ease-out both' }}>
                   +{xpGain.xp}
                 </span>
               )}
               {streak > 0 && (
-                <span className="flex items-center gap-1 text-[11px] font-medium text-warn">
+                <span className="flex items-center gap-1 text-[0.6875rem] font-medium text-warn">
                   <FlameIcon className="size-3" /> {streak}
                 </span>
               )}
@@ -842,7 +843,7 @@ export default function App() {
       {detailId && isDesktop && (
         <aside
           key={detailId}
-          className="sticky top-0 hidden h-dvh w-[400px] shrink-0 overflow-y-auto border-l border-line/10 glass-bar lg:block"
+          className="sticky top-0 hidden h-dvh w-[25rem] max-w-[45vw] shrink-0 overflow-y-auto border-l border-line/10 glass-bar lg:block"
           style={{ animation: 'slide-in-right 0.28s ease-out both' }}
           aria-label="Detalle de la tarea"
         >

@@ -114,7 +114,7 @@ export function ContextMenu({
                       sub.onClick?.()
                       onClose()
                     }}
-                    className={`${itemClass} py-1.5 pl-6 text-[13px]`}
+                    className={`${itemClass} py-1.5 pl-6 text-[0.8125rem]`}
                   >
                     <span className="w-4 shrink-0 text-accent-400" aria-hidden="true">
                       {sub.selected && (

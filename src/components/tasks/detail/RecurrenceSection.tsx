@@ -120,11 +120,11 @@ export function RecurrenceSection({ task }: RecurrenceSectionProps) {
         )}
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-ink-faint">{describeRule(rule)} — al completar se crea la siguiente</span>
+        <span className="text-[0.6875rem] text-ink-faint">{describeRule(rule)} — al completar se crea la siguiente</span>
         <button
           type="button"
           onClick={() => updateTask(task.id, { recurrenceRule: null })}
-          className="text-[11px] text-ink-faint transition-colors hover:text-danger"
+          className="text-[0.6875rem] text-ink-faint transition-colors hover:text-danger"
         >
           Quitar
         </button>

@@ -122,7 +122,7 @@ export function MiniTimer({ onExpand }: { onExpand: () => void }) {
             <span className="font-mono text-sm font-bold text-ink tabular-nums">
               {mmss(timer.remainingMs)}
             </span>
-            <span className="text-[10px] text-ink-faint">
+            <span className="text-[0.625rem] text-ink-faint">
               {PHASE_LABEL[timer.phase]}
               {timer.status === 'paused' && ' · pausa'}
             </span>

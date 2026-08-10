@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: Settings = {
   accentColor: '#8b5cf6',
   glassTint: null,
   bgBlur: 14,
+  fontScale: 1,
   ambientSound: 'none',
   ambientVolume: 0.5,
   pomodoroFocusMin: 25,

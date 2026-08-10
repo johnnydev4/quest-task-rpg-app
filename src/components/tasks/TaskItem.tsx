@@ -40,7 +40,7 @@ interface TaskItemProps {
 }
 
 // Chips compactos: la fila de configuración bajo el título ocupa lo mínimo.
-const chipBase = 'inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-medium'
+const chipBase = 'inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[0.625rem] font-medium'
 
 /** Menú contextual (clic derecho) de una tarea: Hoy, prioridad, completar, fecha y lista. */
 function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: number; onClose: () => void }) {
@@ -257,7 +257,7 @@ export function TaskItem({
         )}
         {!task.completed && pomo && (
           <span className="mt-1.5 block max-w-56">
-            <span className="flex items-center gap-1 text-[10px] text-ink-faint">
+            <span className="flex items-center gap-1 text-[0.625rem] text-ink-faint">
               <TimerIcon className="size-3" />
               {pomo.completed ? '¡Pomodoro completado!' : `${pomo.doneMin}/${pomo.goalMin} min de foco`}
             </span>

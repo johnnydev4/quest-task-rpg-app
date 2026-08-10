@@ -118,10 +118,10 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
     >
       <div className="relative">
         <div className={`flex items-center justify-between gap-2 ${quest.completed ? 'pr-8' : ''}`}>
-          <p className="flex items-center gap-1.5 text-[11px] font-bold tracking-widest uppercase" style={{ color: theme.colorA }}>
+          <p className="flex items-center gap-1.5 text-[0.6875rem] font-bold tracking-widest uppercase" style={{ color: theme.colorA }}>
             <SwordIcon className="size-3.5" /> Misión de la semana {week} · {theme.creature}
           </p>
-          <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-ink-muted">
+          <span className="flex shrink-0 items-center gap-1 text-[0.6875rem] font-medium text-ink-muted">
             {quest.completed ? (
               <>
                 <TrophyIcon className="size-3.5" /> Conquistada

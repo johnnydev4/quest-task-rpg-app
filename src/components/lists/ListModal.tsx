@@ -112,7 +112,7 @@ export function ListModal({ list, onClose }: ListModalProps) {
               }`}
             />
           </div>
-          {emojiError && <p className="text-[11px] text-danger">Solo se admiten emojis (ni texto ni números).</p>}
+          {emojiError && <p className="text-[0.6875rem] text-danger">Solo se admiten emojis (ni texto ni números).</p>}
         </div>
 
         {list && (

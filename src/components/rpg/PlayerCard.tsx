@@ -43,7 +43,7 @@ export function PlayerCard() {
           </span>
           <span className="flex flex-col leading-tight">
             <span className="text-sm font-semibold text-ink">Nivel {level}</span>
-            <span className="text-[11px] font-medium text-accent-300">{titleForLevel(level)}</span>
+            <span className="text-[0.6875rem] font-medium text-accent-300">{titleForLevel(level)}</span>
           </span>
         </span>
         {gain && (
@@ -81,7 +81,7 @@ export function PlayerCard() {
           />
         )}
       </div>
-      <div className="mt-1.5 flex items-center justify-between text-[11px] text-ink-faint">
+      <div className="mt-1.5 flex items-center justify-between text-[0.6875rem] text-ink-faint">
         <span>
           {intoLevel}/{needed} XP
         </span>

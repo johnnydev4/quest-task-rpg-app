@@ -43,7 +43,7 @@ export function Sheet({ title, onClose, children }: SheetProps) {
         aria-label={title}
         className={
           side
-            ? 'relative h-full w-[400px] overflow-y-auto overscroll-contain border-l border-line/10 glass-strong shadow-2xl'
+            ? 'relative h-full w-[25rem] max-w-full overflow-y-auto overscroll-contain border-l border-line/10 glass-strong shadow-2xl'
             : 'relative max-h-[82dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl'
         }
         style={{ animation: `${side ? 'slide-in-right 0.28s' : 'sheet-up 0.26s'} ease-out both` }}
@@ -57,7 +57,7 @@ export function Sheet({ title, onClose, children }: SheetProps) {
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3">
             <span aria-hidden="true" />
             <h3 className="text-center text-base font-semibold text-ink">{title}</h3>
-            <button onClick={onClose} className="justify-self-end text-[15px] font-semibold text-accent-400">
+            <button onClick={onClose} className="justify-self-end text-[0.9375rem] font-semibold text-accent-400">
               Listo
             </button>
           </div>

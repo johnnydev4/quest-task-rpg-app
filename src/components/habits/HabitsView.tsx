@@ -109,11 +109,11 @@ export function HabitsView() {
         />
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <div className="space-y-1.5">
-            <span className="block text-[11px] text-ink-faint">Días a cumplir</span>
+            <span className="block text-[0.6875rem] text-ink-faint">Días a cumplir</span>
             <DayPicker value={days} onChange={setDays} />
           </div>
           <div className="space-y-1.5">
-            <span className="block text-[11px] text-ink-faint">Hasta</span>
+            <span className="block text-[0.6875rem] text-ink-faint">Hasta</span>
             <div className="flex items-center gap-2.5">
               <input
                 type="date"
@@ -140,11 +140,11 @@ export function HabitsView() {
             </div>
           </div>
           <label className="space-y-1.5">
-            <span className="block text-[11px] text-ink-faint">Recordarme a las</span>
+            <span className="block text-[0.6875rem] text-ink-faint">Recordarme a las</span>
             <TimeSelect value={reminderTime} onChange={setReminderTime} noneLabel="Sin aviso" ariaLabel="Hora del aviso del hábito" />
           </label>
           <label className="space-y-1.5">
-            <span className="block text-[11px] text-ink-faint">Pomodoro</span>
+            <span className="block text-[0.6875rem] text-ink-faint">Pomodoro</span>
             <select
               value={pomodoroMin}
               onChange={(e) => setPomodoroMin(e.target.value)}
@@ -226,7 +226,7 @@ export function HabitsView() {
           {COMBO_TIERS.map((tier) => (
             <span
               key={tier.combo}
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold text-white"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold text-white"
               style={{ background: tier.name === 'arcoíris' ? RAINBOW_GRADIENT : tier.color }}
             >
               {tier.combo === 7 ? '7+' : tier.combo} · ×{tier.mult} XP {tier.name}

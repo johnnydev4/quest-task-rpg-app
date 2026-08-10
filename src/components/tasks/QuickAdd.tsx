@@ -60,11 +60,11 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
     <div className="space-y-1.5">
       {parsed && (parsed.chips.length > 0 || suggestion !== null) && (
         <div className="flex flex-wrap items-center gap-1.5 px-1" aria-live="polite">
-          <span className="text-[11px] text-ink-faint">Detectado:</span>
+          <span className="text-[0.6875rem] text-ink-faint">Detectado:</span>
           {parsed.chips.map((chip) => (
             <span
               key={chip}
-              className="inline-flex items-center rounded-full border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 text-[11px] font-medium text-accent-300"
+              className="inline-flex items-center rounded-full border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 text-[0.6875rem] font-medium text-accent-300"
             >
               {chip}
             </span>
@@ -75,7 +75,7 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
               type="button"
               onClick={() => setPickedListId(picked ? null : suggestion.id)}
               aria-pressed={picked}
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.6875rem] font-medium transition-colors ${
                 picked
                   ? 'border-accent-500/60 bg-accent-500/25 text-accent-300'
                   : 'border-line/25 bg-surface-700/60 text-ink-muted hover:border-accent-500/40 hover:text-accent-300'
@@ -84,7 +84,7 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
               <FolderIcon className="size-3" />
               {picked ? suggestion.name : `Añadir a ${suggestion.name}`}
               {/* Atajo sólo útil con teclado físico: se oculta en táctil. */}
-              <kbd className="ml-0.5 hidden rounded border border-current/30 px-1 text-[9px] font-normal opacity-70 [@media(pointer:fine)]:inline">
+              <kbd className="ml-0.5 hidden rounded border border-current/30 px-1 text-[0.5625rem] font-normal opacity-70 [@media(pointer:fine)]:inline">
                 {picked ? '↓' : 'Tab'}
               </kbd>
             </button>

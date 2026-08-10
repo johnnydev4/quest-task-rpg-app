@@ -24,7 +24,7 @@ export function CommentSection({ taskId, comments }: CommentSectionProps) {
       {comments.map((c) => (
         <div key={c.id} className="group rounded-lg border border-line/5 glass-input px-3 py-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] text-ink-faint">{formatDateTime(c.createdAt)}</span>
+            <span className="text-[0.6875rem] text-ink-faint">{formatDateTime(c.createdAt)}</span>
             <button
               onClick={() => deleteComment(c.id)}
               aria-label="Eliminar comentario"

@@ -177,7 +177,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
           </button>
         ) : (
           <span
-            className={`flex shrink-0 items-center justify-center rounded-full border-2 border-dashed border-line/15 text-[10px] text-ink-faint ${
+            className={`flex shrink-0 items-center justify-center rounded-full border-2 border-dashed border-line/15 text-[0.625rem] text-ink-faint ${
               compact ? 'size-5' : 'size-6'
             }`}
             title={ended ? 'Hábito finalizado' : 'Hoy no toca'}
@@ -196,7 +196,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             <p className="truncate text-sm font-medium text-ink">{habit.title}</p>
             {showCombo && combo > 0 && (
               <span
-                className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black tracking-wide text-white uppercase"
+                className="shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] font-black tracking-wide text-white uppercase"
                 style={{ background: comboBackground(combo), animation: 'combo-pop 2.4s ease-out both' }}
               >
                 Combo ×{combo}
@@ -209,7 +209,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
               style={{ width: `${pct}%`, background: comboBackground(combo) }}
             />
           </div>
-          <div className={`flex items-center justify-between text-[10px] text-ink-faint ${compact ? 'mt-0.5' : 'mt-1'}`}>
+          <div className={`flex items-center justify-between text-[0.625rem] text-ink-faint ${compact ? 'mt-0.5' : 'mt-1'}`}>
             <span>
               {total === null
                 ? `${done} cumplido${done === 1 ? '' : 's'} · sin fecha límite`
@@ -224,7 +224,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
           </div>
           {pomo && (
             <div className={compact ? 'mt-1' : 'mt-1.5'}>
-              <div className="flex items-center justify-between text-[10px] text-ink-faint">
+              <div className="flex items-center justify-between text-[0.625rem] text-ink-faint">
                 <span className="flex items-center gap-1">
                   <TimerIcon className="size-3" />
                   {pomo.completed
@@ -253,7 +253,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             }}
             aria-label={`Empezar pomodoro de ${habit.pomodoroMinutes} minutos`}
             title={`Pomodoro · ${habit.pomodoroMinutes} min`}
-            className="flex shrink-0 items-center gap-1 rounded-lg border border-line/10 px-2 py-1 text-[10px] font-semibold text-ink-dim transition-colors hover:bg-ink/5"
+            className="flex shrink-0 items-center gap-1 rounded-lg border border-line/10 px-2 py-1 text-[0.625rem] font-semibold text-ink-dim transition-colors hover:bg-ink/5"
           >
             <svg viewBox="0 0 24 24" fill="currentColor" className="size-3" aria-hidden="true">
               <path d="M8 5.14v13.72L19 12z" />
@@ -273,7 +273,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
                 return (
                   <span
                     key={day}
-                    className={`flex size-5 items-center justify-center rounded-full text-[9px] font-bold ${
+                    className={`flex size-5 items-center justify-center rounded-full text-[0.5625rem] font-bold ${
                       active ? 'text-white' : 'text-ink-faint opacity-50'
                     }`}
                     style={active ? { backgroundColor: `${color}cc` } : undefined}

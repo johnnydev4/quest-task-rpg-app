@@ -9,6 +9,20 @@ export const ACCENT_PRESETS = [
   { name: 'Ámbar', color: '#f59e0b' },
 ]
 
+/** Accesibilidad: tamaños de texto ofrecidos en Ajustes (multiplican la raíz). */
+export const FONT_SCALES = [
+  { id: 'sm', label: 'Pequeño', scale: 0.9 },
+  { id: 'md', label: 'Normal', scale: 1 },
+  { id: 'lg', label: 'Grande', scale: 1.15 },
+  { id: 'xl', label: 'Enorme', scale: 1.3 },
+] as const
+
+/** Escala del texto global. Se limita al rango de los presets por seguridad. */
+export function applyFontScale(scale: number): void {
+  const safe = Math.min(1.3, Math.max(0.9, Number.isFinite(scale) ? scale : 1))
+  document.documentElement.style.setProperty('--t-font-scale', String(safe))
+}
+
 function hexToHsl(hex: string): [number, number, number] {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
   if (!m) return [258, 0.9, 0.66] // violeta por defecto

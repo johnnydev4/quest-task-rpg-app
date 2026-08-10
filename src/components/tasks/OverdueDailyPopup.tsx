@@ -71,7 +71,7 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm text-ink">{t.title}</span>
-                <span className="block text-[11px] text-ink-faint">{t.dueAt !== null && formatDue(t.dueAt)}</span>
+                <span className="block text-[0.6875rem] text-ink-faint">{t.dueAt !== null && formatDue(t.dueAt)}</span>
               </span>
               <button
                 onClick={() => void handle((id) => setTaskCompleted(id, true), [t.id])}

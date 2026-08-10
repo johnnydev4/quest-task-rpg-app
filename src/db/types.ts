@@ -253,6 +253,8 @@ export interface Settings {
   glassTint: string | null
   /** Difusión (blur) del fondo en px. */
   bgBlur: number
+  /** Accesibilidad: multiplicador del tamaño del texto (1 = normal). */
+  fontScale: number
   ambientSound: AmbientSoundId
   /** 0..1 */
   ambientVolume: number

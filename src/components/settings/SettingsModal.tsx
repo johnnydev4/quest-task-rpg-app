@@ -6,7 +6,7 @@ import { updateSettings } from '../../db/repo/settings'
 import { setBgImage } from '../../db/repo/media'
 import { useSettings } from '../../lib/useSettings'
 import { COMPLETION_SOUNDS, playCompletion } from '../../lib/sound'
-import { ACCENT_PRESETS } from '../../lib/theme'
+import { ACCENT_PRESETS, FONT_SCALES } from '../../lib/theme'
 import { exportData, importData } from '../../services/backup'
 import { notificationService } from '../../services/notifications'
 import { cloudConfigured } from '../../services/supabase'
@@ -57,7 +57,7 @@ function BackgroundPushSettings() {
 
   if (!webPushConfigured || !webPush.isSupported()) {
     return (
-      <p className="text-[11px] text-ink-faint">
+      <p className="text-[0.6875rem] text-ink-faint">
         Los avisos llegan solo con Quest abierta. Para recibirlos con la app cerrada hay que
         configurar la nube y las claves de push (ver <code>supabase/PUSH.md</code>).
       </p>
@@ -69,7 +69,7 @@ function BackgroundPushSettings() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="space-y-0.5">
           <span className="block text-sm font-medium text-ink">Avisos con la app cerrada</span>
-          <span className="block text-[11px] text-ink-muted">
+          <span className="block text-[0.6875rem] text-ink-muted">
             {active
               ? 'Este dispositivo recibirá los recordatorios aunque no estés usando Quest.'
               : 'Ahora mismo solo suenan si tienes Quest abierta.'}
@@ -87,7 +87,7 @@ function BackgroundPushSettings() {
           {busy ? 'Un momento…' : active ? 'Desactivar' : 'Activar'}
         </button>
       </div>
-      {error && <p className="text-[11px] text-warn">{error}</p>}
+      {error && <p className="text-[0.6875rem] text-warn">{error}</p>}
     </div>
   )
 }
@@ -185,7 +185,7 @@ function NotificationsSettings() {
       >
         Activar notificaciones
       </button>
-      <p className="text-[11px] text-ink-faint">
+      <p className="text-[0.6875rem] text-ink-faint">
         Para recordatorios de tareas, avisos de hábitos y cambios de fase del pomodoro.
       </p>
     </div>
@@ -414,6 +414,36 @@ export function SettingsModal({
                 />
               </label>
             )}
+          </div>
+        </Section>
+
+        <Section title="Accesibilidad">
+          <div className="space-y-1.5">
+            <span className="block text-xs text-ink-faint">Tamaño del texto</span>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Tamaño del texto">
+              {FONT_SCALES.map((f) => (
+                <button
+                  key={f.id}
+                  role="radio"
+                  aria-checked={settings.fontScale === f.scale}
+                  onClick={() => updateSettings({ fontScale: f.scale })}
+                  className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2 transition-colors ${
+                    settings.fontScale === f.scale
+                      ? 'border-accent-500/50 bg-accent-500/15 text-accent-300'
+                      : 'border-line/10 text-ink-muted hover:bg-ink/5'
+                  }`}
+                >
+                  {/* Muestra en px: así la vista previa no cambia con el ajuste ya activo. */}
+                  <span aria-hidden="true" className="leading-none font-semibold" style={{ fontSize: `${16 * f.scale}px` }}>
+                    Aa
+                  </span>
+                  <span className="text-xs">{f.label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-ink-faint">
+              Escala toda la interfaz —textos, botones y espacios— para que nada se corte.
+            </p>
           </div>
         </Section>
 

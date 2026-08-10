@@ -43,7 +43,7 @@ const inputClass =
 function XpChip({ xp, theme }: { xp: number; theme: MonthTheme }) {
   return (
     <span
-      className="shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+      className="shrink-0 rounded-full border px-2 py-0.5 text-[0.6875rem] font-semibold"
       style={{ background: `${theme.colorA}1a`, borderColor: `${theme.colorA}40`, color: theme.colorA }}
     >
       +{xp} XP
@@ -290,7 +290,7 @@ export function QuestsView() {
         )}
         <div className="relative flex flex-col items-start gap-2">
           <div className="flex w-full items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[11px] font-bold tracking-widest text-white uppercase backdrop-blur-sm">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[0.6875rem] font-bold tracking-widest text-white uppercase backdrop-blur-sm">
               <SparkleIcon className="size-3.5" /> Reto del mes
             </span>
             <div className="flex items-center gap-1.5">
@@ -318,7 +318,7 @@ export function QuestsView() {
           <p className="max-w-md text-sm text-white/85 italic">"{theme.motto}"</p>
           {totalUnits > 0 && !monthly?.completed && (
             <div className="w-full max-w-md pt-1">
-              <p className="mb-1 text-[11px] font-medium text-white/80">
+              <p className="mb-1 text-[0.6875rem] font-medium text-white/80">
                 {doneUnits} / {totalUnits} gestas completadas
               </p>
               <div className="h-2 overflow-hidden rounded-full bg-black/25">
@@ -458,7 +458,7 @@ export function QuestsView() {
               <p className="text-xs text-ink-muted">Experiencia al conquistar la gesta del mes</p>
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-ink-faint">
+          <p className="mt-2 text-[0.6875rem] text-ink-faint">
             Además: +{WEEKLY_QUEST_XP} XP por semana conquistada y +{QUEST_STEP_XP} XP por cada paso.
           </p>
 
@@ -512,9 +512,9 @@ export function QuestsView() {
                     {q.completed ? <TrophyIcon className="size-5" /> : <SwordIcon className="size-5" />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] text-ink-faint">{monthLabelOf(q.monthKey)}</p>
+                    <p className="text-[0.625rem] text-ink-faint">{monthLabelOf(q.monthKey)}</p>
                     <p className="truncate text-sm font-bold text-ink">{t.epicTitle}</p>
-                    <p className={`text-[11px] font-medium ${q.completed ? 'text-ok' : 'text-ink-faint'}`}>
+                    <p className={`text-[0.6875rem] font-medium ${q.completed ? 'text-ok' : 'text-ink-faint'}`}>
                       {q.completed ? '✓ Completado' : 'No conquistado'}
                     </p>
                   </div>
@@ -565,7 +565,7 @@ function ForgeRow({
       className="rounded-xl border border-dashed border-line/15 px-3 py-2.5 transition-colors focus-within:border-line/30"
     >
       {caption && (
-        <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold tracking-wide text-ink-faint uppercase">
+        <p className="mb-1 flex items-center gap-1 text-[0.625rem] font-semibold tracking-wide text-ink-faint uppercase">
           <SwordIcon className="size-3" /> {caption}
         </p>
       )}
@@ -693,7 +693,7 @@ function MonthlyQuestBlock({
 
       <div className="mt-2 flex items-center justify-end">
         {!quest.completed && completeLocked ? (
-          <span className="flex items-center gap-1.5 text-[11px] text-ink-faint">
+          <span className="flex items-center gap-1.5 text-[0.6875rem] text-ink-faint">
             <LockIcon />
             Se conquista cuando termine el mes
           </span>
@@ -814,7 +814,7 @@ function WeeklyQuestRow({
         </button>
         <div className="min-w-0 flex-1">
           <EditableTitle quest={quest} />
-          <p className="flex items-center gap-1 text-[10px] text-ink-faint">
+          <p className="flex items-center gap-1 text-[0.625rem] text-ink-faint">
             <SwordIcon className="size-3" /> Semana {week} · {rangeLabel}
             {highlight && (
               <span className="font-semibold" style={{ color: theme.colorA }}>
@@ -826,7 +826,7 @@ function WeeklyQuestRow({
           </p>
         </div>
         {quest.completed ? (
-          <span className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-ok">
+          <span className="flex shrink-0 items-center gap-1 text-[0.6875rem] font-semibold text-ok">
             <TrophyIcon className="size-3.5" /> +{quest.xpValue} XP
           </span>
         ) : (
@@ -928,7 +928,7 @@ function EditableTitle({ quest, big = false }: { quest: Quest; big?: boolean }) 
       }}
       aria-label="Título de la misión"
       className={`w-full resize-none overflow-hidden border-none bg-transparent font-bold outline-none focus:shadow-none ${
-        big ? 'text-xl' : 'text-[15px]'
+        big ? 'text-xl' : 'text-[0.9375rem]'
       } ${quest.completed ? 'text-ink-faint line-through' : 'text-ink'}`}
     />
   )

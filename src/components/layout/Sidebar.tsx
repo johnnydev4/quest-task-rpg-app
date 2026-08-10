@@ -57,7 +57,7 @@ function NavItem({
       {icon}
       <span className="min-w-0 flex-1 truncate text-left">{label}</span>
       {badge && (
-        <span className={`rounded bg-accent-500/15 px-1.5 py-px text-xs font-bold text-accent-300 lg:px-1 lg:text-[10px]${metaFade}`}>{badge}</span>
+        <span className={`rounded bg-accent-500/15 px-1.5 py-px text-xs font-bold text-accent-300 lg:px-1 lg:text-[0.625rem]${metaFade}`}>{badge}</span>
       )}
       {count !== undefined && count > 0 && (
         <span className={`text-sm lg:text-xs ${active ? 'text-accent-300/80' : 'text-ink-faint'}${metaFade}`}>{count}</span>

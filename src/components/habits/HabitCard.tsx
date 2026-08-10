@@ -9,7 +9,7 @@ import { localDateKey } from '../../lib/dates'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
-import { CheckCircleIcon, FlagIcon, FolderIcon, MoonIcon, TimerIcon, TrashIcon } from '../ui/icons'
+import { CheckCircleIcon, ClockIcon, FlagIcon, FolderIcon, MoonIcon, TimerIcon, TrashIcon } from '../ui/icons'
 import {
   comboBackground,
   comboColor,
@@ -48,6 +48,8 @@ function HabitContextMenu({
   onClose: () => void
 }) {
   const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
+  // Momentos del día (pestaña Hoy): alternativa al arrastre para asignarlos.
+  const daySections = useLiveQuery(() => db.daySections.orderBy('order').toArray(), []) ?? []
 
   const entries: MenuEntry[] = [
     ...(canToggleToday
@@ -75,6 +77,26 @@ function HabitContextMenu({
         },
       ],
     },
+    ...(daySections.length > 0
+      ? [
+          {
+            label: 'Momento del día…',
+            icon: <ClockIcon className="size-4" />,
+            submenu: [
+              ...daySections.map((s) => ({
+                label: s.name,
+                selected: habit.daySectionId === s.id,
+                onClick: () => void updateHabit(habit.id, { daySectionId: s.id }),
+              })),
+              {
+                label: 'Sin momento',
+                selected: !habit.daySectionId,
+                onClick: () => void updateHabit(habit.id, { daySectionId: null }),
+              },
+            ],
+          },
+        ]
+      : []),
     {
       label: 'Eliminar hábito',
       icon: <TrashIcon className="size-4" />,

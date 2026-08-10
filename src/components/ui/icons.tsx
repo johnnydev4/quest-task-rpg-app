@@ -178,6 +178,72 @@ export function SortIcon({ className }: { className?: string }) {
   )
 }
 
+/** Embudo: filtrar el resultado (p. ej. ocultar listas en "Todas"). */
+export function FilterIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M3 4h18l-7 8v7l-4 2v-9L3 4z" />
+    </Icon>
+  )
+}
+
+/** Más: crear un elemento nuevo. */
+export function PlusIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M12 5v14M5 12h14" />
+    </Icon>
+  )
+}
+
+/** Tres puntos: menú de opciones. */
+export function MoreIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+    </Icon>
+  )
+}
+
+/** Reloj: momentos del día. */
+export function ClockIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </Icon>
+  )
+}
+
+/** Lápiz: renombrar / editar. */
+export function PencilIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    </Icon>
+  )
+}
+
+/** Flecha arriba: subir una posición. */
+export function ArrowUpIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </Icon>
+  )
+}
+
+/** Flecha abajo: bajar una posición. */
+export function ArrowDownIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M12 5v14M19 12l-7 7-7-7" />
+    </Icon>
+  )
+}
+
 /** Papelera: eliminar. */
 export function TrashIcon({ className }: { className?: string }) {
   return (

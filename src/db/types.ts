@@ -60,6 +60,8 @@ export interface Task {
   tagIds: string[]
   /** Minutos de pomodoro asignados a la tarea; null/ausente = sin pomodoro. */
   pomodoroMinutes?: number | null
+  /** Momento del día (sección personalizada de Hoy); null/ausente = sin momento. */
+  daySectionId?: string | null
   /** Posición manual (arrastrar y soltar). Ausente = se usa createdAt. */
   order?: number
   xpValue: number
@@ -197,8 +199,26 @@ export interface Habit {
   pomodoroMinutes?: number | null
   /** Lista (atributo RPG) a la que pertenece; su XP va a esa lista. */
   listId?: string | null
+  /** Momento del día (sección personalizada de Hoy); null/ausente = sin momento. */
+  daySectionId?: string | null
   /** Posición manual (arrastrar y soltar). Ausente = se usa createdAt. */
   order?: number
+  createdAt: number
+  updatedAt: number
+  syncStatus: SyncStatus
+}
+
+/**
+ * Momento del día en la pestaña Hoy ("Mediodía", "9pm", "Más tarde"…): sección
+ * plegable dentro de la que se arrastran tareas y hábitos para organizarlos
+ * según cuándo toca hacerlos.
+ */
+export interface DaySection {
+  id: string
+  name: string
+  order: number
+  /** Plegada por el usuario (se recuerda entre sesiones). */
+  collapsed?: boolean
   createdAt: number
   updatedAt: number
   syncStatus: SyncStatus

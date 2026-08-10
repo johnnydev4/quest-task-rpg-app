@@ -1,13 +1,15 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db/db'
-import type { List, Tag, Task } from './db/types'
+import type { Habit, List, Tag, Task } from './db/types'
 import type { View } from './lib/view'
 import { localDateKey, startOfDayOffset, startOfToday } from './lib/dates'
 import { sortCompleted, sortPending, TASK_SORT_OPTIONS, type TaskSortMode } from './lib/taskSort'
 import { levelFromXp, STAT_XP_BASE } from './lib/level'
 import { SortMenu } from './components/ui/SortMenu'
+import { FilterMenu } from './components/ui/FilterMenu'
 import { createTask, reorderTasks, updateTask } from './db/repo/tasks'
+import { NO_DAY_SECTION, zoneToSectionId } from './db/repo/daySections'
 import { getOrCreateTag } from './db/repo/tags'
 import { emitConfigOpened, onCompletion, onConfigOpened, onOpenStudy } from './lib/events'
 import type { QuickParseResult } from './lib/quickParse'
@@ -22,6 +24,7 @@ import { startPushHeartbeat } from './services/webPush'
 import { Sidebar } from './components/layout/Sidebar'
 import { QuickAdd } from './components/tasks/QuickAdd'
 import { TaskSection } from './components/tasks/TaskSection'
+import { DayMoments } from './components/tasks/DayMoments'
 import { TaskDetail, TaskDetailContent } from './components/tasks/TaskDetail'
 import { OverdueDailyPopup } from './components/tasks/OverdueDailyPopup'
 import { useIsDesktop } from './lib/useMediaQuery'
@@ -39,7 +42,7 @@ import { CalendarView } from './components/calendar/CalendarView'
 import { QuestsView } from './components/quests/QuestsView'
 import { WeeklyQuestBanner } from './components/quests/WeeklyQuestBanner'
 import { HabitsView } from './components/habits/HabitsView'
-import { HabitsToday, useTodayHabits } from './components/habits/HabitsToday'
+import { HabitsDoneToday, PendingHabits, useTodayHabits } from './components/habits/HabitsToday'
 import { FlameIcon } from './components/ui/icons'
 import { pomodoro } from './services/pomodoro'
 
@@ -50,6 +53,11 @@ type ListModalState = { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; lis
 
 /** Día (YYYY-MM-DD) en que ya se mostró el aviso de vencidas. */
 const OVERDUE_NOTICE_KEY = 'quest-overdue-notice-day'
+
+/** Listas ocultas del resultado en la pestaña "Todas" (preferencia local). */
+const HIDDEN_LISTS_KEY = 'quest-all-hidden-lists'
+/** Clave del filtro para las tareas sin lista. */
+const NO_LIST = '__nolist__'
 
 // Trazos de cada vista (mismos que en el sidebar) para el icono del header.
 const HEADER_ICON_PATHS: Partial<Record<View['kind'], React.ReactNode>> = {
@@ -121,6 +129,19 @@ export default function App() {
     await reorderTasks(ids)
     if (taskSort !== 'manual') changeTaskSort('manual')
   }
+  // Pestaña "Todas": listas quitadas del resultado, recordadas entre sesiones.
+  const [hiddenLists, setHiddenLists] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(HIDDEN_LISTS_KEY)
+      return new Set(raw ? (JSON.parse(raw) as string[]) : [])
+    } catch {
+      return new Set()
+    }
+  })
+  function changeHiddenLists(next: Set<string>) {
+    setHiddenLists(next)
+    localStorage.setItem(HIDDEN_LISTS_KEY, JSON.stringify([...next]))
+  }
 
   // Solo un panel de configuración a la vez: al abrir el detalle de tarea se
   // avisa (cierra hojas de hábito) y viceversa.
@@ -149,7 +170,7 @@ export default function App() {
   const xpGain = useXpGain()
   // Hábitos que tocan hoy sin cumplir (incluye los que "lingerean" tras
   // completarse): cuentan para que la sección "Hoy" no se vea vacía.
-  const pendingHabits = useTodayHabits().pendingHabits.length
+  const { pendingHabits } = useTodayHabits()
   const headerPct = Math.min(100, Math.round((intoLevel / needed) * 100))
   const headerGainPct = xpGain ? Math.min(headerPct, Math.round((xpGain.xp / needed) * 100)) : 0
 
@@ -208,9 +229,12 @@ export default function App() {
   const listsRaw = useLiveQuery(() => db.lists.orderBy('order').toArray(), [])
   const tasksRaw = useLiveQuery(() => db.tasks.toArray(), [])
   const tagsRaw = useLiveQuery(() => db.tags.orderBy('name').toArray(), [])
+  const daySectionsRaw = useLiveQuery(() => db.daySections.orderBy('order').toArray(), [])
   const lists = useMemo(() => listsRaw ?? [], [listsRaw])
   const tasks = useMemo(() => tasksRaw ?? [], [tasksRaw])
   const tags = useMemo(() => tagsRaw ?? [], [tagsRaw])
+  const daySections = useMemo(() => daySectionsRaw ?? [], [daySectionsRaw])
+  const daySectionIds = useMemo(() => new Set(daySections.map((s) => s.id)), [daySections])
 
   const listsById = useMemo(() => new Map(lists.map((l) => [l.id, l])), [lists])
   const tagsById = useMemo(() => new Map(tags.map((t) => [t.id, t])), [tags])
@@ -334,6 +358,31 @@ export default function App() {
     })
   }
 
+  // Momento del día efectivo: si apunta a uno que ya no existe (borrado en otro
+  // dispositivo), la tarea/hábito vuelve al bloque "Hoy" en vez de esfumarse.
+  const momentOf = (id: string | null | undefined) => (id && daySectionIds.has(id) ? id : null)
+
+  // Reparto de lo de hoy entre el bloque "Hoy" y los momentos del día.
+  const todayPending = displayPending.filter((t) => t.dueAt !== null && t.dueAt >= sod && t.dueAt < tomorrow)
+  const tasksByMoment = new Map<string, Task[]>(daySections.map((s) => [s.id, [] as Task[]]))
+  const habitsByMoment = new Map<string, Habit[]>(daySections.map((s) => [s.id, [] as Habit[]]))
+  const todayLoose: Task[] = []
+  const habitsLoose: Habit[] = []
+  for (const t of todayPending) {
+    const m = momentOf(t.daySectionId)
+    if (m) tasksByMoment.get(m)!.push(t)
+    else todayLoose.push(t)
+  }
+  for (const h of pendingHabits) {
+    const m = momentOf(h.daySectionId)
+    if (m) habitsByMoment.get(m)!.push(h)
+    else habitsLoose.push(h)
+  }
+  for (const [id, list] of tasksByMoment) tasksByMoment.set(id, sortPending(list, taskSort))
+
+  // Pestaña "Todas": una tarea se ve si su lista no está quitada del filtro.
+  const visibleInAll = (t: Task) => !hiddenLists.has(t.listId ?? NO_LIST)
+
   let sections: {
     key: string
     title?: string
@@ -365,9 +414,10 @@ export default function App() {
       {
         // Hoy muestra SOLO lo de hoy: las tareas vencidas de días anteriores
         // no aparecen aquí (viven en "Todas", donde se pueden reprogramar).
+        // Lo repartido en momentos del día se pinta más abajo, en su sección.
         key: 'today',
         title: 'Hoy',
-        tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= sod && t.dueAt < tomorrow), taskSort),
+        tasks: sortPending(todayLoose, taskSort),
         hideTodayChip: true,
       },
       {
@@ -393,20 +443,23 @@ export default function App() {
     ]
   } else if (view.kind === 'all') {
     const isOverdue = (t: (typeof displayPending)[number]) => t.dueAt !== null && t.dueAt < sod
+    // El filtro de listas se aplica a todo el resultado (vencidas, pendientes
+    // y completadas), no solo a un bloque.
+    const shown = displayPending.filter(visibleInAll)
     sections = [
       {
         // Categoría desplegable para las tareas atrasadas.
         key: 'overdue',
         title: 'Vencidas',
-        tasks: sortPending(displayPending.filter(isOverdue), taskSort),
+        tasks: sortPending(shown.filter(isOverdue), taskSort),
         collapsible: true,
         showMoveToToday: true,
       },
-      { key: 'pending', tasks: sortPending(displayPending.filter((t) => !isOverdue(t)), taskSort) },
+      { key: 'pending', tasks: sortPending(shown.filter((t) => !isOverdue(t)), taskSort) },
       {
         key: 'done',
         title: 'Completadas',
-        tasks: sortCompleted(tasks.filter(settled)).slice(0, 100),
+        tasks: sortCompleted(tasks.filter((t) => settled(t) && visibleInAll(t))).slice(0, 100),
         collapsible: true,
       },
     ]
@@ -438,6 +491,31 @@ export default function App() {
   const firstSectionWithTasks = sections.findIndex((s) => s.tasks.length > 0 && s.key !== 'overdue')
   const taskSortMenu = (
     <SortMenu value={taskSort} options={TASK_SORT_OPTIONS} onChange={changeTaskSort} label="Ordenar tareas" />
+  )
+  // En "Todas" el orden y el filtro viven juntos en una barra propia, que sigue
+  // ahí aunque el filtro deje el resultado vacío (si no, no habría cómo deshacerlo).
+  const listFilterOptions = useMemo(
+    () => [
+      ...lists.map((l) => ({ id: l.id, label: l.name, color: l.color, emoji: l.emoji })),
+      { id: NO_LIST, label: 'Sin lista', color: null },
+    ],
+    [lists],
+  )
+  const hasListFilter = listFilterOptions.some((o) => hiddenLists.has(o.id))
+
+  // Momentos del día de la pestaña Hoy ("Mediodía", "9pm"…): secciones
+  // plegables dentro de las que se arrastran tareas y hábitos.
+  const dayMoments = (
+    <DayMoments
+      sections={daySections}
+      tasksBySection={tasksByMoment}
+      habitsBySection={habitsByMoment}
+      listsById={listsById}
+      tagsById={tagsById}
+      onOpen={setDetailId}
+      onReorder={(ids) => void handleTaskReorder(ids)}
+      onMoveToList={(listId, taskId) => void updateTask(taskId, { listId })}
+    />
   )
   const viewTitle =
     view.kind === 'today'
@@ -481,7 +559,8 @@ export default function App() {
       : view.kind === 'upcoming'
         ? counts.upcoming
         : view.kind === 'all'
-          ? counts.all
+          ? // El contador acompaña a lo que se ve: el filtro de listas también cuenta.
+            pending.filter(visibleInAll).length
           : view.kind === 'list'
             ? (counts.byList[view.listId] ?? 0)
             : view.kind === 'tag'
@@ -734,7 +813,7 @@ export default function App() {
             <>
               {/* La misión de la semana destaca sobre las side quests (tareas normales) */}
               <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />
-              {isEmpty && pendingHabits === 0 ? (
+              {isEmpty && pendingHabits.length === 0 && daySections.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
                   {/* Sol de cristal (PNG con alpha real: se funde con tema claro y oscuro).
                       Flota con un balanceo suave y su resplandor "respira" detrás. */}
@@ -763,6 +842,92 @@ export default function App() {
                 </div>
               ) : (
                 sections.map((s, i) => (
+                  // Los momentos del día se intercalan justo antes de "Completadas
+                  // hoy": debajo de lo suelto de Hoy y encima de lo ya cumplido.
+                  <Fragment key={`${JSON.stringify(view)}-${s.key}`}>
+                    {s.key === 'done' && dayMoments}
+                    <TaskSection
+                      title={s.title}
+                      tasks={s.tasks}
+                      listsById={listsById}
+                      tagsById={tagsById}
+                      onOpen={setDetailId}
+                      collapsible={s.collapsible}
+                      showMoveToToday={s.showMoveToToday}
+                      showOverdueActions={s.showOverdueActions}
+                      hideTodayChip={s.hideTodayChip}
+                      action={i === firstSectionWithTasks ? taskSortMenu : undefined}
+                      onReorder={s.key === 'done' ? undefined : (ids) => void handleTaskReorder(ids)}
+                      onMoveToList={(listId, taskId) => void updateTask(taskId, { listId })}
+                      // El bloque "Hoy" recoge lo que no pertenece a ningún momento
+                      // del día y hace de zona para devolver ahí lo que se arrastre.
+                      zoneId={s.key === 'today' ? NO_DAY_SECTION : undefined}
+                      onDropOnZone={
+                        s.key === 'today'
+                          ? (zone, taskId) => void updateTask(taskId, { daySectionId: zoneToSectionId(zone) })
+                          : undefined
+                      }
+                      // Con momentos creados, "Hoy" se queda visible aunque no
+                      // tenga nada: es la zona a la que devolver lo que salga de ellos.
+                      alwaysShow={s.key === 'today' && daySections.length > 0}
+                      emptyHint={
+                        s.key === 'today' && daySections.length > 0
+                          ? 'Sin momento asignado'
+                          : undefined
+                      }
+                      // Los hábitos de hoy viven dentro de la propia sección "Hoy"
+                      leading={
+                        s.key === 'today' && habitsLoose.length > 0 ? (
+                          <PendingHabits habits={habitsLoose} zoneId={NO_DAY_SECTION} />
+                        ) : undefined
+                      }
+                    />
+                  </Fragment>
+                ))
+              )}
+              {isEmpty && pendingHabits.length === 0 && daySections.length === 0 && dayMoments}
+              {/* Los hábitos ya cumplidos bajan al fondo de la pestaña */}
+              <HabitsDoneToday />
+            </>
+          ) : (
+            <>
+              {/* "Todas": barra propia con el filtro por listas y el orden. Se
+                  queda visible aunque el filtro vacíe el resultado. */}
+              {view.kind === 'all' && (
+                <div className="flex items-center justify-end gap-2">
+                  <FilterMenu
+                    options={listFilterOptions}
+                    hidden={hiddenLists}
+                    onChange={changeHiddenLists}
+                    label="Listas"
+                  />
+                  {taskSortMenu}
+                </div>
+              )}
+              {isEmpty ? (
+                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                  <div className="flex size-14 items-center justify-center rounded-2xl glass-panel text-3xl">✨</div>
+                  {view.kind === 'all' && hasListFilter ? (
+                    <>
+                      <p className="font-medium text-ink-dim">Nada con este filtro</p>
+                      <button
+                        onClick={() => changeHiddenLists(new Set())}
+                        className="text-sm font-medium text-accent-400 transition-colors hover:text-accent-300"
+                      >
+                        Mostrar todas las listas
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-ink-dim">Sin tareas aún</p>
+                      <p className="max-w-xs text-sm text-ink-faint">
+                        Añade una tarea abajo y empieza a ganar terreno, una a la vez.
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                sections.map((s, i) => (
                   <TaskSection
                     key={`${JSON.stringify(view)}-${s.key}`}
                     title={s.title}
@@ -772,45 +937,14 @@ export default function App() {
                     onOpen={setDetailId}
                     collapsible={s.collapsible}
                     showMoveToToday={s.showMoveToToday}
-                    showOverdueActions={s.showOverdueActions}
-                    hideTodayChip={s.hideTodayChip}
-                    action={i === firstSectionWithTasks ? taskSortMenu : undefined}
+                    // En "Todas" el orden ya vive en la barra de arriba.
+                    action={i === firstSectionWithTasks && view.kind !== 'all' ? taskSortMenu : undefined}
                     onReorder={s.key === 'done' ? undefined : (ids) => void handleTaskReorder(ids)}
                     onMoveToList={(listId, taskId) => void updateTask(taskId, { listId })}
-                    // Los hábitos de hoy viven dentro de la propia sección "Hoy"
-                    leading={
-                      s.key === 'today' && pendingHabits > 0 ? <HabitsToday section="pending" /> : undefined
-                    }
                   />
                 ))
               )}
-              {/* Los hábitos ya cumplidos bajan al fondo de la pestaña */}
-              <HabitsToday section="completed" />
             </>
-          ) : isEmpty ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-center">
-              <div className="flex size-14 items-center justify-center rounded-2xl glass-panel text-3xl">✨</div>
-              <p className="font-medium text-ink-dim">Sin tareas aún</p>
-              <p className="max-w-xs text-sm text-ink-faint">
-                Añade una tarea abajo y empieza a ganar terreno, una a la vez.
-              </p>
-            </div>
-          ) : (
-            sections.map((s, i) => (
-              <TaskSection
-                key={`${JSON.stringify(view)}-${s.key}`}
-                title={s.title}
-                tasks={s.tasks}
-                listsById={listsById}
-                tagsById={tagsById}
-                onOpen={setDetailId}
-                collapsible={s.collapsible}
-                showMoveToToday={s.showMoveToToday}
-                action={i === firstSectionWithTasks ? taskSortMenu : undefined}
-                onReorder={s.key === 'done' ? undefined : (ids) => void handleTaskReorder(ids)}
-                onMoveToList={(listId, taskId) => void updateTask(taskId, { listId })}
-              />
-            ))
           )}
         </main>
 

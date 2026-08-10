@@ -23,6 +23,14 @@ interface TaskSectionProps {
   onReorder?: (ids: string[]) => void
   /** Soltar sobre una lista del menú lateral (escritorio): mueve la tarea allí. */
   onMoveToList?: (listId: string, taskId: string) => void
+  /** Momento del día que representa la sección: la convierte en zona de soltado. */
+  zoneId?: string
+  /** Soltar en OTRO momento del día: mueve la tarea allí. */
+  onDropOnZone?: (zoneId: string, taskId: string) => void
+  /** Pinta la sección aunque esté vacía (hace falta para poder soltar en ella). */
+  alwaysShow?: boolean
+  /** Texto guía cuando la sección está vacía. */
+  emptyHint?: string
 }
 
 export function TaskSection({
@@ -39,13 +47,24 @@ export function TaskSection({
   action,
   onReorder,
   onMoveToList,
+  zoneId,
+  onDropOnZone,
+  alwaysShow = false,
+  emptyHint,
 }: TaskSectionProps) {
   const [open, setOpen] = useState(!collapsible)
 
-  if (tasks.length === 0 && !leading) return null
+  if (tasks.length === 0 && !leading && !alwaysShow) return null
 
   return (
-    <section className="space-y-1.5">
+    <section
+      data-drop-zone={zoneId}
+      className={`space-y-1.5 ${
+        zoneId
+          ? 'rounded-2xl transition-shadow data-[drop-over=true]:bg-accent-500/5 data-[drop-over=true]:ring-2 data-[drop-over=true]:ring-accent-400 data-[drop-over=true]:ring-inset'
+          : ''
+      }`}
+    >
       {(title || action) && (
         <div className="flex items-center justify-between gap-2 px-1">
           {collapsible && title ? (
@@ -87,6 +106,8 @@ export function TaskSection({
             disabled={!onReorder}
             onReorder={(ids) => onReorder?.(ids)}
             onDropOnList={onMoveToList}
+            onDropOnZone={onDropOnZone}
+            zoneId={zoneId}
             className="space-y-1.5"
           >
             {tasks.map((task) => (
@@ -103,6 +124,11 @@ export function TaskSection({
               </SortableItem>
             ))}
           </SortableList>
+          {tasks.length === 0 && !leading && emptyHint && (
+            <p className="rounded-xl border border-dashed border-line/15 px-3 py-3 text-center text-xs text-ink-faint">
+              {emptyHint}
+            </p>
+          )}
         </div>
       )}
     </section>

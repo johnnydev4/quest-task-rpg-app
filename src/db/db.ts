@@ -3,6 +3,7 @@ import type {
   AppMedia,
   Attachment,
   Comment,
+  DaySection,
   Habit,
   HabitLog,
   List,
@@ -34,6 +35,7 @@ const db = new Dexie('quest-db') as Dexie & {
   questSteps: EntityTable<QuestStep, 'id'>
   habits: EntityTable<Habit, 'id'>
   habitLogs: EntityTable<HabitLog, 'id'>
+  daySections: EntityTable<DaySection, 'id'>
   appMedia: EntityTable<AppMedia, 'id'>
 }
 
@@ -128,6 +130,12 @@ db.version(8).upgrade(async (tx) => {
   if (Object.keys(patch).length > 0) await tx.table('settings').update('app', patch)
 })
 
+// Momentos del día en la pestaña Hoy: secciones plegables creadas por el
+// usuario ("Mediodía", "9pm"…) dentro de las que se arrastran tareas y hábitos.
+// La pertenencia vive en `daySectionId` de cada tarea/hábito (sin índice: el
+// filtrado ya se hace en memoria, como el resto de la vista).
+db.version(9).stores({ daySections: 'id, order' })
+
 // Disparo de sincronización con debounce: cualquier escritura en una tabla
 // sincronizada emite `quest:changed` en window. sync.ts se suscribe y llama a
 // scheduleSync(); el evento evita un ciclo de imports db<->sync.
@@ -145,6 +153,7 @@ const SYNCED_TABLES = [
   'questSteps',
   'habits',
   'habitLogs',
+  'daySections',
   'settings',
 ] as const
 

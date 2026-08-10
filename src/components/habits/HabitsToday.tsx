@@ -6,6 +6,7 @@ import { emitConfigOpened, onConfigOpened } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { habitEnded, isScheduledToday } from '../../lib/habits'
 import { reorderHabits, updateHabit } from '../../db/repo/habits'
+import { zoneToSectionId } from '../../db/repo/daySections'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { HabitCard } from './HabitCard'
 import { HabitDetailSheet } from './HabitDetailSheet'
@@ -57,26 +58,14 @@ export function useTodayHabits(): { pendingHabits: Habit[]; completedHabits: Hab
   }
 }
 
-interface HabitsTodayProps {
-  /** 'pending': solo las tarjetas, para incrustar dentro de la sección "Hoy".
-      'completed': sección plegable (plegada por defecto) al fondo de la pestaña. */
-  section?: 'pending' | 'completed'
-}
-
-/** Hábitos que tocan hoy, integrados con las tareas de la pestaña Hoy. */
-export function HabitsToday({ section = 'pending' }: HabitsTodayProps) {
-  const { pendingHabits, completedHabits } = useTodayHabits()
-  // Plegable de completados (plegado por defecto, como "Completadas hoy").
-  const [open, setOpen] = useState(false)
-  // Tocar un hábito abre su hoja de ajustes (como el menú de una tarea).
-  // Solo un panel de configuración a la vez en toda la app: al abrir se avisa
-  // (cierra el detalle de tarea u otras hojas) y se escucha para cerrarse.
+/**
+ * Abre la hoja de ajustes de un hábito. Solo un panel de configuración a la vez
+ * en toda la app: al abrir se avisa (cierra el detalle de tarea u otras hojas)
+ * y se escucha para cerrarse cuando abre otro.
+ */
+function useHabitSheet() {
   const instanceId = useId()
   const [editingId, setEditingId] = useState<string | null>(null)
-  const openHabit = (id: string) => {
-    emitConfigOpened(instanceId)
-    setEditingId(id)
-  }
   useEffect(
     () =>
       onConfigOpened((d) => {
@@ -84,29 +73,50 @@ export function HabitsToday({ section = 'pending' }: HabitsTodayProps) {
       }),
     [instanceId],
   )
-
-  const sheet = editingId && <HabitDetailSheet habitId={editingId} onClose={() => setEditingId(null)} />
-
-  if (section === 'pending') {
-    if (pendingHabits.length === 0) return null
-    return (
-      <>
-        <SortableList
-          ids={pendingHabits.map((h) => h.id)}
-          onReorder={(ids) => void reorderHabits(ids)}
-          onDropOnList={(listId, habitId) => void updateHabit(habitId, { listId })}
-          className="space-y-1.5"
-        >
-          {pendingHabits.map((h) => (
-            <SortableItem key={h.id} id={h.id}>
-              <HabitCard habit={h} compact onManage={() => openHabit(h.id)} />
-            </SortableItem>
-          ))}
-        </SortableList>
-        {sheet}
-      </>
-    )
+  const openHabit = (id: string) => {
+    emitConfigOpened(instanceId)
+    setEditingId(id)
   }
+  const sheet = editingId && <HabitDetailSheet habitId={editingId} onClose={() => setEditingId(null)} />
+  return { openHabit, sheet }
+}
+
+/**
+ * Tarjetas de los hábitos pendientes de un momento del día concreto: se
+ * reordenan entre sí y se pueden arrastrar a otro momento (`data-drop-zone`) o,
+ * en escritorio, a una lista del menú lateral.
+ */
+export function PendingHabits({ habits, zoneId }: { habits: Habit[]; zoneId: string }) {
+  const { openHabit, sheet } = useHabitSheet()
+  if (habits.length === 0) return null
+  return (
+    <>
+      <SortableList
+        ids={habits.map((h) => h.id)}
+        onReorder={(ids) => void reorderHabits(ids)}
+        onDropOnList={(listId, habitId) => void updateHabit(habitId, { listId })}
+        onDropOnZone={(zone, habitId) =>
+          void updateHabit(habitId, { daySectionId: zoneToSectionId(zone) })
+        }
+        zoneId={zoneId}
+        className="space-y-1.5"
+      >
+        {habits.map((h) => (
+          <SortableItem key={h.id} id={h.id}>
+            <HabitCard habit={h} compact onManage={() => openHabit(h.id)} />
+          </SortableItem>
+        ))}
+      </SortableList>
+      {sheet}
+    </>
+  )
+}
+
+/** Sección plegable (plegada por defecto) con los hábitos ya cumplidos hoy. */
+export function HabitsDoneToday() {
+  const { completedHabits } = useTodayHabits()
+  const [open, setOpen] = useState(false)
+  const { openHabit, sheet } = useHabitSheet()
 
   if (completedHabits.length === 0) return null
   return (

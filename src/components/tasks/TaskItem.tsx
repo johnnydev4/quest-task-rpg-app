@@ -13,6 +13,7 @@ import { SwipeToDelete } from '../ui/SwipeToDelete'
 import {
   CalendarIcon,
   CheckCircleIcon,
+  ClockIcon,
   CommentIcon,
   FlagIcon,
   FolderIcon,
@@ -45,6 +46,8 @@ const chipBase = 'inline-flex items-center gap-1 rounded-full border px-1.5 py-p
 /** Menú contextual (clic derecho) de una tarea: Hoy, prioridad, completar, fecha y lista. */
 function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: number; onClose: () => void }) {
   const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
+  // Momentos del día (pestaña Hoy): alternativa al arrastre para asignarlos.
+  const daySections = useLiveQuery(() => db.daySections.orderBy('order').toArray(), []) ?? []
   // "En Hoy" = vence exactamente hoy. Las vencidas (fecha anterior) NO están en
   // Hoy, así que ofrecen "Agregar a Hoy", no "Quitar de Hoy".
   const inToday = task.dueAt !== null && task.dueAt >= startOfToday() && task.dueAt < startOfDayOffset(1)
@@ -119,6 +122,26 @@ function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: nu
         { label: 'Sin lista', selected: task.listId === null, onClick: () => void updateTask(task.id, { listId: null }) },
       ],
     },
+    ...(daySections.length > 0
+      ? [
+          {
+            label: 'Momento del día…',
+            icon: <ClockIcon className="size-4" />,
+            submenu: [
+              ...daySections.map((s) => ({
+                label: s.name,
+                selected: task.daySectionId === s.id,
+                onClick: () => void updateTask(task.id, { daySectionId: s.id }),
+              })),
+              {
+                label: 'Sin momento',
+                selected: !task.daySectionId,
+                onClick: () => void updateTask(task.id, { daySectionId: null }),
+              },
+            ],
+          },
+        ]
+      : []),
     {
       label: 'Eliminar tarea',
       icon: <TrashIcon className="size-4" />,

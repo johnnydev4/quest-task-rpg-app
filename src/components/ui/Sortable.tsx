@@ -15,6 +15,11 @@ import { createContext, useContext, useMemo, useRef, type ReactNode } from 'reac
  * Además, si se pasa `onDropOnList`, soltar encima de un elemento marcado con
  * `data-drop-list="<id>"` (las listas del menú lateral, solo visibles en
  * escritorio) mueve el elemento a esa lista en vez de reordenarlo.
+ *
+ * Con `onDropOnZone` pasa lo mismo con `data-drop-zone="<id>"` (los momentos
+ * del día de la pestaña Hoy), pero también con el dedo: son áreas grandes de la
+ * propia pantalla. La zona a la que ya pertenece la lista (`zoneId`) se ignora,
+ * así arrastrar dentro de una sección sigue reordenando con normalidad.
  */
 
 let dragActive = false
@@ -38,6 +43,10 @@ interface SortableListProps {
   onReorder: (ids: string[]) => void
   /** Soltar sobre una lista del menú lateral: mueve el elemento a esa lista. */
   onDropOnList?: (listId: string, itemId: string) => void
+  /** Soltar sobre otra zona (`data-drop-zone`): mueve el elemento allí. */
+  onDropOnZone?: (zoneId: string, itemId: string) => void
+  /** Zona a la que pertenece esta lista; soltar dentro de ella solo reordena. */
+  zoneId?: string
   disabled?: boolean
   className?: string
   children: ReactNode
@@ -47,6 +56,8 @@ export function SortableList({
   ids,
   onReorder,
   onDropOnList,
+  onDropOnZone,
+  zoneId,
   disabled = false,
   className,
   children,
@@ -61,6 +72,10 @@ export function SortableList({
   reorderRef.current = onReorder
   const dropRef = useRef(onDropOnList)
   dropRef.current = onDropOnList
+  const zoneDropRef = useRef(onDropOnZone)
+  zoneDropRef.current = onDropOnZone
+  const ownZoneRef = useRef(zoneId)
+  ownZoneRef.current = zoneId
 
   const ctx = useMemo<SortableCtx>(() => {
     const register = (id: string, el: HTMLElement | null) => {
@@ -77,7 +92,13 @@ export function SortableList({
       if (!els.current.has(id)) return
 
       const touch = e.pointerType !== 'mouse'
+      // Las listas del menú lateral solo existen en escritorio; las zonas de la
+      // pestaña Hoy están en pantalla y también valen con el dedo.
       const canDropOnList = !touch && typeof dropRef.current === 'function'
+      const canDropOnZone = typeof zoneDropRef.current === 'function'
+      const dropSelector = [canDropOnList && '[data-drop-list]', canDropOnZone && '[data-drop-zone]']
+        .filter(Boolean)
+        .join(',')
       const startX = e.clientX
       const startY = e.clientY
       const startPageY = startY + window.scrollY
@@ -123,11 +144,13 @@ export function SortableList({
         const dx = touch ? 0 : lastX - startX
         self.el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(1.02)`
 
-        // ¿El puntero está sobre una lista del menú lateral?
+        // ¿El puntero está sobre una lista del menú lateral u otra zona?
         let over: HTMLElement | null = null
-        if (canDropOnList) {
+        if (dropSelector) {
           const under = document.elementFromPoint(lastX, lastY) as HTMLElement | null
-          over = (under?.closest('[data-drop-list]') as HTMLElement | null) ?? null
+          over = (under?.closest(dropSelector) as HTMLElement | null) ?? null
+          // Soltar en la zona propia no mueve nada: se reordena como siempre.
+          if (over && over.getAttribute('data-drop-zone') === ownZoneRef.current) over = null
         }
         if (over !== dropEl) {
           dropEl?.removeAttribute('data-drop-over')
@@ -135,7 +158,7 @@ export function SortableList({
           dropEl?.setAttribute('data-drop-over', 'true')
         }
         if (dropEl) {
-          // Mientras se apunta a una lista no tiene sentido reordenar.
+          // Mientras se apunta a una lista o zona no tiene sentido reordenar.
           for (const l of layout) if (l.id !== id) l.el.style.transform = ''
           newIndex = from
           return
@@ -218,6 +241,7 @@ export function SortableList({
           l.el.style.pointerEvents = ''
         }
         const listId = dropEl?.getAttribute('data-drop-list') ?? null
+        const zone = dropEl?.getAttribute('data-drop-zone') ?? null
         dropEl?.removeAttribute('data-drop-over')
         dropEl = null
 
@@ -228,6 +252,8 @@ export function SortableList({
         if (!commit) return
         if (listId !== null && dropRef.current) {
           dropRef.current(listId, id)
+        } else if (zone !== null && zoneDropRef.current) {
+          zoneDropRef.current(zone, id)
         } else if (newIndex !== from) {
           const next = layout.map((l) => l.id)
           next.splice(from, 1)

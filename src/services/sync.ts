@@ -227,27 +227,60 @@ export function lastSyncAt(): number | null {
   return v ? Number(v) : null
 }
 
+/**
+ * Sincroniza solo si la última pasó hace más de `maxAge`. Evita repetir la misma
+ * consulta cuando varios disparos (volver a la app, foco, latido) coinciden.
+ */
+async function syncIfStale(maxAge: number): Promise<void> {
+  if (!navigator.onLine || syncing) return
+  const last = lastSyncAt()
+  if (last && Date.now() - last < maxAge) return
+  await syncNow()
+}
+
+/** Ritmo del latido mientras la app está a la vista: trae cambios de otros dispositivos. */
+const FOREGROUND_POLL = 30_000
+
 let autoStarted = false
 
-/** Sincroniza al iniciar sesión, al recuperar conexión y periódicamente si hay cambios pendientes. */
+/**
+ * Sincroniza al abrir la app, al volver a ella, al recuperar conexión y con un
+ * latido en primer plano, de modo que los cambios hechos en otro dispositivo
+ * aparecen sin esperar a escribir algo aquí.
+ */
 export function startAutoSync(): void {
   if (autoStarted || !supabase) return
   autoStarted = true
+
+  // Al arrancar: baja lo último del respaldo antes de tocar nada.
+  void syncNow()
   supabase.auth.onAuthStateChange((event) => {
-    if (event === 'SIGNED_IN') void syncNow()
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+      void syncIfStale(5_000)
+    }
   })
   window.addEventListener('online', () => void syncNow())
   // Cualquier escritura local (hooks de Dexie en db.ts) dispara un sync con debounce.
   window.addEventListener('quest:changed', () => scheduleSync())
-  // Flush al ocultar/cerrar la pestaña para no perder cambios recientes.
   document.addEventListener('visibilitychange', () => {
+    // Al ocultar: flush para no perder cambios recientes.
     if (document.visibilityState === 'hidden') void syncNow()
+    // Al volver (pestaña o app en el móvil): comprueba si hay algo nuevo.
+    else void syncIfStale(10_000)
   })
+  window.addEventListener('focus', () => void syncIfStale(10_000))
   window.addEventListener('pagehide', () => void syncNow())
   setInterval(() => {
     if (!navigator.onLine) return
+    // En primer plano se sincroniza siempre (aunque no haya cambios locales),
+    // que es lo único que trae lo escrito en el otro dispositivo. De fondo,
+    // solo si queda algo por subir.
+    if (document.visibilityState === 'visible') {
+      void syncIfStale(FOREGROUND_POLL - 5_000)
+      return
+    }
     void countPending().then((n) => {
       if (n > 0) void syncNow()
     })
-  }, 45_000)
+  }, FOREGROUND_POLL)
 }

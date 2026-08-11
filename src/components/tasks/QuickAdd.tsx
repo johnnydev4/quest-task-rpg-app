@@ -78,7 +78,9 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
               className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.6875rem] font-medium transition-colors ${
                 picked
                   ? 'border-accent-500/60 bg-accent-500/25 text-accent-300'
-                  : 'border-line/25 bg-surface-700/60 text-ink-muted hover:border-accent-500/40 hover:text-accent-300'
+                  // Sin hover que la revele, en táctil la sugerencia necesita
+                  // fondo opaco y tinta plena para leerse a plena luz.
+                  : 'border-line/40 bg-surface-700 text-ink-dim hover:border-accent-500/40 hover:text-accent-300'
               }`}
             >
               <FolderIcon className="size-3" />

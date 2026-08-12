@@ -73,7 +73,15 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
             // La lista no se aplica sola: es un botón que el usuario acepta o no.
             <button
               type="button"
-              onClick={() => setPickedListId(picked ? null : suggestion.id)}
+              // El botón no debe robar el foco: en táctil eso cierra el teclado
+              // y obliga a tocar el input otra vez. preventDefault en el
+              // puntero mantiene el cursor (y el teclado) en el campo; el
+              // refoco es un respaldo para navegadores que igual lo sueltan.
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => {
+                setPickedListId(picked ? null : suggestion.id)
+                inputRef.current?.focus()
+              }}
               aria-pressed={picked}
               className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.6875rem] font-medium transition-colors ${
                 picked

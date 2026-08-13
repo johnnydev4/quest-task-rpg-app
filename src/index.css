@@ -33,9 +33,9 @@
 
 :root {
   color-scheme: dark;
-  --t-surface-900: #0f1117;
-  --t-surface-800: #161a23;
-  --t-surface-700: #1f2430;
+  --t-surface-900: #1a1e28;
+  --t-surface-800: #242a36;
+  --t-surface-700: #2f3644;
   --t-ink: #ffffff;
   /* Las tintas apagadas se acercan a la tinta plena según --t-ink-lift, que JS
      sube cuando el fondo elegido pelea con el tema (ver lib/bgContrast.ts). */

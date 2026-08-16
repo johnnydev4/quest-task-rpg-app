@@ -9,6 +9,7 @@ import { levelFromXp, STAT_XP_BASE } from './lib/level'
 import { SortMenu } from './components/ui/SortMenu'
 import { FilterMenu } from './components/ui/FilterMenu'
 import { createTask, reorderTasks } from './db/repo/tasks'
+import { markOverdueNoticeShown } from './db/repo/progress'
 import { NO_DAY_SECTION } from './db/repo/daySections'
 import { getOrCreateTag } from './db/repo/tags'
 import { emitConfigOpened, onCompletion, onConfigOpened, onOpenStudy } from './lib/events'
@@ -21,7 +22,7 @@ import { useSettings } from './lib/useSettings'
 import { useSelection } from './lib/selection'
 import { useBulkMove } from './lib/bulkMove'
 import { startReminderScheduler } from './services/reminderScheduler'
-import { startAutoSync } from './services/sync'
+import { onSync, startAutoSync } from './services/sync'
 import { startPushHeartbeat } from './services/webPush'
 import { Sidebar } from './components/layout/Sidebar'
 import { QuickAdd } from './components/tasks/QuickAdd'
@@ -53,7 +54,11 @@ const StatsView = lazy(() => import('./components/stats/StatsView'))
 
 type ListModalState = { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; listId: string }
 
-/** Día (YYYY-MM-DD) en que ya se mostró el aviso de vencidas. */
+/**
+ * Día (YYYY-MM-DD) en que ya se mostró el aviso de vencidas en ESTE dispositivo.
+ * Se conserva solo para migrar el estado heredado: la fuente de verdad ahora es
+ * `profile.overdueNoticeDay`, que sí se sincroniza entre dispositivos.
+ */
 const OVERDUE_NOTICE_KEY = 'quest-overdue-notice-day'
 
 /** Listas ocultas del resultado en la pestaña "Todas" (preferencia local). */
@@ -169,7 +174,7 @@ export default function App() {
   // Selección múltiple: arrastrar una fila marcada mueve todas las marcadas.
   const selection = useSelection()
   const bulk = useBulkMove()
-  const { level, intoLevel, needed, streak } = useProfile()
+  const { profile, level, intoLevel, needed, streak } = useProfile()
   const isDesktop = useIsDesktop()
   // Destello del XP recién ganado en la mini-barra del encabezado (móvil).
   const xpGain = useXpGain()
@@ -289,21 +294,45 @@ export default function App() {
   // el aviso sigue disponible si alguna vence más tarde.
   const [overdueNotice, setOverdueNotice] = useState<Task[] | null>(null)
   const overdueNoticeShown = useRef(false)
+  // No decidimos hasta que la primera sincronización asiente: así trabajamos con
+  // las tareas y el flag `overdueNoticeDay` ya bajados de otros dispositivos
+  // (evita mostrar vencidas que otro dispositivo ya movió o el aviso ya visto).
+  // Con timeout de reserva para no bloquearlo si no hay red.
+  const [syncSettled, setSyncSettled] = useState(false)
+  useEffect(() => {
+    const off = onSync((s) => {
+      if (s === 'done' || s === 'error') setSyncSettled(true)
+    })
+    const t = setTimeout(() => setSyncSettled(true), 8000)
+    return () => {
+      off()
+      clearTimeout(t)
+    }
+  }, [])
   useEffect(() => {
     if (overdueNoticeShown.current || view.kind !== 'today' || tasksRaw === undefined) return
     if (new Date().getHours() < 6) return
+    if (!syncSettled) return
     const day = localDateKey()
+    // Ya mostrado hoy (en este o en otro dispositivo). Migra el flag heredado
+    // de localStorage al perfil sincronizado la primera vez tras actualizar.
+    if (profile?.overdueNoticeDay === day) {
+      overdueNoticeShown.current = true
+      return
+    }
     if (localStorage.getItem(OVERDUE_NOTICE_KEY) === day) {
       overdueNoticeShown.current = true
+      void markOverdueNoticeShown(day)
       return
     }
     const overdue = tasks.filter((t) => !t.completed && t.dueAt !== null && t.dueAt < sod)
     if (overdue.length === 0) return
     overdueNoticeShown.current = true
     localStorage.setItem(OVERDUE_NOTICE_KEY, day)
+    void markOverdueNoticeShown(day)
     // Las más recientes primero: ayer arriba, lo más antiguo al final.
     setOverdueNotice([...overdue].sort((a, b) => b.dueAt! - a.dueAt!))
-  }, [view.kind, tasksRaw, tasks, sod])
+  }, [view.kind, tasksRaw, tasks, sod, syncSettled, profile])
   // Al salir de Hoy el aviso se retira (no reaparece: ya está marcado el día).
   useEffect(() => {
     if (view.kind !== 'today') setOverdueNotice(null)

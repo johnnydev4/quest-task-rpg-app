@@ -252,6 +252,12 @@ export interface PlayerProfile {
   /** XP ya ganado hoy, para el tope diario (ver `dailyXpCap`). */
   xpToday: number
   achievements: string[]
+  /**
+   * Día 'YYYY-MM-DD' en que ya se mostró el aviso diario de tareas vencidas.
+   * Vive en el perfil (y no en localStorage) para que, si el aviso ya salió en
+   * un dispositivo, no vuelva a salir en otro tras sincronizar.
+   */
+  overdueNoticeDay?: string | null
   updatedAt: number
   syncStatus: SyncStatus
 }

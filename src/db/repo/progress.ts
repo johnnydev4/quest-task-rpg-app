@@ -26,6 +26,23 @@ async function ensureProfile(): Promise<PlayerProfile> {
   return fresh
 }
 
+/**
+ * Marca que el aviso diario de vencidas ya se mostró en el día `day`. Al vivir
+ * en el perfil sincronizado, otros dispositivos lo verán tras sincronizar y no
+ * volverán a mostrarlo. Si ya estaba marcado ese día, no reescribe (no ensucia
+ * el `updatedAt` ni dispara syncs de más).
+ */
+export async function markOverdueNoticeShown(day: string): Promise<void> {
+  const profile = await ensureProfile()
+  if (profile.overdueNoticeDay === day) return
+  await db.profile.put({
+    ...profile,
+    overdueNoticeDay: day,
+    updatedAt: Date.now(),
+    syncStatus: 'pending',
+  })
+}
+
 export interface XpResult {
   xp: number
   leveledUp: boolean

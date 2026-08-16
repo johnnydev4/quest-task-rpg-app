@@ -33,9 +33,12 @@
 
 :root {
   color-scheme: dark;
-  --t-surface-900: #1a1e28;
-  --t-surface-800: #242a36;
-  --t-surface-700: #2f3644;
+  /* Paleta oscura estilo "GitHub Dark": casi-negro con un sutil tinte frío, el
+     tono más reconocido y profesional para modo oscuro en UX. Progresión
+     canvas → superficie → elevado. */
+  --t-surface-900: #0d1117;
+  --t-surface-800: #161b22;
+  --t-surface-700: #21262d;
   --t-ink: #ffffff;
   /* Las tintas apagadas se acercan a la tinta plena según --t-ink-lift, que JS
      sube cuando el fondo elegido pelea con el tema (ver lib/bgContrast.ts). */

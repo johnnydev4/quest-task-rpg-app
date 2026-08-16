@@ -110,5 +110,5 @@ export function applyTheme(mode: ThemeMode, accent: string, glassTint?: string |
   else root.style.removeProperty('--t-glass-tint')
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', dark ? '#0f1117' : '#f6f7f9')
+    ?.setAttribute('content', dark ? '#0d1117' : '#f6f7f9')
 }

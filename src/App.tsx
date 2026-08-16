@@ -627,35 +627,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-dvh">
-      {/* Fondo personalizado con difusión, detrás de todo. Sin imagen: manchas de
-          color suaves con el acento/tinte, para que el cristal siempre se note. */}
-      {!bgUrl && (
-        // Manchas de luz con gradientes radiales (sin filter: blur, que iOS Safari
-        // renderiza mal en áreas grandes y "rompía" el fondo al cambiar el tinte).
-        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-          <div
-            className="absolute -top-40 -left-40 size-[560px]"
-            style={{
-              background:
-                'radial-gradient(circle closest-side, color-mix(in srgb, var(--t-accent-500) 26%, transparent), transparent)',
-            }}
-          />
-          <div
-            className="absolute top-1/3 -right-48 size-[600px]"
-            style={{
-              background:
-                'radial-gradient(circle closest-side, color-mix(in srgb, var(--t-glass-tint) 30%, transparent), transparent)',
-            }}
-          />
-          <div
-            className="absolute bottom-[-200px] left-1/4 size-[540px]"
-            style={{
-              background:
-                'radial-gradient(circle closest-side, color-mix(in srgb, var(--t-accent-400) 16%, transparent), transparent)',
-            }}
-          />
-        </div>
-      )}
+      {/* Fondo personalizado con difusión, detrás de todo. */}
       {bgUrl && (
         <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
           <img src={bgUrl} alt="" className="h-full w-full object-cover" />

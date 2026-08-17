@@ -178,6 +178,20 @@ a {
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 7%, transparent);
 }
 
+/*
+ * Fila de tarea OPACA (ya no Liquid Glass): superficie sólida, sin blur, para
+ * que las tareas se lean planas y descansadas. En claro es la superficie
+ * elevada; en oscuro se pinta más oscura que el lienzo para dar profundidad.
+ */
+.task-opaque {
+  background-color: var(--t-surface-800);
+  box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 4%, transparent);
+}
+
+:root:not([data-theme='light']) .task-opaque {
+  background-color: #0a0d12;
+}
+
 .glass-strong {
   background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(90% * var(--t-glass-op))), transparent);
   backdrop-filter: blur(28px) saturate(150%);
@@ -207,19 +221,6 @@ a {
   box-shadow:
     inset 0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent),
     0 8px 24px -12px color-mix(in srgb, #000000 60%, transparent);
-}
-
-/*
- * Igual que .glass-bar pero flotante: la cabecera es una tarjeta redondeada
- * separada del sidebar en vez de una barra a todo el ancho. Mismo cristal y
- * difusión, con una outer shadow más leve.
- */
-.glass-bar-float {
-  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(42% * var(--t-glass-op))), transparent);
-  backdrop-filter: blur(20px) saturate(200%);
-  box-shadow:
-    inset 0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent),
-    0 4px 14px -10px color-mix(in srgb, #000000 45%, transparent);
 }
 
 /*
@@ -313,29 +314,6 @@ textarea:focus {
 }
 
 /* Animaciones del sistema RPG y micro-interacciones (Fases 3 y 10) */
-/* Sol del estado vacío de Hoy: flota suavemente y su resplandor respira. */
-@keyframes sun-float {
-  0%,
-  100% {
-    transform: translateY(4px) rotate(-2deg);
-  }
-  50% {
-    transform: translateY(-6px) rotate(2deg);
-  }
-}
-
-@keyframes sun-glow-pulse {
-  0%,
-  100% {
-    opacity: 0.65;
-    transform: scale(0.94);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-}
-
 /* Menú contextual: aparece con un pop sutil desde el cursor. */
 @keyframes menu-pop {
   from {

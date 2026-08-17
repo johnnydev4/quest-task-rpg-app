@@ -4,8 +4,6 @@ import { db } from '../../db/db'
 import type { Task } from '../../db/types'
 import { createTask } from '../../db/repo/tasks'
 import { formatDueTime } from '../../lib/dates'
-import { playScrollTick } from '../../lib/sound'
-import { useSettings } from '../../lib/useSettings'
 import { Modal } from '../ui/Modal'
 
 const WEEKDAYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
@@ -35,7 +33,6 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
   )
   const tasks = useLiveQuery(() => db.tasks.toArray(), []) ?? []
   const lists = useLiveQuery(() => db.lists.toArray(), [])
-  const settings = useSettings()
 
   useEffect(() => {
     localStorage.setItem('calendar-view-mode', mode)
@@ -112,14 +109,6 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
-
-  // Tic ASMR suave mientras se desplaza el calendario.
-  useEffect(() => {
-    if (!settings.soundEnabled) return
-    const onScroll = () => playScrollTick(settings.soundVolume)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [settings.soundEnabled, settings.soundVolume])
 
   // Al prepender meses anteriores, compensa el scroll para que la vista no salte.
   useLayoutEffect(() => {

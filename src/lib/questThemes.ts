@@ -1,13 +1,14 @@
 /**
- * Temática RPG mensual: cada mes está regido por una criatura mítica.
- * La misión principal del mes lleva su nombre épico; las misiones semanales
- * heredan sus colores para destacar entre las tareas normales.
+ * Temática RPG mensual: cada mes lleva un título épico basado en su propio
+ * nombre (p. ej. "La Gran Misión de Agosto"). La misión principal del mes usa
+ * ese título; las misiones semanales heredan sus colores para destacar entre
+ * las tareas normales.
  */
 
 export interface MonthTheme {
   creature: string
   emoji: string
-  /** Título épico del mes (frase variada, no siempre "El reto de…"). */
+  /** Título épico del mes, tejido con el nombre del mes (frase variada). */
   epicTitle: string
   /** Lema motivacional corto. */
   motto: string
@@ -23,7 +24,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Fénix',
     emoji: '🐦‍🔥',
-    epicTitle: 'El Despertar del Fénix',
+    epicTitle: 'El Sendero de Enero',
     motto: 'Renace de tus cenizas: cada comienzo te pertenece.',
     colorA: '#f97316',
     colorB: '#dc2626',
@@ -31,7 +32,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Unicornio',
     emoji: '🦄',
-    epicTitle: 'La Promesa del Unicornio',
+    epicTitle: 'La Chispa de Febrero',
     motto: 'Persigue lo imposible con el corazón por delante.',
     colorA: '#ec4899',
     colorB: '#a855f7',
@@ -39,7 +40,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Grifo',
     emoji: '🦅',
-    epicTitle: 'El Vuelo del Grifo',
+    epicTitle: 'El Despertar de Marzo',
     motto: 'Coraje y vigilia: una nueva etapa despierta.',
     colorA: '#f59e0b',
     colorB: '#92400e',
@@ -47,7 +48,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Pegaso',
     emoji: '🪽',
-    epicTitle: 'La Cabalgata del Pegaso',
+    epicTitle: 'La Conquista de Abril',
     motto: 'Despliega las alas: crea y crece sin límites.',
     colorA: '#38bdf8',
     colorB: '#818cf8',
@@ -55,7 +56,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Kirin',
     emoji: '🦌',
-    epicTitle: 'La Bendición del Kirin',
+    epicTitle: 'El Ascenso de Mayo',
     motto: 'Paz y fortuna acompañan cada paso firme.',
     colorA: '#10b981',
     colorB: '#0d9488',
@@ -63,7 +64,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Sirena',
     emoji: '🧜‍♀️',
-    epicTitle: 'El Canto de la Sirena',
+    epicTitle: 'El Desafío de Junio',
     motto: 'Sumérgete en el misterio y emerge con tu verdad.',
     colorA: '#06b6d4',
     colorB: '#3b82f6',
@@ -71,7 +72,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Dragón',
     emoji: '🐉',
-    epicTitle: 'El Reto del Dragón',
+    epicTitle: 'La Cima de Julio',
     motto: 'Poder, fuego y liderazgo: este mes se conquista.',
     colorA: '#dc2626',
     colorB: '#f59e0b',
@@ -81,7 +82,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Mantícora',
     emoji: '🦁',
-    epicTitle: 'La Prueba de la Mantícora',
+    epicTitle: 'La Gran Misión de Agosto',
     motto: 'Fuerza y determinación: resiste y vence.',
     colorA: '#e11d48',
     colorB: '#7f1d1d',
@@ -90,7 +91,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Hipogrifo',
     emoji: '🪶',
-    epicTitle: 'La Senda del Hipogrifo',
+    epicTitle: 'La Travesía de Septiembre',
     motto: 'Sabiduría y equilibrio para cruzar la transición.',
     colorA: '#6366f1',
     colorB: '#14b8a6',
@@ -98,7 +99,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Cerbero',
     emoji: '🐺',
-    epicTitle: 'Los Portales del Cerbero',
+    epicTitle: 'El Reto de Octubre',
     motto: 'Transfórmate: cruza el umbral de lo desconocido.',
     colorA: '#7c3aed',
     colorB: '#312e81',
@@ -106,7 +107,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Kraken',
     emoji: '🐙',
-    epicTitle: 'Las Profundidades del Kraken',
+    epicTitle: 'La Forja de Noviembre',
     motto: 'Desciende a lo profundo y vuelve más fuerte.',
     colorA: '#0ea5e9',
     colorB: '#1e3a8a',
@@ -114,7 +115,7 @@ export const MONTH_THEMES: MonthTheme[] = [
   {
     creature: 'Cabra de Yule',
     emoji: '🐐',
-    epicTitle: 'El Festín de la Cabra de Yule',
+    epicTitle: 'El Gran Cierre de Diciembre',
     motto: 'Celebra, protege y cierra el ciclo con abundancia.',
     colorA: '#ca8a04',
     colorB: '#166534',

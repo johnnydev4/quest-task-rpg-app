@@ -198,7 +198,7 @@ export function QuestsView() {
             </h2>
             <p className="max-w-md text-sm text-ink-muted">
               El desafío de <span className="font-semibold text-ink-dim">{monthLabelOf(monthKey)}</span> todavía no se ha
-              revelado. Vuelve cuando se acerque el mes para descubrir qué criatura mítica te aguarda.
+              revelado. Vuelve cuando se acerque el mes para descubrir el reto que te aguarda.
             </p>
           </div>
         </section>
@@ -222,7 +222,7 @@ export function QuestsView() {
           }}
         >
           <p className="text-xs font-semibold tracking-wide uppercase" style={{ color: prevTheme.colorA }}>
-            {prevTheme.emoji} {monthLabelOf(prevMonthKey)} terminó
+            {monthLabelOf(prevMonthKey)} terminó
           </p>
           <p className="text-sm text-ink-dim">
             ¿Conquistaste tu gran misión{' '}
@@ -283,11 +283,7 @@ export function QuestsView() {
               aria-hidden="true"
             />
           </>
-        ) : (
-          <span className="pointer-events-none absolute -top-6 -right-4 text-[7rem] opacity-25 select-none" aria-hidden="true">
-            {theme.emoji}
-          </span>
-        )}
+        ) : null}
         <div className="relative flex flex-col items-start gap-2">
           <div className="flex w-full items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[0.6875rem] font-bold tracking-widest text-white uppercase backdrop-blur-sm">

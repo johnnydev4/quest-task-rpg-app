@@ -184,7 +184,7 @@ export function TaskItem({
   return (
     <SwipeToDelete onDelete={() => void deleteTask(task.id)}>
     <div
-      className={`group flex items-center gap-3 rounded-xl border glass-panel px-3 py-1.5 transition-colors ${
+      className={`group flex items-center gap-3 rounded-xl border task-opaque px-3 py-1.5 transition-colors ${
         picked ? 'border-accent-400/60 bg-accent-500/10' : 'border-line/5 hover:border-line/15'
       }`}
       onContextMenu={(e) => {

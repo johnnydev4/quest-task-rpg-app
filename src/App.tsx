@@ -695,8 +695,8 @@ export default function App() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 px-3 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] sm:px-4">
-          <div className={`mx-auto w-full ${contentMax} overflow-hidden rounded-2xl border border-line/10 glass-bar-float`}>
+        <header className="sticky top-0 z-10 border-b border-line/10 glass-bar pt-[env(safe-area-inset-top)]">
+          <div className={`mx-auto w-full ${contentMax}`}>
           <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6">
             <button
               onClick={() => setDrawerOpen(true)}
@@ -845,26 +845,6 @@ export default function App() {
               <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />
               {isEmpty && pendingHabits.length === 0 && daySections.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
-                  {/* Sol de cristal (PNG con alpha real: se funde con tema claro y oscuro).
-                      Flota con un balanceo suave y su resplandor "respira" detrás. */}
-                  <div className="relative grid place-items-center py-1">
-                    <div
-                      className="absolute size-40 rounded-full"
-                      style={{
-                        background:
-                          'radial-gradient(circle, rgba(255,150,20,0.40), rgba(255,132,0,0.16) 45%, transparent 70%)',
-                        animation: 'sun-glow-pulse 4.5s ease-in-out infinite',
-                      }}
-                      aria-hidden="true"
-                    />
-                    <img
-                      src="/sun-glass.png"
-                      alt=""
-                      draggable={false}
-                      className="relative size-36 select-none"
-                      style={{ animation: 'sun-float 6s ease-in-out infinite' }}
-                    />
-                  </div>
                   <p className="font-medium text-ink-dim">Nada para hoy</p>
                   <p className="max-w-xs text-sm text-ink-faint">
                     Añade una tarea abajo y empieza a ganar terreno, una a la vez.

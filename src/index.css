@@ -36,9 +36,9 @@
   /* Paleta oscura en gris neutro: el fondo y las superficies son gris oscuro
      (no casi-negro), progresando canvas → superficie → elevado. Las tareas se
      pintan en un gris más claro (ver .task-opaque) para que resalten. */
-  --t-surface-900: #262629;
-  --t-surface-800: #303034;
-  --t-surface-700: #3a3a3f;
+  --t-surface-900: #0d1117;
+  --t-surface-800: #161b22;
+  --t-surface-700: #21262d;
   --t-ink: #ffffff;
   /* Las tintas apagadas se acercan a la tinta plena según --t-ink-lift, que JS
      sube cuando el fondo elegido pelea con el tema (ver lib/bgContrast.ts). */
@@ -181,34 +181,13 @@ a {
 /*
  * Fila de tarea OPACA (ya no Liquid Glass): superficie sólida, sin blur, para
  * que las tareas se lean planas y descansadas. En claro es la superficie
- * elevada; en oscuro se pinta más oscura que el lienzo para dar profundidad.
+ * elevada; en oscuro es la superficie 800 (un pelín más clara que el lienzo),
+ * de modo que la tarjeta se integra en el fondo negro-azulado con una elevación
+ * sutil, con texto blanco (estilo GitHub Dark).
  */
 .task-opaque {
   background-color: var(--t-surface-800);
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, #ffffff 4%, transparent);
-}
-
-/*
- * En oscuro la tarea es una tarjeta de GRIS CLARO sobre el fondo gris oscuro.
- * Como la superficie se invierte (clara), también invertimos DENTRO de la
- * tarjeta los tokens de tinta y de estado a sus valores "para fondo claro"
- * (los mismos del tema claro): así el título, los chips y los bordes quedan
- * oscuros y con buen contraste, sin tocar el JSX de TaskItem.
- */
-:root:not([data-theme='light']) .task-opaque {
-  background-color: #d8d9de;
-  /* Sobre las variables --color-* (las que consumen las clases de Tailwind), no
-     las --t-*: estas últimas ya quedaron resueltas en :root por @theme y no se
-     recomputan al redefinirlas aquí. */
-  --color-ink: #0b1220;
-  --color-ink-dim: #334155;
-  --color-ink-muted: #475569;
-  --color-ink-faint: #64748b;
-  --color-line: #0f1117;
-  --color-warn: #b45309;
-  --color-danger: #e11d48;
-  --color-ok: #047857;
-  --color-info: #0369a1;
 }
 
 .glass-strong {

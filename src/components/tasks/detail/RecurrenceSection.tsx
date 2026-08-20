@@ -2,13 +2,21 @@ import type { RecurrenceEnd, Task } from '../../../db/types'
 import { updateTask } from '../../../db/repo/tasks'
 import { RECURRENCE_UNITS, describeRule } from '../../../lib/recurrence'
 import { dateInputToMs, msToDateInput, startOfDayOffset } from '../../../lib/dates'
+import { GlassSelect, numberOptions, type GlassOption } from '../../ui/GlassSelect'
 
 interface RecurrenceSectionProps {
   task: Task
 }
 
-const selectClass =
-  'rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink outline-none focus:border-accent-500/60'
+const dateInputClass =
+  'rounded-lg border border-line/10 glass-input px-2.5 py-1 text-xs font-medium text-ink outline-none focus:border-accent-500/60'
+
+/** Fin de recurrencia como opciones para el desplegable de cristal. */
+const END_OPTIONS: GlassOption<'never' | 'count' | 'until'>[] = [
+  { value: 'never', label: 'para siempre' },
+  { value: 'count', label: 'N veces más' },
+  { value: 'until', label: 'hasta fecha' },
+]
 
 export function RecurrenceSection({ task }: RecurrenceSectionProps) {
   const rule = task.recurrenceRule
@@ -47,62 +55,41 @@ export function RecurrenceSection({ task }: RecurrenceSectionProps) {
     <div className="space-y-2 rounded-lg border border-line/5 glass-input px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-1.5 text-xs text-ink-dim">
         <span>Cada</span>
-        <input
-          type="number"
-          min={1}
-          max={365}
+        <GlassSelect
           value={rule.every}
-          onChange={(e) =>
-            updateTask(task.id, {
-              recurrenceRule: { ...rule, every: Math.max(1, Number(e.target.value) || 1) },
-            })
+          options={numberOptions(1, 60)}
+          onChange={(v) =>
+            updateTask(task.id, { recurrenceRule: { ...rule, every: Math.max(1, v) } })
           }
-          aria-label="Intervalo de repetición"
-          className={`${selectClass} w-14`}
+          ariaLabel="Intervalo de repetición"
         />
-        <select
+        <GlassSelect
           value={rule.unit}
-          onChange={(e) =>
-            updateTask(task.id, {
-              recurrenceRule: { ...rule, unit: e.target.value as typeof rule.unit },
-            })
-          }
-          aria-label="Unidad de repetición"
-          className={selectClass}
-        >
-          {RECURRENCE_UNITS.map((u) => (
-            <option key={u.id} value={u.id}>
-              {rule.every === 1 ? u.label : u.plural}
-            </option>
-          ))}
-        </select>
+          options={RECURRENCE_UNITS.map((u) => ({
+            value: u.id,
+            label: rule.every === 1 ? u.label : u.plural,
+          }))}
+          onChange={(v) => updateTask(task.id, { recurrenceRule: { ...rule, unit: v } })}
+          ariaLabel="Unidad de repetición"
+        />
         <span>·</span>
-        <select
+        <GlassSelect
           value={rule.end.type}
-          onChange={(e) => setEnd(e.target.value as 'never' | 'count' | 'until')}
-          aria-label="Fin de la recurrencia"
-          className={selectClass}
-        >
-          <option value="never">para siempre</option>
-          <option value="count">N veces más</option>
-          <option value="until">hasta fecha</option>
-        </select>
+          options={END_OPTIONS}
+          onChange={(v) => setEnd(v)}
+          ariaLabel="Fin de la recurrencia"
+          minWidthClass="min-w-36"
+        />
         {rule.end.type === 'count' && (
-          <input
-            type="number"
-            min={1}
-            max={999}
+          <GlassSelect
             value={rule.end.remaining}
-            onChange={(e) =>
+            options={numberOptions(1, 99)}
+            onChange={(v) =>
               updateTask(task.id, {
-                recurrenceRule: {
-                  ...rule,
-                  end: { type: 'count', remaining: Math.max(1, Number(e.target.value) || 1) },
-                },
+                recurrenceRule: { ...rule, end: { type: 'count', remaining: Math.max(1, v) } },
               })
             }
-            aria-label="Repeticiones restantes"
-            className={`${selectClass} w-14`}
+            ariaLabel="Repeticiones restantes"
           />
         )}
         {rule.end.type === 'until' && (
@@ -115,7 +102,7 @@ export function RecurrenceSection({ task }: RecurrenceSectionProps) {
                 updateTask(task.id, { recurrenceRule: { ...rule, end: { type: 'until', date: ms } } })
             }}
             aria-label="Fecha de fin de recurrencia"
-            className={`${selectClass}`}
+            className={dateInputClass}
           />
         )}
       </div>

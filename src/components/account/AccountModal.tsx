@@ -103,7 +103,7 @@ VITE_SUPABASE_ANON_KEY=TU_CLAVE_ANON`}</pre>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={async () => {
-                const r = await syncNow()
+                const r = await syncNow(true)
                 setMessage(r.ok ? 'Sincronizado ✓' : (r.error ?? 'Error'))
               }}
               disabled={syncState === 'syncing'}

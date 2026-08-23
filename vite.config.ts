@@ -53,8 +53,25 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // El póster (jpg) se precachea como el resto de imágenes; el video no
+        // (los .mp4/.webm precacheados rompen las peticiones Range en Safari).
+        globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff2}'],
         navigateFallback: 'index.html',
+        // Video de fondo por defecto: cache-first en tiempo de ejecución con
+        // soporte de Range (obligatorio para reproducir video desde caché).
+        // Así el nebula sigue disponible offline, igual que las imágenes propias.
+        runtimeCaching: [
+          {
+            urlPattern: /\/backgrounds\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'app-backgrounds',
+              rangeRequests: true,
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 8 },
+            },
+          },
+        ],
         // Añade los handlers de Web Push (`push` y `notificationclick`) al SW
         // generado, para recibir avisos con la app cerrada. Ver public/push-sw.js.
         importScripts: ['push-sw.js'],

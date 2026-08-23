@@ -32,6 +32,7 @@ import { TaskDetail, TaskDetailContent } from './components/tasks/TaskDetail'
 import { OverdueDailyPopup } from './components/tasks/OverdueDailyPopup'
 import { useIsDesktop } from './lib/useMediaQuery'
 import { useBlurredBackground } from './lib/useBlurredBackground'
+import { TodayBackground } from './components/layout/TodayBackground'
 import { ListModal } from './components/lists/ListModal'
 import { TagModal } from './components/tags/TagModal'
 import { LevelUpToast } from './components/rpg/LevelUpToast'
@@ -204,7 +205,11 @@ export default function App() {
   }, [view, clearSelection])
 
   // Fondo personalizado pre-difuminado (bitmap estático: no cuesta nada componerlo).
-  const bgBlob = useLiveQuery(async () => (await db.appMedia.get('bg'))?.blob ?? null, []) ?? null
+  // `undefined` mientras la consulta resuelve; `null` = resuelta sin imagen.
+  // Distinguirlos evita que el video por defecto parpadee un frame para quien
+  // sí tiene imagen propia (que aún no ha bajado de IndexedDB).
+  const bgBlobRaw = useLiveQuery(async () => (await db.appMedia.get('bg'))?.blob ?? null, [])
+  const bgBlob = bgBlobRaw ?? null
   const { url: bgUrl, lum: bgLum } = useBlurredBackground(bgBlob, settings.bgBlur)
 
   // Tema, acento y tinte del cristal globales e instantáneos (spec §10). El
@@ -671,6 +676,9 @@ export default function App() {
           />
         </div>
       )}
+      {/* Fondo por defecto: video del nebula (difuminado) solo en Hoy y solo si
+          el usuario no tiene imagen propia (consulta ya resuelta a `null`). */}
+      {view.kind === 'today' && bgBlobRaw === null && <TodayBackground />}
       {/* Sidebar fija en escritorio */}
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r border-line/5 glass-bar p-3 lg:block">
         {sidebar}

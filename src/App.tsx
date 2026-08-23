@@ -676,9 +676,10 @@ export default function App() {
           />
         </div>
       )}
-      {/* Fondo por defecto: video del nebula (difuminado) solo en Hoy y solo si
-          el usuario no tiene imagen propia (consulta ya resuelta a `null`). */}
-      {view.kind === 'today' && bgBlobRaw === null && <TodayBackground />}
+      {/* Fondo por defecto: video del nebula (difuminado) solo en Hoy, solo si
+          el usuario no tiene imagen propia (consulta ya resuelta a `null`) y si
+          no ha desactivado el fondo animado en Ajustes. */}
+      {view.kind === 'today' && bgBlobRaw === null && settings.animatedBg && <TodayBackground />}
       {/* Sidebar fija en escritorio */}
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r border-line/5 glass-bar p-3 lg:block">
         {sidebar}

@@ -365,6 +365,29 @@ export function SettingsModal({
 
           <div className="space-y-1.5 pt-1">
             <span className="block text-xs text-ink-faint">Fondo del área de tareas</span>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-ink">Fondo animado por defecto</p>
+                <p className="text-xs text-ink-faint">
+                  Video del nebula en Hoy cuando no tienes una imagen propia.
+                </p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={settings.animatedBg}
+                aria-label="Fondo animado por defecto"
+                onClick={() => updateSettings({ animatedBg: !settings.animatedBg })}
+                className={`h-6 w-11 shrink-0 rounded-full transition-colors ${
+                  settings.animatedBg ? 'bg-accent-600' : 'bg-ink/10'
+                }`}
+              >
+                <span
+                  className={`block size-5 rounded-full bg-white shadow transition-transform ${
+                    settings.animatedBg ? 'translate-x-5.5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => bgFileRef.current?.click()}

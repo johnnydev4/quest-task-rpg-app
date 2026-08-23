@@ -279,6 +279,8 @@ export interface Settings {
   glassTint: string | null
   /** Difusión (blur) del fondo en px. */
   bgBlur: number
+  /** Fondo animado por defecto (video del nebula) en Hoy cuando no hay imagen propia. */
+  animatedBg: boolean
   /** Accesibilidad: multiplicador del tamaño del texto (1 = normal). */
   fontScale: number
   ambientSound: AmbientSoundId

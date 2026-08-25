@@ -5,7 +5,7 @@ import type { Habit } from '../../db/types'
 import { deleteHabit, toggleHabitToday, updateHabit } from '../../db/repo/habits'
 import { pomodoro } from '../../services/pomodoro'
 import { emitOpenStudy, emitToast } from '../../lib/events'
-import { localDateKey } from '../../lib/dates'
+import { formatDueTime, localDateKey } from '../../lib/dates'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import { useSelection } from '../../lib/selection'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
@@ -123,6 +123,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
   const logs = logsRaw ?? []
   const doneKeys = useMemo(() => new Set(logs.map((l) => l.dateKey)), [logs])
 
+  const todayLog = logs.find((l) => l.dateKey === localDateKey())
   const todayDone = doneKeys.has(localDateKey())
   const combo = computeCombo(habit, doneKeys)
   const color = comboColor(combo)
@@ -260,12 +261,20 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
                 ? `${done} cumplido${done === 1 ? '' : 's'} · sin fecha límite`
                 : `${done}/${total} · hasta el ${endLabel}`}
             </span>
-            {!compact && !ended && !scheduledToday && (
-              <span className="flex items-center gap-1">
-                <MoonIcon className="size-3" /> Hoy no toca
+            {todayDone && todayLog?.completedAt ? (
+              <span className="flex items-center gap-1" title="Hora de cumplimiento">
+                <CheckCircleIcon className="size-3" /> {formatDueTime(todayLog.completedAt)}
               </span>
+            ) : (
+              <>
+                {!compact && !ended && !scheduledToday && (
+                  <span className="flex items-center gap-1">
+                    <MoonIcon className="size-3" /> Hoy no toca
+                  </span>
+                )}
+                {ended && <span>Finalizado</span>}
+              </>
             )}
-            {ended && <span>Finalizado</span>}
           </div>
           {pomo && (
             <div className={compact ? 'mt-1' : 'mt-1.5'}>

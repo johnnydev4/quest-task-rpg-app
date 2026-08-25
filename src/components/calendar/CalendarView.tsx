@@ -4,6 +4,7 @@ import { db } from '../../db/db'
 import type { Task } from '../../db/types'
 import { createTask } from '../../db/repo/tasks'
 import { formatDueTime } from '../../lib/dates'
+import { CheckCircleIcon } from '../ui/icons'
 import { Modal } from '../ui/Modal'
 
 const WEEKDAYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
@@ -71,8 +72,13 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
       map.set(key, arr)
     }
     for (const arr of map.values()) {
-      // Pendientes primero, luego por hora.
-      arr.sort((a, b) => Number(a.completed) - Number(b.completed) || (a.dueAt ?? 0) - (b.dueAt ?? 0))
+      // Completadas arriba, en orden de cumplimiento (la primera cumplida
+      // primero); debajo, las que faltan por completar, ordenadas por hora.
+      arr.sort((a, b) => {
+        if (a.completed !== b.completed) return a.completed ? -1 : 1
+        if (a.completed) return (a.completedAt ?? 0) - (b.completedAt ?? 0)
+        return (a.dueAt ?? 0) - (b.dueAt ?? 0)
+      })
     }
     return map
   }, [tasks])
@@ -531,8 +537,15 @@ function DayModal({
                 >
                   {t.title}
                 </span>
-                {t.dueHasTime && (
-                  <span className="shrink-0 text-xs text-ink-faint">{formatDueTime(t.dueAt!)}</span>
+                {t.completed && t.completedAt !== null ? (
+                  <span className="flex shrink-0 items-center gap-1 text-xs text-ink-faint" title="Hora de cumplimiento">
+                    <CheckCircleIcon className="size-3" />
+                    {formatDueTime(t.completedAt)}
+                  </span>
+                ) : (
+                  t.dueHasTime && (
+                    <span className="shrink-0 text-xs text-ink-faint">{formatDueTime(t.dueAt!)}</span>
+                  )
                 )}
               </button>
             ))}

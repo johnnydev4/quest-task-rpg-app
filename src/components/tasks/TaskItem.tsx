@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { List, Tag, Task } from '../../db/types'
 import { deleteTask, setTaskCompleted, skipOverdueToNearest, updateTask } from '../../db/repo/tasks'
-import { formatDue, formatDueTime, isOverdue, startOfDayOffset, startOfToday } from '../../lib/dates'
+import { formatDateTime, formatDue, formatDueTime, isOverdue, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
 import { playHoverTick } from '../../lib/sound'
 import { useSettings } from '../../lib/useSettings'
@@ -308,6 +308,12 @@ export function TaskItem({
             {task.priority && (
               <span className={`${chipBase} ${PRIORITY_CHIP_CLASS[task.priority]}`}>{PRIORITY_LABEL[task.priority]}</span>
             )}
+          </span>
+        )}
+        {task.completed && task.completedAt !== null && (
+          <span className="mt-0.5 flex items-center gap-1 text-[0.625rem] text-ink-faint">
+            <CheckCircleIcon className="size-2.5" />
+            Completada · {formatDateTime(task.completedAt)}
           </span>
         )}
         {!task.completed && pomo && (

@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
-import type { Task } from '../../db/types'
+import type { Habit, Task } from '../../db/types'
 import { createTask } from '../../db/repo/tasks'
 import { formatDueTime } from '../../lib/dates'
+import { isScheduledToday } from '../../lib/habits'
 import { CheckCircleIcon } from '../ui/icons'
 import { Modal } from '../ui/Modal'
 
@@ -13,6 +14,23 @@ const pad = (n: number) => String(n).padStart(2, '0')
 
 function dayKeyOf(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/**
+ * Entrada del calendario: unifica tareas y hábitos para pintarlos juntos en un
+ * día. Los hábitos se expanden por sus días programados; `completed` sale de si
+ * hay registro de cumplimiento ese día (con su hora en `completedAt`).
+ */
+export interface CalEntry {
+  id: string
+  kind: 'task' | 'habit'
+  title: string
+  color: string | null
+  completed: boolean
+  completedAt: number | null
+  /** Hora programada (ms) para ordenar/mostrar pendientes; null = sin hora. */
+  time: number | null
+  hasTime: boolean
 }
 
 function monthLabel(ms: number): string {
@@ -33,6 +51,8 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
     localStorage.getItem('calendar-view-mode') === 'agenda' ? 'agenda' : 'month',
   )
   const tasks = useLiveQuery(() => db.tasks.toArray(), []) ?? []
+  const habits = useLiveQuery(() => db.habits.toArray(), []) ?? []
+  const habitLogs = useLiveQuery(() => db.habitLogs.toArray(), []) ?? []
   const lists = useLiveQuery(() => db.lists.toArray(), [])
 
   useEffect(() => {
@@ -45,6 +65,19 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
     const byId = new Map((lists ?? []).map((l) => [l.id, l.color]))
     return (t: Task) => t.color ?? (t.listId ? (byId.get(t.listId) ?? null) : null)
   }, [lists])
+
+  // Color del hábito: hereda el de su lista (atributo RPG), si tiene.
+  const habitColorOf = useMemo(() => {
+    const byId = new Map((lists ?? []).map((l) => [l.id, l.color]))
+    return (h: Habit) => (h.listId ? (byId.get(h.listId) ?? null) : null)
+  }, [lists])
+
+  // Registro de cumplimiento por hábito+día: 'habitId|YYYY-MM-DD' → hora (ms|null).
+  const habitLogByKey = useMemo(() => {
+    const map = new Map<string, number | null>()
+    for (const l of habitLogs) map.set(`${l.habitId}|${l.dateKey}`, l.completedAt ?? null)
+    return map
+  }, [habitLogs])
 
   const currentMonthRef = useRef<HTMLElement>(null)
   const todayRowRef = useRef<HTMLDivElement>(null)
@@ -62,26 +95,68 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
     })
   }, [range])
 
-  const tasksByDay = useMemo(() => {
-    const map = new Map<string, Task[]>()
+  const entriesByDay = useMemo(() => {
+    const map = new Map<string, CalEntry[]>()
+    const push = (key: string, e: CalEntry) => {
+      const arr = map.get(key)
+      if (arr) arr.push(e)
+      else map.set(key, [e])
+    }
+
+    // Tareas: en el día de su vencimiento.
     for (const t of tasks) {
       if (t.dueAt === null) continue
-      const key = dayKeyOf(new Date(t.dueAt))
-      const arr = map.get(key) ?? []
-      arr.push(t)
-      map.set(key, arr)
+      push(dayKeyOf(new Date(t.dueAt)), {
+        id: t.id,
+        kind: 'task',
+        title: t.title,
+        color: colorOf(t),
+        completed: t.completed,
+        completedAt: t.completedAt,
+        time: t.dueHasTime ? t.dueAt : null,
+        hasTime: t.dueHasTime,
+      })
     }
+
+    // Hábitos: se expanden por sus días programados dentro de la ventana
+    // visible (los indefinidos no se pueden expandir hasta el infinito).
+    if (habits.length > 0 && months.length > 0) {
+      const day = new Date(months[0])
+      day.setHours(0, 0, 0, 0)
+      const lastFirst = new Date(months[months.length - 1])
+      const end = new Date(lastFirst.getFullYear(), lastFirst.getMonth() + 1, 0).getTime()
+      while (day.getTime() <= end) {
+        for (const h of habits) {
+          if (!isScheduledToday(h, day)) continue
+          const key = dayKeyOf(day)
+          const logKey = `${h.id}|${key}`
+          const done = habitLogByKey.has(logKey)
+          push(key, {
+            id: h.id,
+            kind: 'habit',
+            title: h.title,
+            color: habitColorOf(h),
+            completed: done,
+            completedAt: done ? (habitLogByKey.get(logKey) ?? null) : null,
+            time: null,
+            hasTime: false,
+          })
+        }
+        day.setDate(day.getDate() + 1)
+      }
+    }
+
     for (const arr of map.values()) {
       // Completadas arriba, en orden de cumplimiento (la primera cumplida
-      // primero); debajo, las que faltan por completar, ordenadas por hora.
+      // primero); debajo, las que faltan por completar, con hora antes que sin.
       arr.sort((a, b) => {
         if (a.completed !== b.completed) return a.completed ? -1 : 1
         if (a.completed) return (a.completedAt ?? 0) - (b.completedAt ?? 0)
-        return (a.dueAt ?? 0) - (b.dueAt ?? 0)
+        return (a.time ?? Infinity) - (b.time ?? Infinity)
       })
     }
     return map
-  }, [tasks])
+  }, [tasks, habits, habitLogByKey, months, colorOf, habitColorOf])
 
   // Días aplanados para la vista de lista: desde hoy hacia adelante (o desde el
   // primer mes cargado si se pidieron días anteriores) hasta el final del rango.
@@ -180,9 +255,8 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
       {mode === 'agenda' ? (
         <AgendaList
           days={agendaDays}
-          tasksByDay={tasksByDay}
+          entriesByDay={entriesByDay}
           todayKey={todayKey}
-          colorOf={colorOf}
           onSelectDay={setSelectedDay}
           todayRef={todayRowRef}
         />
@@ -195,9 +269,8 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
               key={ms}
               ref={isCurrent ? currentMonthRef : undefined}
               monthStart={ms}
-              tasksByDay={tasksByDay}
+              entriesByDay={entriesByDay}
               todayKey={todayKey}
-              colorOf={colorOf}
               onSelectDay={setSelectedDay}
             />
           )
@@ -227,8 +300,7 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
       {selectedDay !== null && (
         <DayModal
           dayMs={selectedDay}
-          tasks={tasksByDay.get(dayKeyOf(new Date(selectedDay))) ?? []}
-          colorOf={colorOf}
+          entries={entriesByDay.get(dayKeyOf(new Date(selectedDay))) ?? []}
           onClose={() => setSelectedDay(null)}
           onOpenTask={(id) => {
             setSelectedDay(null)
@@ -242,16 +314,14 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
 
 function AgendaList({
   days,
-  tasksByDay,
+  entriesByDay,
   todayKey,
-  colorOf,
   onSelectDay,
   todayRef,
 }: {
   days: number[]
-  tasksByDay: Map<string, Task[]>
+  entriesByDay: Map<string, CalEntry[]>
   todayKey: string
-  colorOf: (t: Task) => string | null
   onSelectDay: (ms: number) => void
   todayRef: React.Ref<HTMLDivElement>
 }) {
@@ -272,9 +342,8 @@ function AgendaList({
             <AgendaDayRow
               ref={key === todayKey ? todayRef : undefined}
               dayMs={ms}
-              tasks={tasksByDay.get(key) ?? []}
+              entries={entriesByDay.get(key) ?? []}
               isToday={key === todayKey}
-              colorOf={colorOf}
               onSelect={onSelectDay}
             />
           </Fragment>
@@ -284,24 +353,34 @@ function AgendaList({
   )
 }
 
+/** Pequeño distintivo (↻) para reconocer los hábitos entre las tareas. */
+function HabitGlyph({ className = 'size-3' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`inline-block shrink-0 ${className}`} aria-hidden="true">
+      <path d="m17 2 4 4-4 4" />
+      <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+      <path d="m7 22-4-4 4-4" />
+      <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+    </svg>
+  )
+}
+
 function AgendaDayRow({
   dayMs,
-  tasks,
+  entries,
   isToday,
-  colorOf,
   onSelect,
   ref,
 }: {
   dayMs: number
-  tasks: Task[]
+  entries: CalEntry[]
   isToday: boolean
-  colorOf: (t: Task) => string | null
   onSelect: (ms: number) => void
   ref?: React.Ref<HTMLDivElement>
 }) {
   const d = new Date(dayMs)
   const weekday = WEEKDAYS[(d.getDay() + 6) % 7]
-  const pending = tasks.filter((t) => !t.completed).length
+  const pending = entries.filter((e) => !e.completed).length
   return (
     <div ref={ref} className="scroll-mt-24">
       <button
@@ -320,24 +399,27 @@ function AgendaDayRow({
           <span className="text-lg font-bold leading-tight">{d.getDate()}</span>
         </span>
         <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-          {tasks.length === 0 ? (
+          {entries.length === 0 ? (
             <>
               <span className="text-sm text-ink-dim">No hay nada planeado</span>
               <span className="text-xs text-ink-faint">Tocar para crear</span>
             </>
           ) : (
-            tasks.map((t) => {
-              const c = colorOf(t)
+            entries.map((e) => {
+              const c = e.color
               return (
                 <span
-                  key={t.id}
-                  className={`truncate rounded-md px-2 py-1 text-sm leading-tight ${
-                    t.completed ? 'line-through opacity-50' : ''
+                  key={`${e.kind}-${e.id}`}
+                  className={`flex items-center gap-1 truncate rounded-md px-2 py-1 text-sm leading-tight ${
+                    e.completed ? 'line-through opacity-50' : ''
                   } ${c ? '' : 'bg-accent-500/15 text-accent-300'}`}
                   style={c ? { backgroundColor: `color-mix(in srgb, ${c} 18%, transparent)`, color: c } : undefined}
                 >
-                  {t.dueHasTime && `${formatDueTime(t.dueAt!)} `}
-                  {t.title}
+                  {e.kind === 'habit' && <HabitGlyph className="size-3" />}
+                  <span className="truncate">
+                    {e.hasTime && e.time !== null && `${formatDueTime(e.time)} `}
+                    {e.title}
+                  </span>
                 </span>
               )
             })
@@ -350,16 +432,14 @@ function AgendaDayRow({
 
 function MonthGrid({
   monthStart,
-  tasksByDay,
+  entriesByDay,
   todayKey,
-  colorOf,
   onSelectDay,
   ref,
 }: {
   monthStart: number
-  tasksByDay: Map<string, Task[]>
+  entriesByDay: Map<string, CalEntry[]>
   todayKey: string
-  colorOf: (t: Task) => string | null
   onSelectDay: (ms: number) => void
   ref?: React.Ref<HTMLElement>
 }) {
@@ -389,9 +469,9 @@ function MonthGrid({
         ))}
         {days.map((d) => {
           const key = dayKeyOf(d)
-          const dayTasks = tasksByDay.get(key) ?? []
+          const dayEntries = entriesByDay.get(key) ?? []
           const isToday = key === todayKey
-          const pendingCount = dayTasks.filter((t) => !t.completed).length
+          const pendingCount = dayEntries.filter((e) => !e.completed).length
           return (
             <button
               key={key}
@@ -410,37 +490,40 @@ function MonthGrid({
               </span>
               {/* Escritorio: mini-chips con título; móvil: puntos */}
               <span className="hidden min-w-0 flex-col gap-0.5 md:flex">
-                {dayTasks.slice(0, 3).map((t) => {
-                  const c = colorOf(t)
+                {dayEntries.slice(0, 3).map((e) => {
+                  const c = e.color
                   return (
                     <span
-                      key={t.id}
-                      className={`truncate rounded px-1 py-px text-[0.625rem] leading-tight ${
-                        t.completed ? 'line-through opacity-50' : ''
+                      key={`${e.kind}-${e.id}`}
+                      className={`flex items-center gap-0.5 truncate rounded px-1 py-px text-[0.625rem] leading-tight ${
+                        e.completed ? 'line-through opacity-50' : ''
                       } ${c ? '' : 'bg-accent-500/15 text-accent-300'}`}
                       style={c ? { backgroundColor: `color-mix(in srgb, ${c} 18%, transparent)`, color: c } : undefined}
                     >
-                      {t.dueHasTime && `${formatDueTime(t.dueAt!)} `}
-                      {t.title}
+                      {e.kind === 'habit' && <HabitGlyph className="size-2.5" />}
+                      <span className="truncate">
+                        {e.hasTime && e.time !== null && `${formatDueTime(e.time)} `}
+                        {e.title}
+                      </span>
                     </span>
                   )
                 })}
-                {dayTasks.length > 3 && (
-                  <span className="px-1 text-[0.625rem] text-ink-faint">+{dayTasks.length - 3} más</span>
+                {dayEntries.length > 3 && (
+                  <span className="px-1 text-[0.625rem] text-ink-faint">+{dayEntries.length - 3} más</span>
                 )}
               </span>
               <span className="flex flex-wrap items-center gap-0.5 md:hidden">
-                {dayTasks.slice(0, 4).map((t) => {
-                  const c = colorOf(t)
+                {dayEntries.slice(0, 4).map((e) => {
+                  const c = e.color
                   return (
                     <span
-                      key={t.id}
-                      className={`size-1.5 rounded-full ${t.completed ? 'opacity-40' : ''} ${c ? '' : 'bg-accent-500'}`}
+                      key={`${e.kind}-${e.id}`}
+                      className={`size-1.5 rounded-full ${e.completed ? 'opacity-40' : ''} ${c ? '' : 'bg-accent-500'}`}
                       style={c ? { backgroundColor: c } : undefined}
                     />
                   )
                 })}
-                {dayTasks.length > 4 && <span className="text-[0.5625rem] text-ink-faint">+{dayTasks.length - 4}</span>}
+                {dayEntries.length > 4 && <span className="text-[0.5625rem] text-ink-faint">+{dayEntries.length - 4}</span>}
               </span>
             </button>
           )
@@ -452,14 +535,12 @@ function MonthGrid({
 
 function DayModal({
   dayMs,
-  tasks,
-  colorOf,
+  entries,
   onClose,
   onOpenTask,
 }: {
   dayMs: number
-  tasks: Task[]
-  colorOf: (t: Task) => string | null
+  entries: CalEntry[]
   onClose: () => void
   onOpenTask: (id: string) => void
 }) {
@@ -515,40 +596,63 @@ function DayModal({
           </button>
         </form>
 
-        {tasks.length === 0 ? (
-          <p className="py-2 text-center text-sm text-ink-faint">Sin tareas programadas este día.</p>
+        {entries.length === 0 ? (
+          <p className="py-2 text-center text-sm text-ink-faint">Sin tareas ni hábitos este día.</p>
         ) : (
           <div className="space-y-1">
-            {tasks.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => onOpenTask(t.id)}
-                className="flex w-full items-center gap-2.5 rounded-lg border border-line/5 glass-input px-3 py-2 text-left transition-colors hover:border-line/15"
-              >
-                <span
-                  className={`size-2 shrink-0 rounded-full ${colorOf(t) ? '' : 'bg-accent-500'}`}
-                  style={colorOf(t) ? { backgroundColor: colorOf(t)! } : undefined}
-                  aria-hidden="true"
-                />
-                <span
-                  className={`min-w-0 flex-1 truncate text-sm ${
-                    t.completed ? 'text-ink-faint line-through' : 'text-ink-dim'
-                  }`}
-                >
-                  {t.title}
-                </span>
-                {t.completed && t.completedAt !== null ? (
+            {entries.map((e) => {
+              // Marca de la derecha: hora de cumplimiento si está hecho; si no,
+              // la hora programada (solo las tareas con hora la tienen).
+              const meta =
+                e.completed && e.completedAt !== null ? (
                   <span className="flex shrink-0 items-center gap-1 text-xs text-ink-faint" title="Hora de cumplimiento">
                     <CheckCircleIcon className="size-3" />
-                    {formatDueTime(t.completedAt)}
+                    {formatDueTime(e.completedAt)}
                   </span>
                 ) : (
-                  t.dueHasTime && (
-                    <span className="shrink-0 text-xs text-ink-faint">{formatDueTime(t.dueAt!)}</span>
+                  e.hasTime && e.time !== null && (
+                    <span className="shrink-0 text-xs text-ink-faint">{formatDueTime(e.time)}</span>
                   )
-                )}
-              </button>
-            ))}
+                )
+              const dot = (
+                <span
+                  className={`size-2 shrink-0 rounded-full ${e.color ? '' : 'bg-accent-500'}`}
+                  style={e.color ? { backgroundColor: e.color } : undefined}
+                  aria-hidden="true"
+                />
+              )
+              const titleEl = (
+                <span
+                  className={`flex min-w-0 flex-1 items-center gap-1.5 truncate text-sm ${
+                    e.completed ? 'text-ink-faint line-through' : 'text-ink-dim'
+                  }`}
+                >
+                  {e.kind === 'habit' && <HabitGlyph className="size-3 opacity-70" />}
+                  <span className="truncate">{e.title}</span>
+                </span>
+              )
+              // Las tareas abren su detalle; los hábitos son informativos aquí.
+              return e.kind === 'task' ? (
+                <button
+                  key={`task-${e.id}`}
+                  onClick={() => onOpenTask(e.id)}
+                  className="flex w-full items-center gap-2.5 rounded-lg border border-line/5 glass-input px-3 py-2 text-left transition-colors hover:border-line/15"
+                >
+                  {dot}
+                  {titleEl}
+                  {meta}
+                </button>
+              ) : (
+                <div
+                  key={`habit-${e.id}`}
+                  className="flex w-full items-center gap-2.5 rounded-lg border border-line/5 glass-input px-3 py-2 text-left"
+                >
+                  {dot}
+                  {titleEl}
+                  {meta}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

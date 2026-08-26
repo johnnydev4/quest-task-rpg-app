@@ -140,13 +140,17 @@ async function spawnNextOccurrence(task: Task): Promise<void> {
     }
     const reminders = await db.reminders.where('taskId').equals(task.id).toArray()
     for (const r of reminders) {
+      const remindAt = r.remindAt + delta
       await db.reminders.add({
         ...r,
         id: uid(),
         taskId: newTaskId,
-        remindAt: r.remindAt + delta,
+        remindAt,
         firedCount: 0,
-        dismissed: false,
+        // Si la hora del aviso ya pasó (p. ej. completar tarde una recurrente
+        // atrasada deja la nueva ocurrencia hoy con su hora de aviso vencida),
+        // nace descartado para no disparar una notificación inmediata sin sentido.
+        dismissed: remindAt <= now,
         createdAt: now,
         updatedAt: now,
         syncStatus: 'pending',
@@ -201,14 +205,17 @@ export async function skipOverdueToNearest(id: string): Promise<void> {
   while (next < sod) next = nextOccurrence(next, task.recurrenceRule)
 
   const delta = next - task.dueAt
+  const now = Date.now()
   await updateTask(id, { dueAt: next })
   const reminders = await db.reminders.where('taskId').equals(id).toArray()
   for (const r of reminders) {
+    const remindAt = r.remindAt + delta
     await db.reminders.update(r.id, {
-      remindAt: r.remindAt + delta,
+      remindAt,
       firedCount: 0,
-      dismissed: false,
-      updatedAt: Date.now(),
+      // Si la nueva hora del aviso ya pasó, se deja descartado para no saltar al instante.
+      dismissed: remindAt <= now,
+      updatedAt: now,
       syncStatus: 'pending',
     })
   }

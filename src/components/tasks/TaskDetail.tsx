@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type {
@@ -158,6 +159,63 @@ function RowIcon({ children }: { children: ReactNode }) {
 /** Grupo de filas estilo iOS sobre cristal líquido. */
 function Group({ children }: { children: ReactNode }) {
   return <div className="overflow-hidden rounded-2xl border border-line/5 glass-panel">{children}</div>
+}
+
+/**
+ * Nota a pantalla completa: un lienzo amplio para leer y editar la nota con más
+ * espacio. Se ancla sobre todo (portal a <body>), cierra con Escape o "Listo" y
+ * comparte el mismo estado que el campo de nota del detalle.
+ */
+function NoteFullScreen({
+  value,
+  onChange,
+  onClose,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onClose: () => void
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  // Enfoca al abrir, con el cursor al final para seguir escribiendo.
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(el.value.length, el.value.length)
+  }, [])
+
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex flex-col glass-strong">
+      <header className="flex items-center justify-between border-b border-line/5 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <h2 className="text-base font-semibold text-ink">Nota</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-[0.9375rem] font-semibold text-accent-400"
+        >
+          Listo
+        </button>
+      </header>
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Escribe tu nota…"
+        aria-label="Nota ampliada"
+        className="mx-auto w-full max-w-3xl flex-1 resize-none border-none bg-transparent px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-base leading-relaxed text-ink outline-none placeholder-ink-muted focus:shadow-none"
+      />
+    </div>,
+    document.body,
+  )
 }
 
 /** Opción de una hoja (fila táctil grande estilo To Do). */
@@ -619,6 +677,8 @@ function TaskForm({
   const [sheet, setSheet] = useState<SheetId | null>(null)
   // Calendario desplegable dentro de la hoja de Vencimiento.
   const [pickerOpen, setPickerOpen] = useState(false)
+  // Nota ampliada a pantalla completa para leer/editar con más espacio.
+  const [notesExpanded, setNotesExpanded] = useState(false)
 
   const closeSheet = () => {
     setSheet(null)
@@ -885,16 +945,40 @@ function TaskForm({
 
       {/* Nota, sin bordes (como To Do) */}
       <Group>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={saveNotes}
-          rows={4}
-          placeholder="Añadir nota"
-          aria-label="Notas"
-          className="w-full resize-y border-none bg-transparent px-4 py-3.5 text-[0.9375rem] text-ink outline-none placeholder-ink-muted focus:shadow-none lg:text-sm"
-        />
+        <div className="relative">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={saveNotes}
+            rows={4}
+            placeholder="Añadir nota"
+            aria-label="Notas"
+            className="w-full resize-y border-none bg-transparent px-4 py-3.5 pr-11 text-[0.9375rem] text-ink outline-none placeholder-ink-muted focus:shadow-none lg:text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => setNotesExpanded(true)}
+            aria-label="Ampliar nota"
+            title="Ampliar nota"
+            className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/10 hover:text-ink"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5" aria-hidden="true">
+              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+            </svg>
+          </button>
+        </div>
       </Group>
+
+      {notesExpanded && (
+        <NoteFullScreen
+          value={notes}
+          onChange={setNotes}
+          onClose={() => {
+            saveNotes()
+            setNotesExpanded(false)
+          }}
+        />
+      )}
 
       {/* Pie: creada + papelera */}
       <div className="flex items-center gap-2 px-1 pt-1">

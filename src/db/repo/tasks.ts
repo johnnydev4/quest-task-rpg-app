@@ -93,6 +93,53 @@ export async function reorderTasks(ids: string[]): Promise<void> {
   })
 }
 
+/**
+ * Ids de todo el linaje de una recurrente: la cadena de tareas enlazadas por
+ * `spawnedFromTaskId` (una completación engendra la siguiente). Sube hasta la
+ * raíz y luego recoge todos sus descendientes. Para una tarea suelta (sin
+ * linaje) devuelve solo su propio id.
+ */
+async function lineageIds(taskId: string): Promise<Set<string>> {
+  const all = await db.tasks.toArray()
+  const byId = new Map(all.map((t) => [t.id, t]))
+  // Raíz del linaje (con guarda anticiclos por si un dato viejo se enlazó mal).
+  let rootId = taskId
+  const seen = new Set<string>()
+  for (;;) {
+    const t = byId.get(rootId)
+    if (!t || !t.spawnedFromTaskId || !byId.has(t.spawnedFromTaskId) || seen.has(rootId)) break
+    seen.add(rootId)
+    rootId = t.spawnedFromTaskId
+  }
+  // Descendientes desde la raíz (punto fijo: el linaje es pequeño).
+  const ids = new Set<string>([rootId])
+  for (let added = true; added; ) {
+    added = false
+    for (const t of all) {
+      if (t.spawnedFromTaskId && ids.has(t.spawnedFromTaskId) && !ids.has(t.id)) {
+        ids.add(t.id)
+        added = true
+      }
+    }
+  }
+  return ids
+}
+
+/**
+ * Un linaje recurrente solo puede tener UNA ocurrencia pendiente a la vez.
+ * Conserva `keepId` y elimina las demás ocurrencias pendientes del linaje, así
+ * una misma tarea nunca queda duplicada. No toca las completadas (son historial)
+ * ni las tareas sueltas (linaje de tamaño 1).
+ */
+async function dedupeLineagePending(keepId: string): Promise<void> {
+  const ids = await lineageIds(keepId)
+  if (ids.size <= 1) return
+  const all = await db.tasks.toArray()
+  for (const t of all) {
+    if (t.id !== keepId && ids.has(t.id) && !t.completed) await deleteTask(t.id)
+  }
+}
+
 /** Al completar una tarea recurrente se crea la siguiente ocurrencia (con subtareas y recordatorios desplazados). */
 async function spawnNextOccurrence(task: Task): Promise<void> {
   const rule = task.recurrenceRule
@@ -166,13 +213,17 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
 
   if (completed) {
     await spawnNextOccurrence(task)
+  } else if (task.recurrenceRule !== null && task.dueAt !== null && task.dueAt < startOfToday()) {
+    // Deshacer una recurrente vencida: se reprograma a su ocurrencia desde hoy
+    // (queda visible en la lista en vez de esconderse en "Vencidas") y de paso
+    // se descartan las demás ocurrencias pendientes del linaje —incluida la que
+    // esta completación engendró—, de modo que solo quede una versión.
+    await skipOverdueToNearest(id)
   } else {
-    // Deshacer: la ocurrencia que ESTA completación generó se anula (si aún
-    // está pendiente); así la tarea no queda duplicada al volver a la lista.
-    const spawned = (await db.tasks.toArray()).filter(
-      (t) => t.spawnedFromTaskId === id && !t.completed,
-    )
-    for (const s of spawned) await deleteTask(s.id)
+    // Deshacer: el linaje solo puede tener UNA ocurrencia pendiente. Se anula la
+    // ocurrencia que esta completación generó (y cualquier otra pendiente), así
+    // la tarea vuelve a la lista sin duplicarse.
+    await dedupeLineagePending(id)
   }
 
   // Una recurrente ATRASADA (de días anteriores) completada tarde no da XP;
@@ -219,6 +270,9 @@ export async function skipOverdueToNearest(id: string): Promise<void> {
       syncStatus: 'pending',
     })
   }
+  // Solo una ocurrencia pendiente del linaje: si ya había otra (p. ej. la de hoy
+  // que se generó al completar), se descarta para no dejar la tarea duplicada.
+  await dedupeLineagePending(id)
 }
 
 /**
@@ -236,6 +290,9 @@ export async function skipOverdue(id: string): Promise<void> {
 /** Traer una vencida al día de hoy (sin hora). */
 export async function moveOverdueToToday(id: string): Promise<void> {
   await updateTask(id, { dueAt: startOfToday(), dueHasTime: false })
+  // Si el linaje ya tenía otra ocurrencia pendiente hoy (p. ej. la generada al
+  // completar), traer la vencida a hoy la duplicaría: se deja una sola versión.
+  await dedupeLineagePending(id)
 }
 
 export async function deleteTask(id: string): Promise<void> {

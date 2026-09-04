@@ -217,8 +217,9 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
     // Deshacer una recurrente vencida: se reprograma a su ocurrencia desde hoy
     // (queda visible en la lista en vez de esconderse en "Vencidas") y de paso
     // se descartan las demás ocurrencias pendientes del linaje —incluida la que
-    // esta completación engendró—, de modo que solo quede una versión.
-    await skipOverdueToNearest(id)
+    // esta completación engendró—, de modo que solo quede una versión. Al ser un
+    // "deshacer" se conserva el progreso de los pasos (resetSteps=false).
+    await skipOverdueToNearest(id, false)
   } else {
     // Deshacer: el linaje solo puede tener UNA ocurrencia pendiente. Se anula la
     // ocurrencia que esta completación generó (y cualquier otra pendiente), así
@@ -241,12 +242,26 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
   if (completed) emitCompletion({ ...result, kind: 'task' })
 }
 
+/** Desmarca todos los pasos (subtareas) de una tarea. */
+async function resetSubtasks(taskId: string): Promise<void> {
+  const now = Date.now()
+  const subtasks = await db.subtasks.where('taskId').equals(taskId).toArray()
+  for (const s of subtasks) {
+    if (!s.completed) continue
+    await db.subtasks.update(s.id, { completed: false, updatedAt: now, syncStatus: 'pending' })
+  }
+}
+
 /**
  * "Saltar a hoy" de una recurrente atrasada: reprograma la tarea a su
  * ocurrencia más cercana desde hoy (diaria → hoy; cada 2 días con 1 pasado →
  * mañana), desplazando también sus recordatorios.
+ *
+ * `resetSteps` reinicia los pasos: al avanzar a la siguiente ocurrencia es una
+ * nueva repetición, así que sus pasos vuelven a quedar sin marcar (igual que al
+ * completar). En el "deshacer" de una completada se conserva el progreso.
  */
-export async function skipOverdueToNearest(id: string): Promise<void> {
+export async function skipOverdueToNearest(id: string, resetSteps = true): Promise<void> {
   const task = await db.tasks.get(id)
   if (!task || !task.recurrenceRule || task.dueAt === null) return
   const sod = startOfToday()
@@ -258,6 +273,7 @@ export async function skipOverdueToNearest(id: string): Promise<void> {
   const delta = next - task.dueAt
   const now = Date.now()
   await updateTask(id, { dueAt: next })
+  if (resetSteps) await resetSubtasks(id)
   const reminders = await db.reminders.where('taskId').equals(id).toArray()
   for (const r of reminders) {
     const remindAt = r.remindAt + delta

@@ -164,6 +164,46 @@ export async function linkNodeToQuest(id: string, questId: string | null): Promi
 }
 
 /**
+ * "Explota" una quest compleja dentro de un nodo: lo vincula a la quest, toma su
+ * título si el nodo estaba vacío, y crea un hijo por cada paso de la quest. Así
+ * una misión difusa se convierte en un sub-árbol de subtareas manejables (la
+ * idea central de la feature para TDAH). Devuelve cuántos pasos se importaron.
+ */
+export async function explodeQuestIntoNode(nodeId: string, questId: string): Promise<number> {
+  const node = await db.ideaNodes.get(nodeId)
+  const quest = await db.quests.get(questId)
+  if (!node || !quest) return 0
+  const steps = await db.questSteps.where('questId').equals(questId).sortBy('order')
+
+  const now = Date.now()
+  const base = (await siblings(node.mapId, node.id)).at(-1)?.order ?? -1
+  const children: IdeaNode[] = steps.map((s, i) => ({
+    id: uid(),
+    mapId: node.mapId,
+    text: s.title.trim(),
+    parentId: node.id,
+    collapsed: false,
+    order: base + 1 + i,
+    createdAt: now,
+    updatedAt: now,
+    syncStatus: 'pending',
+  }))
+
+  await db.transaction('rw', db.ideaNodes, async () => {
+    await db.ideaNodes.update(nodeId, {
+      linkedQuestId: questId,
+      collapsed: false,
+      // Solo hereda el título de la misión si el nodo aún no decía nada.
+      ...(node.text.trim() ? {} : { text: quest.title.trim() }),
+      updatedAt: now,
+      syncStatus: 'pending',
+    })
+    if (children.length > 0) await db.ideaNodes.bulkAdd(children)
+  })
+  return children.length
+}
+
+/**
  * Ids de un nodo y toda su descendencia (DFS). Se usa para borrar ramas enteras
  * en cascada sin dejar nodos huérfanos.
  */

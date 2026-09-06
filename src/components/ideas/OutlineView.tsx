@@ -11,7 +11,8 @@ import {
   setNodeText,
   toggleCollapsed,
 } from '../../db/repo/ideas'
-import { PlusIcon, TrashIcon } from '../ui/icons'
+import { PlusIcon, SwordIcon, TrashIcon } from '../ui/icons'
+import { QuestLinkMenu } from './QuestLinkMenu'
 import { flattenOutline, groupByParent, type FlatRow } from './tree'
 
 /** Ancho (px) de cada nivel de indentación en la lista. */
@@ -227,6 +228,13 @@ function NodeRow({ row, index, flat, siblings, childCount, focusId, setFocusId, 
           className="min-w-0 flex-1 border-none bg-transparent py-0.5 text-sm text-ink placeholder-ink-faint outline-none focus:shadow-none"
         />
 
+        {/* Insignia siempre visible si el nodo está vinculado a una misión. */}
+        {node.linkedQuestId && (
+          <span className="shrink-0 text-accent-400" title="Vinculado a una misión" aria-hidden="true">
+            <SwordIcon className="size-3.5" />
+          </span>
+        )}
+
         {/* Cuántos hijos tiene, cuando está plegada: pista de lo que hay debajo. */}
         {hasChildren && node.collapsed && (
           <span className="shrink-0 rounded-full bg-ink/5 px-1.5 text-[0.625rem] font-semibold text-ink-faint">
@@ -236,6 +244,7 @@ function NodeRow({ row, index, flat, siblings, childCount, focusId, setFocusId, 
 
         {/* Acciones (aparecen al pasar el ratón o al enfocar la fila). */}
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          <QuestLinkMenu nodeId={node.id} linkedQuestId={node.linkedQuestId} />
           <button
             onClick={() => void onAddChild()}
             aria-label="Añadir sub-idea"

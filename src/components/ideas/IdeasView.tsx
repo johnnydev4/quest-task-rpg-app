@@ -8,15 +8,15 @@ import { HierarchyIcon, PlusIcon } from '../ui/icons'
 import { OutlineView } from './OutlineView'
 import { findRoot } from './tree'
 
-// React Flow + d3-hierarchy son pesados: se cargan solo al abrir la vista árbol
-// (mismo criterio que StatsView con Recharts), así la vista lista arranca ligera.
-const TreeView = lazy(() => import('./TreeView').then((m) => ({ default: m.TreeView })))
+// React Flow + d3-hierarchy son pesados: se cargan solo al abrir una vista
+// gráfica (mismo criterio que StatsView con Recharts), así la lista arranca ligera.
+const GraphView = lazy(() => import('./GraphView').then((m) => ({ default: m.GraphView })))
 
 /** Opciones del conmutador de vistas (misma estructura, distinta forma). */
 const VIEW_OPTIONS: { id: IdeaView; label: string; soon?: boolean }[] = [
   { id: 'outline', label: 'Lista' },
   { id: 'tree', label: 'Árbol' },
-  { id: 'radial', label: 'Radial', soon: true },
+  { id: 'radial', label: 'Radial' },
 ]
 
 /**
@@ -157,8 +157,7 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
   // El mapa ya no existe (borrado): la galería lo detecta y vuelve sola.
   if (!map) return null
 
-  // La radial aún no está lista: si el mapa se guardó en esa vista, cae a árbol.
-  const mode: IdeaView = map.view === 'radial' ? 'tree' : map.view
+  const mode: IdeaView = map.view
 
   return (
     <div className="space-y-4">
@@ -188,18 +187,18 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
 
       {!root ? (
         <p className="py-10 text-center text-sm text-ink-faint">No se encontró la raíz de este mapa.</p>
-      ) : mode === 'tree' ? (
+      ) : mode === 'outline' ? (
+        <OutlineView mapId={map.id} rootId={root.id} />
+      ) : (
         <Suspense
           fallback={
             <div className="flex justify-center py-16">
-              <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label="Cargando árbol" />
+              <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label="Cargando vista" />
             </div>
           }
         >
-          <TreeView mapId={map.id} rootId={root.id} />
+          <GraphView mapId={map.id} rootId={root.id} layout={mode === 'radial' ? 'radial' : 'tree'} />
         </Suspense>
-      ) : (
-        <OutlineView mapId={map.id} rootId={root.id} />
       )}
     </div>
   )

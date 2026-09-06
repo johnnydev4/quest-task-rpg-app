@@ -26,6 +26,8 @@ import { onSync, startAutoSync } from './services/sync'
 import { startPushHeartbeat } from './services/webPush'
 import { Sidebar } from './components/layout/Sidebar'
 import { QuickAdd } from './components/tasks/QuickAdd'
+import { TaskSearch } from './components/tasks/TaskSearch'
+import { BulkTaskMenu } from './components/tasks/BulkTaskMenu'
 import { TaskSection } from './components/tasks/TaskSection'
 import { DayMoments } from './components/tasks/DayMoments'
 import { TaskDetail, TaskDetailContent } from './components/tasks/TaskDetail'
@@ -66,6 +68,9 @@ const OVERDUE_NOTICE_KEY = 'quest-overdue-notice-day'
 const HIDDEN_LISTS_KEY = 'quest-all-hidden-lists'
 /** Clave del filtro para las tareas sin lista. */
 const NO_LIST = '__nolist__'
+
+/** Normaliza para buscar sin distinguir mayúsculas ni acentos. */
+const normalizeSearch = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 
 // Trazos de cada vista (mismos que en el sidebar) para el icono del header.
 const HEADER_ICON_PATHS: Partial<Record<View['kind'], React.ReactNode>> = {
@@ -150,6 +155,8 @@ export default function App() {
     setHiddenLists(next)
     localStorage.setItem(HIDDEN_LISTS_KEY, JSON.stringify([...next]))
   }
+  // Pestaña "Todas": texto del buscador, filtra las tareas por su título en vivo.
+  const [allSearch, setAllSearch] = useState('')
 
   // Solo un panel de configuración a la vez: al abrir el detalle de tarea se
   // avisa (cierra hojas de hábito) y viceversa.
@@ -202,6 +209,7 @@ export default function App() {
     window.scrollTo(0, 0)
     setDetailId(null)
     clearSelection()
+    setAllSearch('')
   }, [view, clearSelection])
 
   // Fondo personalizado pre-difuminado (bitmap estático: no cuesta nada componerlo).
@@ -485,9 +493,13 @@ export default function App() {
     ]
   } else if (view.kind === 'all') {
     const isOverdue = (t: (typeof displayPending)[number]) => t.dueAt !== null && t.dueAt < sod
+    // Buscador: coincide por título sin distinguir mayúsculas ni acentos. Vacío
+    // no filtra nada. Se aplica a los tres bloques (vencidas, pendientes, hechas).
+    const q = normalizeSearch(allSearch.trim())
+    const matchesSearch = (t: Task) => q === '' || normalizeSearch(t.title).includes(q)
     // El filtro de listas se aplica a todo el resultado (vencidas, pendientes
     // y completadas), no solo a un bloque.
-    const shown = displayPending.filter(visibleInAll)
+    const shown = displayPending.filter((t) => visibleInAll(t) && matchesSearch(t))
     sections = [
       {
         // Categoría desplegable para las tareas atrasadas.
@@ -501,7 +513,7 @@ export default function App() {
       {
         key: 'done',
         title: 'Completadas',
-        tasks: sortCompleted(tasks.filter((t) => settled(t) && visibleInAll(t))).slice(0, 100),
+        tasks: sortCompleted(tasks.filter((t) => settled(t) && visibleInAll(t) && matchesSearch(t))).slice(0, 100),
         collapsible: true,
       },
     ]
@@ -911,7 +923,8 @@ export default function App() {
               {/* "Todas": barra propia con el filtro por listas y el orden. Se
                   queda visible aunque el filtro vacíe el resultado. */}
               {view.kind === 'all' && (
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <TaskSearch value={allSearch} onChange={setAllSearch} />
                   <FilterMenu
                     options={listFilterOptions}
                     hidden={hiddenLists}
@@ -924,7 +937,17 @@ export default function App() {
               {isEmpty ? (
                 <div className="flex flex-col items-center gap-3 py-16 text-center">
                   <div className="flex size-14 items-center justify-center rounded-2xl glass-panel text-3xl">✨</div>
-                  {view.kind === 'all' && hasListFilter ? (
+                  {view.kind === 'all' && allSearch.trim() ? (
+                    <>
+                      <p className="font-medium text-ink-dim">Nada coincide con la búsqueda</p>
+                      <button
+                        onClick={() => setAllSearch('')}
+                        className="text-sm font-medium text-accent-400 transition-colors hover:text-accent-300"
+                      >
+                        Limpiar búsqueda
+                      </button>
+                    </>
+                  ) : view.kind === 'all' && hasListFilter ? (
                     <>
                       <p className="font-medium text-ink-dim">Nada con este filtro</p>
                       <button
@@ -986,8 +1009,12 @@ export default function App() {
                   <span className="min-w-0 flex-1 truncate text-xs text-ink-faint">
                     {selection.count === 0
                       ? 'Marca tareas y hábitos para moverlos juntos'
-                      : 'Arrastra uno y se mueven todos'}
+                      : 'Arrástralas juntas o edítalas en bloque'}
                   </span>
+                  {(() => {
+                    const taskIds = selection.ids.filter((id) => selection.kindOf(id) === 'task')
+                    return taskIds.length > 0 ? <BulkTaskMenu ids={taskIds} onDone={() => selection.clear()} /> : null
+                  })()}
                   <button
                     onClick={() => selection.clear()}
                     className="shrink-0 rounded-lg border border-line/10 px-2.5 py-1.5 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"

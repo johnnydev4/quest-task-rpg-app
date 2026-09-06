@@ -364,3 +364,13 @@ export function PinOffIcon({ className }: { className?: string }) {
     </Icon>
   )
 }
+
+/** Lupa: buscar tareas por nombre. */
+export function SearchIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </Icon>
+  )
+}

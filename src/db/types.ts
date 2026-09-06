@@ -239,6 +239,54 @@ export interface HabitLog {
   syncStatus: SyncStatus
 }
 
+/** Vistas intercambiables de un mapa de ideas (misma estructura, distinta forma). */
+export type IdeaView = 'outline' | 'tree' | 'radial'
+
+/**
+ * Mapa de ideas: contenedor de un árbol jerárquico para descomponer ideas o
+ * tareas complejas (pensado para TDAH: sacar la maraña de la cabeza y trocearla).
+ * Un mapa siempre tiene un nodo raíz (parentId = null). Sus nodos viven en
+ * `ideaNodes`. La misma estructura se visualiza como lista, árbol o mapa radial.
+ */
+export interface IdeaMap {
+  id: string
+  title: string
+  /** Última vista usada, para reabrir el mapa como se dejó. */
+  view: IdeaView
+  /** Posición manual (arrastrar y soltar) en la galería de mapas. */
+  order: number
+  createdAt: number
+  updatedAt: number
+  syncStatus: SyncStatus
+}
+
+/**
+ * Nodo de un mapa de ideas: una idea/subtarea dentro del árbol. La jerarquía se
+ * modela con `parentId` (null = raíz) y el orden entre hermanos con `order`.
+ * `x`/`y` guardan la posición manual en las vistas gráficas cuando el usuario
+ * arrastra un nodo; ausentes = posición automática (layout d3-hierarchy).
+ */
+export interface IdeaNode {
+  id: string
+  mapId: string
+  text: string
+  /** Padre en el árbol; null = nodo raíz del mapa. */
+  parentId: string | null
+  /** Rama plegada: sus descendientes se ocultan. */
+  collapsed: boolean
+  /** Posición manual X en la vista gráfica; null/ausente = automática. */
+  x?: number | null
+  /** Posición manual Y en la vista gráfica; null/ausente = automática. */
+  y?: number | null
+  /** Orden entre hermanos. */
+  order: number
+  /** Vínculo opcional con una quest del sistema RPG (Fase 2 de esta feature). */
+  linkedQuestId?: string | null
+  createdAt: number
+  updatedAt: number
+  syncStatus: SyncStatus
+}
+
 /** Perfil del jugador: fila única con id 'me'. */
 export interface PlayerProfile {
   id: string

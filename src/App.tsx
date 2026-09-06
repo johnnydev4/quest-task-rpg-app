@@ -47,6 +47,7 @@ import { MiniTimer } from './components/study/MiniTimer'
 import { CalendarView } from './components/calendar/CalendarView'
 import { QuestsView } from './components/quests/QuestsView'
 import { WeeklyQuestBanner } from './components/quests/WeeklyQuestBanner'
+import { IdeasView } from './components/ideas/IdeasView'
 import { HabitsView } from './components/habits/HabitsView'
 import { HabitsDoneToday, PendingHabits, useTodayHabits } from './components/habits/HabitsToday'
 import { CheckSquareIcon, FlameIcon } from './components/ui/icons'
@@ -85,6 +86,14 @@ const HEADER_ICON_PATHS: Partial<Record<View['kind'], React.ReactNode>> = {
   ),
   habits: (
     <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+  ),
+  ideas: (
+    <>
+      <rect x="9" y="3" width="6" height="5" rx="1" />
+      <rect x="3" y="16" width="6" height="5" rx="1" />
+      <rect x="15" y="16" width="6" height="5" rx="1" />
+      <path d="M12 8v4M6 16v-2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2" />
+    </>
   ),
   upcoming: (
     <>
@@ -599,6 +608,8 @@ export default function App() {
         ? 'Próximas'
         : view.kind === 'quests'
           ? 'Misiones'
+          : view.kind === 'ideas'
+            ? 'Ideas'
           : view.kind === 'habits'
             ? 'Hábitos'
             : view.kind === 'calendar'
@@ -618,6 +629,8 @@ export default function App() {
   const viewDescription =
     view.kind === 'quests'
       ? 'Acepta retos, completa tareas y gana experiencia.'
+      : view.kind === 'ideas'
+        ? 'Descompón ideas y tareas complejas en un árbol.'
       : view.kind === 'habits'
         ? 'Construye rutinas y encadena tus combos.'
         : view.kind === 'calendar'
@@ -844,6 +857,8 @@ export default function App() {
         <main className={`mx-auto w-full ${contentMax} flex-1 space-y-6 px-4 py-5 sm:px-6`}>
           {view.kind === 'quests' ? (
             <QuestsView />
+          ) : view.kind === 'ideas' ? (
+            <IdeasView />
           ) : view.kind === 'habits' ? (
             <HabitsView />
           ) : view.kind === 'calendar' ? (

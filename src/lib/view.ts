@@ -2,6 +2,7 @@ export type View =
   | { kind: 'today' }
   | { kind: 'quests' }
   | { kind: 'habits' }
+  | { kind: 'ideas' }
   | { kind: 'upcoming' }
   | { kind: 'calendar' }
   | { kind: 'all' }

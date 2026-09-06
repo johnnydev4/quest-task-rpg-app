@@ -25,6 +25,8 @@ const TABLES = [
   'habitLogs',
   'daySections',
   'settings',
+  'ideaMaps',
+  'ideaNodes',
 ] as const
 
 type TableName = (typeof TABLES)[number]

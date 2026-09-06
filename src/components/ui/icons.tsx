@@ -365,6 +365,18 @@ export function PinOffIcon({ className }: { className?: string }) {
   )
 }
 
+/** Jerarquía (organigrama): el organizador de ideas / árbol de subtareas. */
+export function HierarchyIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <rect x="9" y="3" width="6" height="5" rx="1" />
+      <rect x="3" y="16" width="6" height="5" rx="1" />
+      <rect x="15" y="16" width="6" height="5" rx="1" />
+      <path d="M12 8v4M6 16v-2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2" />
+    </Icon>
+  )
+}
+
 /** Lupa: buscar tareas por nombre. */
 export function SearchIcon({ className }: { className?: string }) {
   return (

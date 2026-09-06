@@ -6,6 +6,8 @@ import type {
   DaySection,
   Habit,
   HabitLog,
+  IdeaMap,
+  IdeaNode,
   List,
   PlayerProfile,
   Quest,
@@ -37,6 +39,8 @@ const db = new Dexie('quest-db') as Dexie & {
   habitLogs: EntityTable<HabitLog, 'id'>
   daySections: EntityTable<DaySection, 'id'>
   appMedia: EntityTable<AppMedia, 'id'>
+  ideaMaps: EntityTable<IdeaMap, 'id'>
+  ideaNodes: EntityTable<IdeaNode, 'id'>
 }
 
 // IndexedDB no indexa booleanos, así que `completed` se filtra en memoria
@@ -136,6 +140,14 @@ db.version(8).upgrade(async (tx) => {
 // filtrado ya se hace en memoria, como el resto de la vista).
 db.version(9).stores({ daySections: 'id, order' })
 
+// Organizador de ideas jerárquico (mind map / árbol) para trocear ideas y
+// tareas complejas. Un `ideaMap` es un árbol; sus `ideaNodes` se enlazan por
+// `parentId` (null = raíz) y se ordenan entre hermanos con `order`.
+db.version(10).stores({
+  ideaMaps: 'id, order',
+  ideaNodes: 'id, mapId, parentId, order',
+})
+
 // Disparo de sincronización con debounce: cualquier escritura en una tabla
 // sincronizada emite `quest:changed` en window. sync.ts se suscribe y llama a
 // scheduleSync(); el evento evita un ciclo de imports db<->sync.
@@ -155,6 +167,8 @@ const SYNCED_TABLES = [
   'habitLogs',
   'daySections',
   'settings',
+  'ideaMaps',
+  'ideaNodes',
 ] as const
 
 if (typeof window !== 'undefined') {

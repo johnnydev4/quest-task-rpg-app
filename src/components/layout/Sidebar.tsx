@@ -184,6 +184,19 @@ export function Sidebar({
             </>,
           )}
         />
+        <NavItem
+          active={view.kind === 'ideas'}
+          onClick={() => onSelect({ kind: 'ideas' })}
+          label="Ideas"
+          icon={icon(
+            <>
+              <rect x="9" y="3" width="6" height="5" rx="1" />
+              <rect x="3" y="16" width="6" height="5" rx="1" />
+              <rect x="15" y="16" width="6" height="5" rx="1" />
+              <path d="M12 8v4M6 16v-2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2" />
+            </>,
+          )}
+        />
       </nav>
 
       <div className="mt-5 mb-1 flex shrink-0 items-center justify-between px-3">

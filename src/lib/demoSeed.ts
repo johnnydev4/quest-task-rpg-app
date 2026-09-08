@@ -27,7 +27,7 @@ import type {
   Task,
 } from '../db/types'
 
-const DEMO_VERSION = 'demo-2'
+const DEMO_VERSION = 'demo-3'
 const DEMO_KEY = 'quest-demo-seeded'
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -203,7 +203,9 @@ export async function seedDemo(): Promise<void> {
         createdAt: at(t.completedDaysAgo ?? 1, 12), updatedAt: at(t.completedDaysAgo ?? 1, 12), syncStatus: SYNC,
       })
     }
-    if (t.remindDaysAgo !== undefined && due !== null) {
+    // Solo recordatorios FUTUROS: uno ya vencido saltaría como aviso nada más
+    // abrir la demo (ruido en la primera impresión).
+    if (t.remindDaysAgo !== undefined && due !== null && due - 30 * 60_000 > Date.now()) {
       reminders.push({
         id: uid(), taskId: id, remindAt: due - 30 * 60_000,
         repeatCount: 0, repeatEveryMin: 10, firedCount: 0, dismissed: false,

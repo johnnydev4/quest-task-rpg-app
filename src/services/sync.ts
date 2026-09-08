@@ -69,52 +69,101 @@ export async function countPending(): Promise<number> {
   return total
 }
 
-async function push(userId: string): Promise<void> {
-  const rows: SyncRow[] = []
-  const pushed: { table: TableName; id: string }[] = []
+/**
+ * Sellos de tiempo que el respaldo ya tiene para las filas que se van a subir.
+ * Se consultan en bloques por `id` (son únicos) y se indexan por tabla+id.
+ */
+async function remoteStamps(
+  userId: string,
+  ids: string[],
+): Promise<Map<string, number>> {
+  const stamps = new Map<string, number>()
+  const unique = [...new Set(ids)]
+  for (let i = 0; i < unique.length; i += 200) {
+    const { data, error } = await supabase!
+      .from('sync_items')
+      .select('table_name,id,updated_at')
+      .eq('user_id', userId)
+      .in('id', unique.slice(i, i + 200))
+    if (error) throw new Error(error.message)
+    for (const row of (data ?? []) as { table_name: string; id: string; updated_at: number }[]) {
+      stamps.set(`${row.table_name}|${row.id}`, Number(row.updated_at))
+    }
+  }
+  return stamps
+}
 
+/**
+ * Sube lo pendiente aplicando "última escritura gana" TAMBIÉN de subida: una
+ * fila local más vieja que la del respaldo NO se sube.
+ *
+ * Sin esto, abrir el portátil con cambios pendientes de ayer pisaba en el
+ * respaldo lo hecho esa mañana en el móvil: las vencidas ya organizadas volvían
+ * a salir y las borradas resucitaban. Lo que se deja sin subir se queda
+ * `pending` y la bajada posterior lo reemplaza por la versión buena (que ya
+ * llega marcada como `synced`).
+ */
+async function push(userId: string): Promise<void> {
+  const pending: { table: TableName; item: Record<string, unknown>; updatedAt: number }[] = []
   for (const table of TABLES) {
     const items = (await db
       .table(table)
       .filter((x) => (x as { syncStatus?: string }).syncStatus === 'pending')
       .toArray()) as Record<string, unknown>[]
     for (const item of items) {
-      const id = item.id as string
-      const updatedAt = (item.updatedAt as number) ?? Date.now()
-      if (table === 'attachments') {
-        const path = `${userId}/${id}`
-        const { error } = await supabase!.storage
-          .from('attachments')
-          .upload(path, item.blob as Blob, {
-            upsert: true,
-            contentType: (item.mimeType as string) || 'application/octet-stream',
-          })
-        if (error) throw new Error(`Storage: ${error.message}`)
-        await db.attachments.update(id, { cloudPath: path })
-        rows.push({
-          user_id: userId,
-          table_name: table,
-          id,
-          updated_at: updatedAt,
-          deleted: false,
-          data: { ...stripLocal(item), cloudPath: path },
-        })
-      } else {
-        rows.push({
-          user_id: userId,
-          table_name: table,
-          id,
-          updated_at: updatedAt,
-          deleted: false,
-          data: stripLocal(item),
-        })
-      }
-      pushed.push({ table, id })
+      pending.push({ table, item, updatedAt: (item.updatedAt as number) ?? Date.now() })
     }
   }
-
   const tombstones = await db.tombstones.toArray()
+  if (pending.length === 0 && tombstones.length === 0) return
+
+  const stamps = await remoteStamps(userId, [
+    ...pending.map((p) => p.item.id as string),
+    ...tombstones.map((t) => t.id),
+  ])
+  const stale = (table: string, id: string, updatedAt: number) =>
+    (stamps.get(`${table}|${id}`) ?? -1) > updatedAt
+
+  const rows: SyncRow[] = []
+  const pushed: { table: TableName; id: string }[] = []
+
+  for (const { table, item, updatedAt } of pending) {
+    const id = item.id as string
+    if (stale(table, id, updatedAt)) continue
+    if (table === 'attachments') {
+      const path = `${userId}/${id}`
+      const { error } = await supabase!.storage
+        .from('attachments')
+        .upload(path, item.blob as Blob, {
+          upsert: true,
+          contentType: (item.mimeType as string) || 'application/octet-stream',
+        })
+      if (error) throw new Error(`Storage: ${error.message}`)
+      await db.attachments.update(id, { cloudPath: path })
+      rows.push({
+        user_id: userId,
+        table_name: table,
+        id,
+        updated_at: updatedAt,
+        deleted: false,
+        data: { ...stripLocal(item), cloudPath: path },
+      })
+    } else {
+      rows.push({
+        user_id: userId,
+        table_name: table,
+        id,
+        updated_at: updatedAt,
+        deleted: false,
+        data: stripLocal(item),
+      })
+    }
+    pushed.push({ table, id })
+  }
+
   for (const t of tombstones) {
+    // Un borrado tampoco pisa una edición posterior de otro dispositivo.
+    if (stale(t.table, t.id, t.deletedAt)) continue
     rows.push({
       user_id: userId,
       table_name: t.table,
@@ -130,15 +179,37 @@ async function push(userId: string): Promise<void> {
     if (error) throw new Error(error.message)
   }
 
-  // Todo subido: marca como sincronizado y limpia lápidas.
+  // Todo subido: marca como sincronizado y retira SOLO las lápidas de esta
+  // pasada (una eliminación hecha mientras se subía no se pierde).
   for (const p of pushed) {
     await db.table(p.table).update(p.id, { syncStatus: 'synced' })
   }
-  await db.tombstones.clear()
+  await db.tombstones.bulkDelete(tombstones.map((t) => t.id))
 }
 
 /** Filas por página; se pagina hasta agotar para no toparse con el tope del backend. */
 const PULL_PAGE = 1000
+
+/**
+ * Caso simétrico del merge de `overdueNoticeDay`: cuando gana el perfil LOCAL
+ * pero el respaldo traía un día de aviso posterior, ese día se adopta igual
+ * (si no, este dispositivo volvería a enseñar un aviso ya despachado).
+ */
+async function keepLaterNoticeDay(
+  table: TableName,
+  local: { overdueNoticeDay?: string | null },
+  row: SyncRow,
+): Promise<void> {
+  if (table !== 'profile' || !row.data) return
+  const remoteDay = (row.data.overdueNoticeDay as string | null | undefined) ?? null
+  const localDay = local.overdueNoticeDay ?? null
+  if (remoteDay === null || (localDay !== null && localDay >= remoteDay)) return
+  await db.profile.update(row.id, {
+    overdueNoticeDay: remoteDay,
+    updatedAt: Date.now(),
+    syncStatus: 'pending',
+  })
+}
 
 /**
  * Trae del respaldo lo que cambió desde el último pull.
@@ -178,17 +249,34 @@ async function pull(userId: string, full = false): Promise<void> {
       maxTs = Math.max(maxTs, row.updated_at)
       const table = row.table_name as TableName
       if (!TABLES.includes(table)) continue
-      const local = (await db.table(table).get(row.id)) as { updatedAt?: number } | undefined
+      const local = (await db.table(table).get(row.id)) as
+        | { updatedAt?: number; overdueNoticeDay?: string | null }
+        | undefined
 
       if (row.deleted) {
         if (!local || (local.updatedAt ?? 0) <= row.updated_at) await db.table(table).delete(row.id)
         continue
       }
       // LWW: lo local más nuevo gana y se re-subirá en el próximo push.
-      if (local && (local.updatedAt ?? 0) >= row.updated_at) continue
+      if (local && (local.updatedAt ?? 0) >= row.updated_at) {
+        await keepLaterNoticeDay(table, local, row)
+        continue
+      }
       if (!row.data) continue
 
       const entity: Record<string, unknown> = { ...row.data, syncStatus: 'synced' }
+      // El día del aviso de vencidas viaja dentro del perfil, que se resuelve
+      // por "última escritura gana". Si la versión ganadora es más nueva pero
+      // no traía el día ya marcado en el otro dispositivo, el aviso salía otra
+      // vez ahí: se conserva siempre el día MÁS RECIENTE de los dos.
+      if (table === 'profile') {
+        const localDay = local?.overdueNoticeDay ?? null
+        const remoteDay = (row.data.overdueNoticeDay as string | null | undefined) ?? null
+        if (localDay !== null && (remoteDay === null || localDay > remoteDay)) {
+          entity.overdueNoticeDay = localDay
+          entity.syncStatus = 'pending'
+        }
+      }
       if (table === 'attachments') {
         const path = (row.data.cloudPath as string) ?? `${userId}/${row.id}`
         const { data: blob, error: dlError } = await supabase!.storage.from('attachments').download(path)

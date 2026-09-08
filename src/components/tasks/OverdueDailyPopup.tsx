@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../../db/db'
 import type { Task } from '../../db/types'
-import { formatDue } from '../../lib/dates'
+import { formatDue, startOfToday } from '../../lib/dates'
 import { moveOverdueToToday, setTaskCompleted, skipOverdue } from '../../db/repo/tasks'
 import { CheckCircleIcon, ForwardIcon, HistoryIcon, SunIcon } from '../ui/icons'
 
@@ -16,10 +18,31 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
   const [busy, setBusy] = useState(false)
   const [closing, setClosing] = useState(false)
 
+  // …pero contrastada con la base de datos: si mientras el aviso está abierto
+  // llega una sincronización con esa tarea ya organizada o borrada en otro
+  // dispositivo, la fila se retira en vez de pedir despacharla otra vez.
+  const liveById = useLiveQuery(async () => {
+    const all = await db.tasks.toArray()
+    return new Map(all.map((t) => [t.id, t]))
+  }, [])
+  const sod = startOfToday()
+  const visible = liveById
+    ? items
+        .map((t) => liveById.get(t.id))
+        .filter((t): t is Task => !!t && !t.completed && t.dueAt !== null && t.dueAt < sod)
+    : items
+
   function close() {
+    if (closing) return
     setClosing(true)
     setTimeout(onClose, 220)
   }
+
+  // Ya no queda nada que despachar (aquí o en el otro dispositivo): fuera.
+  useEffect(() => {
+    if (liveById && visible.length === 0) close()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveById, visible.length])
 
   async function handle(action: (id: string) => Promise<void>, ids: string[]) {
     if (busy) return
@@ -31,7 +54,7 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
     if (rest.length === 0) close()
   }
 
-  const allIds = items.map((t) => t.id)
+  const allIds = visible.map((t) => t.id)
 
   return (
     <div
@@ -47,7 +70,7 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
           <HistoryIcon className="size-4 shrink-0 text-accent-400" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-ink">
-              {items.length} {items.length === 1 ? 'tarea vencida' : 'tareas vencidas'}
+              {visible.length} {visible.length === 1 ? 'tarea vencida' : 'tareas vencidas'}
             </p>
             <p className="text-xs text-ink-muted">Sáltalas o tráelas al día de hoy.</p>
           </div>
@@ -63,7 +86,7 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
         </div>
 
         <ul className="max-h-64 overflow-y-auto px-2 py-2">
-          {items.map((t, i) => (
+          {visible.map((t, i) => (
             <li
               key={t.id}
               className="flex items-center gap-1.5 rounded-xl px-2 py-1.5"

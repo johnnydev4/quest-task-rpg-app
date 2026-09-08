@@ -191,7 +191,7 @@ export default function App() {
   // Selección múltiple: arrastrar una fila marcada mueve todas las marcadas.
   const selection = useSelection()
   const bulk = useBulkMove()
-  const { profile, level, intoLevel, needed, streak } = useProfile()
+  const { level, intoLevel, needed, streak } = useProfile()
   const isDesktop = useIsDesktop()
   // Destello del XP recién ganado en la mini-barra del encabezado (móvil).
   const xpGain = useXpGain()
@@ -336,25 +336,34 @@ export default function App() {
     if (new Date().getHours() < 6) return
     if (!syncSettled) return
     const day = localDateKey()
-    // Ya mostrado hoy (en este o en otro dispositivo). Migra el flag heredado
-    // de localStorage al perfil sincronizado la primera vez tras actualizar.
-    if (profile?.overdueNoticeDay === day) {
-      overdueNoticeShown.current = true
-      return
-    }
-    if (localStorage.getItem(OVERDUE_NOTICE_KEY) === day) {
-      overdueNoticeShown.current = true
-      void markOverdueNoticeShown(day)
-      return
-    }
-    const overdue = tasks.filter((t) => !t.completed && t.dueAt !== null && t.dueAt < sod)
-    if (overdue.length === 0) return
+    // Decidir marca el día para siempre, así que la lista se lee de la base de
+    // datos EN ESTE INSTANTE en vez de las consultas vivas: éstas pueden ir un
+    // paso por detrás de la bajada recién terminada, y con la foto vieja salían
+    // vencidas ya organizadas —o borradas— en el otro dispositivo.
     overdueNoticeShown.current = true
-    localStorage.setItem(OVERDUE_NOTICE_KEY, day)
-    void markOverdueNoticeShown(day)
-    // Las más recientes primero: ayer arriba, lo más antiguo al final.
-    setOverdueNotice([...overdue].sort((a, b) => b.dueAt! - a.dueAt!))
-  }, [view.kind, tasksRaw, tasks, sod, syncSettled, profile])
+    void (async () => {
+      // Ya mostrado hoy (en este o en otro dispositivo). Migra el flag heredado
+      // de localStorage al perfil sincronizado la primera vez tras actualizar.
+      const saved = await db.profile.get('me')
+      if (saved?.overdueNoticeDay === day) return
+      if (localStorage.getItem(OVERDUE_NOTICE_KEY) === day) {
+        await markOverdueNoticeShown(day)
+        return
+      }
+      const all = await db.tasks.toArray()
+      const overdue = all.filter((t) => !t.completed && t.dueAt !== null && t.dueAt < sod)
+      if (overdue.length === 0) {
+        // Sin vencidas no se marca el día: el aviso sigue disponible si alguna
+        // vence más tarde.
+        overdueNoticeShown.current = false
+        return
+      }
+      localStorage.setItem(OVERDUE_NOTICE_KEY, day)
+      await markOverdueNoticeShown(day)
+      // Las más recientes primero: ayer arriba, lo más antiguo al final.
+      setOverdueNotice([...overdue].sort((a, b) => b.dueAt! - a.dueAt!))
+    })()
+  }, [view.kind, tasksRaw, sod, syncSettled])
   // Al salir de Hoy el aviso se retira (no reaparece: ya está marcado el día).
   useEffect(() => {
     if (view.kind !== 'today') setOverdueNotice(null)

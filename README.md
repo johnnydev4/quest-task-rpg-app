@@ -11,7 +11,7 @@ principles in mind. Offline-first and installable as an app on desktop and mobil
 > AI-assisted engineering. Feedback and ideas are welcome.
 
 ## Live demo
-[View it live](https://quest-task-rpg-app.vercel.app/)
+[View it live](https://quest-task-rpg-app.vercel.app/?demo)
 
 ## Features
 

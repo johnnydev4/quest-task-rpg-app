@@ -13,6 +13,7 @@ import { markOverdueNoticeShown } from './db/repo/progress'
 import { NO_DAY_SECTION } from './db/repo/daySections'
 import { getOrCreateTag } from './db/repo/tags'
 import { emitConfigOpened, onCompletion, onConfigOpened, onOpenStudy } from './lib/events'
+import { MISSIONS_ENABLED } from './lib/features'
 import type { QuickParseResult } from './lib/quickParse'
 import { playCompletion, playLevelUp } from './lib/sound'
 import { applyBackgroundContrast } from './lib/bgContrast'
@@ -887,7 +888,7 @@ export default function App() {
           ) : view.kind === 'today' ? (
             <>
               {/* La misión de la semana destaca sobre las side quests (tareas normales) */}
-              <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />
+              {MISSIONS_ENABLED && <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />}
               {isEmpty && pendingHabits.length === 0 && daySections.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
                   <p className="font-medium text-ink-dim">Nada para hoy</p>

@@ -3,6 +3,7 @@ import type { List, Tag } from '../../db/types'
 import type { View } from '../../lib/view'
 import { useOnlineStatus } from '../../lib/useOnlineStatus'
 import { useSettings } from '../../lib/useSettings'
+import { MISSIONS_ENABLED } from '../../lib/features'
 import { playSidebarHover } from '../../lib/sound'
 import { reorderLists } from '../../db/repo/lists'
 import { SortableItem, SortableList } from '../ui/Sortable'
@@ -89,7 +90,12 @@ export function Sidebar({
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center gap-2.5 px-3 pt-1 pb-5">
-        <img src="/favicon.svg" alt="" className="size-8 rounded-lg" aria-hidden="true" />
+        <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent-400 to-accent-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
+            <path d="M5 14l7-7 7 7" />
+            <path d="M5 20l7-7 7 7" />
+          </svg>
+        </div>
         <span className="text-lg font-bold text-ink lg:text-base">Quest</span>
       </div>
 
@@ -174,16 +180,18 @@ export function Sidebar({
           label="Stats"
           icon={icon(<path d="M3 3v18h18M8 17V9m5 8V5m5 12v-6" />)}
         />
-        <NavItem
-          active={view.kind === 'quests'}
-          onClick={() => onSelect({ kind: 'quests' })}
-          label="Misiones"
-          icon={icon(
-            <>
-              <path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 8 2a6 6 0 0 0 3-.8V14a6 6 0 0 1-3 .8c-3 0-5-2-8-2a6 6 0 0 0-4 1.2" />
-            </>,
-          )}
-        />
+        {MISSIONS_ENABLED && (
+          <NavItem
+            active={view.kind === 'quests'}
+            onClick={() => onSelect({ kind: 'quests' })}
+            label="Misiones"
+            icon={icon(
+              <>
+                <path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 8 2a6 6 0 0 0 3-.8V14a6 6 0 0 1-3 .8c-3 0-5-2-8-2a6 6 0 0 0-4 1.2" />
+              </>,
+            )}
+          />
+        )}
         <NavItem
           active={view.kind === 'ideas'}
           onClick={() => onSelect({ kind: 'ideas' })}

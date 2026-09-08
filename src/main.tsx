@@ -4,6 +4,7 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
 import { SelectionProvider } from './lib/selection'
+import { cleanDemoParam, seedDemo, shouldSeedDemo } from './lib/demoSeed'
 
 if (import.meta.env.PROD) {
   // Solo en producción: SW para offline. `autoUpdate` activa nuevas versiones al recargar.
@@ -14,6 +15,17 @@ if (import.meta.env.PROD) {
   void navigator.serviceWorker?.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()))
   void window.caches?.keys().then((keys) => keys.forEach((k) => caches.delete(k)))
 }
+
+// Demo pública: si la URL trae `?demo`, se rellena la base local con una cuenta
+// de ejemplo antes de montar la app (así se ve "usada"). `?demo=reset` rehace.
+if (shouldSeedDemo()) {
+  try {
+    await seedDemo()
+  } catch (e) {
+    console.error('No se pudo sembrar la demo', e)
+  }
+}
+cleanDemoParam()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -39,7 +39,9 @@ export function usePomodoroProgress(
     snap.status !== 'idle' &&
     ((link.taskId != null && snap.linkTaskId === link.taskId) ||
       (link.habitId != null && snap.linkHabitId === link.habitId))
-  const liveMin = liveLinked ? Math.floor((snap.totalMs - snap.remainingMs) / 60_000) : 0
+  // Minutos reales de la fase en curso: los mismos que se guardarán al
+  // cerrarla, así la barra no salta al terminar la sesión.
+  const liveMin = liveLinked ? Math.floor(snap.elapsedMs / 60_000) : 0
 
   const total = recorded + liveMin
   return {

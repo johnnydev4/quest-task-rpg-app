@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
+import { DB_NAME } from '../lib/demoMode'
 import type {
   AppMedia,
   Attachment,
@@ -21,7 +22,9 @@ import type {
   Tombstone,
 } from './types'
 
-const db = new Dexie('quest-db') as Dexie & {
+// En modo demo, `DB_NAME` es 'quest-db-demo': una base aparte, para que la
+// cuenta de ejemplo jamás se mezcle con los datos reales de quien la abra.
+const db = new Dexie(DB_NAME) as Dexie & {
   lists: EntityTable<List, 'id'>
   tasks: EntityTable<Task, 'id'>
   subtasks: EntityTable<Subtask, 'id'>

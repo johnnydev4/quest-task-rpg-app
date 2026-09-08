@@ -1,5 +1,6 @@
 import { db } from '../db/db'
 import { supabase } from './supabase'
+import { DEMO_MODE } from '../lib/demoMode'
 
 /**
  * Sincronización local-first (spec §4): Dexie es la fuente de verdad inmediata;
@@ -303,6 +304,8 @@ let pendingRetry = false
  * cliente pudo dejar atrás (ver `pull`).
  */
 export async function syncNow(full = false): Promise<{ ok: boolean; error?: string }> {
+  // La demo nunca sincroniza: sus datos viven solo en la base local aislada.
+  if (DEMO_MODE) return { ok: false, error: 'Demo: sincronización desactivada' }
   if (!supabase) return { ok: false, error: 'Supabase no está configurado' }
   if (syncing) {
     // Ya hay una sync en curso: reintenta al terminar para no perder este disparo.
@@ -341,7 +344,7 @@ let syncTimer: ReturnType<typeof setTimeout> | undefined
  * reinicia el temporizador para agrupar ráfagas de cambios en una sola sync.
  */
 export function scheduleSync(delay = 3000): void {
-  if (!supabase) return
+  if (DEMO_MODE || !supabase) return
   clearTimeout(syncTimer)
   syncTimer = setTimeout(() => {
     if (!navigator.onLine) return
@@ -376,7 +379,9 @@ let autoStarted = false
  * aparecen sin esperar a escribir algo aquí.
  */
 export function startAutoSync(): void {
-  if (autoStarted || !supabase) return
+  // En demo no se arranca sincronización alguna (ni al abrir, ni al reconectar,
+  // ni al escribir): la cuenta de ejemplo no debe tocar ninguna nube.
+  if (DEMO_MODE || autoStarted || !supabase) return
   autoStarted = true
 
   // Al arrancar: bajada completa reconciliadora (recupera lo que el cursor dejó atrás).

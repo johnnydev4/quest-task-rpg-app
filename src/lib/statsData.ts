@@ -1,4 +1,4 @@
-import type { Habit, List, StudySession, Tag, Task } from '../db/types'
+import type { Habit, HabitLog, List, StudySession, Tag, Task } from '../db/types'
 import { PRIORITY_LABEL } from './priority'
 
 export type StatsRange = '7d' | '30d' | '12m' | 'custom'
@@ -228,4 +228,148 @@ export function computeStats(
       focusMinutes: sessions.filter((s) => s.kind === 'focus').reduce((s, x) => s + x.focusMinutes, 0),
     },
   }
+}
+
+/** Un día del calendario de actividad (estilo GitHub). */
+export interface ContributionDay {
+  /** Día local 'YYYY-MM-DD'. */
+  key: string
+  /** Medianoche local del día, en ms. */
+  date: number
+  tasks: number
+  habits: number
+  focusMinutes: number
+  focusSessions: number
+  /** Actividad total del día: tareas + hábitos + sesiones de foco. */
+  total: number
+  /** Intensidad 0–4 para el tono del cuadrado. */
+  level: 0 | 1 | 2 | 3 | 4
+}
+
+export interface ContributionCalendar {
+  /** Columnas de 7 días (lunes→domingo); `null` = hueco antes del inicio o después de hoy. */
+  weeks: (ContributionDay | null)[][]
+  /** Etiqueta de mes por índice de columna, solo donde empieza un mes nuevo. */
+  monthLabels: { column: number; label: string }[]
+  totalDays: number
+  totalActivity: number
+  /** Racha de días activos que llega hasta hoy (o ayer, si hoy aún no hay actividad). */
+  currentStreak: number
+  /** Racha de días activos más larga del periodo. */
+  bestStreak: number
+}
+
+/**
+ * Calendario de actividad diaria de las últimas `weeks` semanas: cada día suma
+ * tareas completadas, hábitos cumplidos y sesiones de foco. Las columnas
+ * empiezan en lunes, como el resto de la app (locale es).
+ */
+export function contributionCalendar(
+  tasks: Task[],
+  sessions: StudySession[],
+  habitLogs: HabitLog[],
+  weeks = 53,
+): ContributionCalendar {
+  const perDay = new Map<string, ContributionDay>()
+  const touch = (key: string, date: number): ContributionDay => {
+    let day = perDay.get(key)
+    if (!day) {
+      day = { key, date, tasks: 0, habits: 0, focusMinutes: 0, focusSessions: 0, total: 0, level: 0 }
+      perDay.set(key, day)
+    }
+    return day
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  // Primera columna: el lunes de la semana en la que empieza el periodo.
+  const start = new Date(today)
+  start.setDate(start.getDate() - (weeks - 1) * 7)
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7))
+  const startMs = start.getTime()
+  const endMs = today.getTime() + 86_400_000
+
+  for (const t of tasks) {
+    if (!t.completed || t.completedAt === null) continue
+    if (t.completedAt < startMs || t.completedAt >= endMs) continue
+    const d = new Date(t.completedAt)
+    d.setHours(0, 0, 0, 0)
+    touch(dayKey(d), d.getTime()).tasks++
+  }
+
+  for (const s of sessions) {
+    if (s.kind !== 'focus') continue
+    if (s.startedAt < startMs || s.startedAt >= endMs) continue
+    const d = new Date(s.startedAt)
+    d.setHours(0, 0, 0, 0)
+    const day = touch(dayKey(d), d.getTime())
+    day.focusSessions++
+    day.focusMinutes += s.focusMinutes
+  }
+
+  for (const log of habitLogs) {
+    const at = log.completedAt ?? log.createdAt
+    if (at < startMs || at >= endMs) continue
+    const d = new Date(at)
+    d.setHours(0, 0, 0, 0)
+    touch(dayKey(d), d.getTime()).habits++
+  }
+
+  let max = 0
+  for (const day of perDay.values()) {
+    day.total = day.tasks + day.habits + day.focusSessions
+    if (day.total > max) max = day.total
+  }
+  // Cuatro tonos repartidos sobre el día más activo del periodo.
+  for (const day of perDay.values()) {
+    if (day.total <= 0) day.level = 0
+    else if (max <= 4) day.level = Math.min(4, day.total) as 1 | 2 | 3 | 4
+    else {
+      const ratio = day.total / max
+      day.level = ratio <= 0.25 ? 1 : ratio <= 0.5 ? 2 : ratio <= 0.75 ? 3 : 4
+    }
+  }
+
+  const grid: (ContributionDay | null)[][] = []
+  const monthLabels: { column: number; label: string }[] = []
+  const monthFmt = new Intl.DateTimeFormat('es', { month: 'short' })
+  const cursor = new Date(start)
+  let lastMonth = -1
+  for (let col = 0; col < weeks; col++) {
+    const column: (ContributionDay | null)[] = []
+    for (let row = 0; row < 7; row++) {
+      const ms = cursor.getTime()
+      if (ms > today.getTime()) column.push(null)
+      else column.push(perDay.get(dayKey(cursor)) ?? { key: dayKey(cursor), date: ms, tasks: 0, habits: 0, focusMinutes: 0, focusSessions: 0, total: 0, level: 0 })
+      cursor.setDate(cursor.getDate() + 1)
+    }
+    grid.push(column)
+    const first = column.find((d) => d !== null)
+    if (first) {
+      const month = new Date(first.date).getMonth()
+      if (month !== lastMonth) {
+        monthLabels.push({ column: col, label: monthFmt.format(first.date) })
+        lastMonth = month
+      }
+    }
+  }
+
+  const days = grid.flat().filter((d): d is ContributionDay => d !== null)
+  const totalActivity = days.reduce((sum, d) => sum + d.total, 0)
+  const totalDays = days.filter((d) => d.total > 0).length
+
+  let bestStreak = 0
+  let run = 0
+  for (const d of days) {
+    run = d.total > 0 ? run + 1 : 0
+    if (run > bestStreak) bestStreak = run
+  }
+  // Racha actual: se cuenta hacia atrás desde hoy; un hoy aún vacío no la rompe.
+  let currentStreak = 0
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (days[i].total > 0) currentStreak++
+    else if (i < days.length - 1) break
+  }
+
+  return { weeks: grid, monthLabels, totalDays, totalActivity, currentStreak, bestStreak }
 }

@@ -27,6 +27,7 @@ import {
   type StatsRange,
 } from '../../lib/statsData'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
+import ContributionGraph from './ContributionGraph'
 
 function cssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#8b5cf6'
@@ -182,6 +183,10 @@ export default function StatsView() {
           </span>
         )}
       </div>
+
+      <Card title="Actividad diaria · último año">
+        <ContributionGraph tasks={tasks} sessions={sessions} />
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Productividad · foco y tareas por fecha" className="lg:col-span-2">

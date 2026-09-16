@@ -11,9 +11,11 @@ import {
   setNodeText,
   toggleCollapsed,
 } from '../../db/repo/ideas'
-import { PlusIcon, SwordIcon, TrashIcon } from '../ui/icons'
+import { NoteIcon, PaletteIcon, PlusIcon, SwordIcon, TrashIcon } from '../ui/icons'
+import { StarRating } from '../ui/StarRating'
+import { NodeDetailsModal } from './NodeDetailsModal'
 import { QuestLinkMenu } from './QuestLinkMenu'
-import { flattenOutline, groupByParent, type FlatRow } from './tree'
+import { flattenOutline, groupByParent, resolveNodeColors, type FlatRow } from './tree'
 
 /** Ancho (px) de cada nivel de indentación en la lista. */
 const INDENT = 22
@@ -21,6 +23,8 @@ const INDENT = 22
 interface OutlineViewProps {
   mapId: string
   rootId: string
+  /** Color del árbol: lo heredan las ideas sin color propio. */
+  mapColor?: string | null
 }
 
 /**
@@ -30,13 +34,16 @@ interface OutlineViewProps {
  * Enter = idea hermana, Tab / Shift+Tab = anidar / desanidar, Alt+↑/↓ = reordenar,
  * ↑/↓ = moverse, Backspace en vacío = borrar.
  */
-export function OutlineView({ mapId, rootId }: OutlineViewProps) {
+export function OutlineView({ mapId, rootId, mapColor = null }: OutlineViewProps) {
   const nodes = useLiveQuery(() => db.ideaNodes.where('mapId').equals(mapId).toArray(), [mapId])
   // Nodo a enfocar tras una acción (crear, mover, borrar). Se "consume" al enfocar.
   const [focusId, setFocusId] = useState<string | null>(null)
+  // Idea con el panel de personalización abierto (color, estrellas, nota).
+  const [detailsId, setDetailsId] = useState<string | null>(null)
 
   const byParent = useMemo(() => groupByParent(nodes ?? []), [nodes])
   const flat = useMemo(() => flattenOutline(rootId, byParent), [rootId, byParent])
+  const colors = useMemo(() => resolveNodeColors(nodes ?? [], mapColor), [nodes, mapColor])
 
   async function addFirst() {
     const id = await addChild(mapId, rootId, '')
@@ -79,6 +86,8 @@ export function OutlineView({ mapId, rootId }: OutlineViewProps) {
               focusId={focusId}
               setFocusId={setFocusId}
               mapId={mapId}
+              color={colors.get(row.node.id) ?? mapColor}
+              onDetails={setDetailsId}
             />
           ))}
           <button
@@ -89,6 +98,8 @@ export function OutlineView({ mapId, rootId }: OutlineViewProps) {
           </button>
         </div>
       )}
+
+      {detailsId && <NodeDetailsModal nodeId={detailsId} onClose={() => setDetailsId(null)} />}
     </div>
   )
 }
@@ -110,9 +121,23 @@ interface NodeRowProps {
   focusId: string | null
   setFocusId: (id: string | null) => void
   mapId: string
+  /** Color efectivo (propio o heredado); null = sin color. */
+  color: string | null
+  onDetails: (id: string) => void
 }
 
-function NodeRow({ row, index, flat, siblings, childCount, focusId, setFocusId, mapId }: NodeRowProps) {
+function NodeRow({
+  row,
+  index,
+  flat,
+  siblings,
+  childCount,
+  focusId,
+  setFocusId,
+  mapId,
+  color,
+  onDetails,
+}: NodeRowProps) {
   const { node, depth, hasChildren } = row
   const [text, setText] = useState(node.text)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -198,7 +223,11 @@ function NodeRow({ row, index, flat, siblings, childCount, focusId, setFocusId, 
         <span key={i} className="shrink-0 border-l border-line/10" style={{ width: INDENT }} aria-hidden="true" />
       ))}
 
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg py-1 pr-1 transition-colors group-focus-within:bg-ink/[0.03]">
+      {/* Barra de color a la izquierda: identifica la rama de un vistazo. */}
+      <div
+        className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg py-1 pr-1 pl-1 transition-colors group-focus-within:bg-ink/[0.03]"
+        style={color ? { boxShadow: `inset 2px 0 0 ${color}` } : undefined}
+      >
         {/* Viñeta: pliega/despliega la rama si tiene hijos; si no, punto guía. */}
         {hasChildren ? (
           <button
@@ -213,7 +242,10 @@ function NodeRow({ row, index, flat, siblings, childCount, focusId, setFocusId, 
           </button>
         ) : (
           <span className="flex size-5 shrink-0 items-center justify-center" aria-hidden="true">
-            <span className="size-1.5 rounded-full bg-ink-faint" />
+            <span
+              className={`size-1.5 rounded-full ${color ? '' : 'bg-ink-faint'}`}
+              style={color ? { backgroundColor: color } : undefined}
+            />
           </span>
         )}
 
@@ -227,6 +259,16 @@ function NodeRow({ row, index, flat, siblings, childCount, focusId, setFocusId, 
           aria-label="Idea"
           className="min-w-0 flex-1 border-none bg-transparent py-0.5 text-sm text-ink placeholder-ink-faint outline-none focus:shadow-none"
         />
+
+        {/* Valoración: insignia de solo lectura; se puntúa desde el panel. */}
+        {node.rating != null && <StarRating value={node.rating} className="size-3" />}
+
+        {/* Hay nota interna: el icono la adelanta y la muestra completa al posarse. */}
+        {node.note && (
+          <span className="shrink-0 text-ink-faint" title={node.note}>
+            <NoteIcon className="size-3.5" />
+          </span>
+        )}
 
         {/* Insignia siempre visible si el nodo está vinculado a una misión. */}
         {node.linkedQuestId && (
@@ -244,6 +286,14 @@ function NodeRow({ row, index, flat, siblings, childCount, focusId, setFocusId, 
 
         {/* Acciones (aparecen al pasar el ratón o al enfocar la fila). */}
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          <button
+            onClick={() => onDetails(node.id)}
+            aria-label="Personalizar idea"
+            title="Color, valoración y nota"
+            className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-ink/10 hover:text-accent-300"
+          >
+            <PaletteIcon className="size-3.5" />
+          </button>
           <QuestLinkMenu nodeId={node.id} linkedQuestId={node.linkedQuestId} />
           <button
             onClick={() => void onAddChild()}

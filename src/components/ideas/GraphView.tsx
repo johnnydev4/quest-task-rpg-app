@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { hierarchy, tree, type HierarchyPointNode } from 'd3-hierarchy'
 import {
@@ -19,11 +19,12 @@ import type { IdeaNode } from '../../db/types'
 import { addChild, setNodePosition, setNodeText, toggleCollapsed } from '../../db/repo/ideas'
 import { resolveDark } from '../../lib/theme'
 import { useSettings } from '../../lib/useSettings'
-import { PlusIcon, SwordIcon } from '../ui/icons'
-import { findRoot, groupByParent } from './tree'
+import { NoteIcon, PaletteIcon, PlusIcon, StarIcon, SwordIcon } from '../ui/icons'
+import { NodeDetailsModal } from './NodeDetailsModal'
+import { findRoot, groupByParent, resolveNodeColors } from './tree'
 
 // Dimensiones del nodo y separaciones que alimentan el layout de d3.
-const NODE_W = 176
+const NODE_W = 200
 const NODE_H = 46
 const GAP_X = 26
 const GAP_Y = 62
@@ -35,10 +36,21 @@ const RADIAL_RING = 200
 // el icono de misión) para poder calcular la altura antes de pintar.
 const TEXT_LINE_H = 20
 const NODE_PAD_Y = 8
-/** Ancho útil del texto dentro de la tarjeta (sin icono de misión). */
-const TEXT_W = NODE_W - 24 - 20 - 6
-/** Lo que roba el icono de "vinculado a una misión". */
+/** Ancho útil del texto: la tarjeta menos su relleno y los dos botones de acción. */
+const TEXT_W = NODE_W - 24 - (20 + 6) * 2
+/** Lo que roba cada insignia previa al texto (misión, nota). */
 const ICON_W = 20
+/** Alto de la fila de estrellas cuando el nodo está valorado. */
+const RATING_H = 16
+
+/**
+ * Mismo color con transparencia (hex de 8 dígitos). Los colores vienen de la
+ * paleta o del selector nativo, siempre `#rrggbb`; cualquier otra cosa se
+ * devuelve tal cual para no inventarse un color roto.
+ */
+function tint(color: string, alpha: string): string {
+  return /^#[0-9a-f]{6}$/i.test(color) ? `${color}${alpha}` : color
+}
 
 let measureCtx: CanvasRenderingContext2D | null = null
 
@@ -81,10 +93,16 @@ export function wrapLines(text: string, width: number): string[] {
   return lines.length ? lines : ['']
 }
 
-/** Altura que necesita un nodo para mostrar todo su texto. */
-function nodeHeight(text: string, linked: boolean): number {
-  const lines = wrapLines(text || 'Sin texto', TEXT_W - (linked ? ICON_W : 0)).length
-  return Math.max(NODE_H, NODE_PAD_Y * 2 + lines * TEXT_LINE_H)
+/** Ancho que le queda al texto según las insignias que lleve el nodo delante. */
+function textWidthFor(linked: boolean, hasNote: boolean): number {
+  return TEXT_W - (linked ? ICON_W : 0) - (hasNote ? ICON_W : 0)
+}
+
+/** Altura que necesita un nodo para mostrar todo su texto (y sus estrellas). */
+function nodeHeight(n: IdeaNode): number {
+  const lines = wrapLines(n.text || 'Sin texto', textWidthFor(!!n.linkedQuestId, !!n.note)).length
+  const rating = n.rating ? RATING_H : 0
+  return Math.max(NODE_H, NODE_PAD_Y * 2 + lines * TEXT_LINE_H + rating)
 }
 
 export type GraphLayout = 'tree' | 'radial'
@@ -93,6 +111,8 @@ interface GraphViewProps {
   mapId: string
   rootId: string
   layout: GraphLayout
+  /** Color del árbol: lo heredan los nodos que no tengan color propio. */
+  mapColor?: string | null
 }
 
 /** Datos que viajan a cada nodo de React Flow para pintarlo e interactuar. */
@@ -103,6 +123,10 @@ interface FlowData extends Record<string, unknown> {
   linked: boolean
   layout: GraphLayout
   mapId: string
+  /** Color efectivo (propio o heredado); null = acento de la app. */
+  color: string | null
+  rating: number | null
+  note: string | null
 }
 
 type FlowNode = Node<FlowData, 'idea'>
@@ -124,8 +148,10 @@ function build(
   nodes: IdeaNode[],
   rootNode: IdeaNode,
   layout: GraphLayout,
+  mapColor: string | null,
 ): { nodes: FlowNode[]; edges: Edge[] } {
   const byParent = groupByParent(nodes)
+  const colors = resolveNodeColors(nodes, mapColor)
   const root = hierarchy<IdeaNode>(rootNode, (n) => (n.collapsed ? [] : (byParent.get(n.id) ?? [])))
 
   let positioned: HierarchyPointNode<IdeaNode>
@@ -150,7 +176,7 @@ function build(
     const rowTop = new Map<number, number>()
     const rowH = new Map<number, number>()
     for (const d of positioned.descendants()) {
-      const h = nodeHeight(d.data.text, !!d.data.linkedQuestId)
+      const h = nodeHeight(d.data)
       rowH.set(d.depth, Math.max(rowH.get(d.depth) ?? 0, h))
     }
     let y = 0
@@ -177,6 +203,9 @@ function build(
         linked: !!n.linkedQuestId,
         layout,
         mapId: n.mapId,
+        color: colors.get(n.id) ?? mapColor,
+        rating: n.rating ?? null,
+        note: n.note ?? null,
       },
       sourcePosition: Position.Bottom,
       targetPosition: Position.Top,
@@ -189,7 +218,12 @@ function build(
     target: l.target.data.id,
     // Top-down: escalón suave. Radial: recta centro-a-centro (radios limpios).
     type: layout === 'radial' ? 'straight' : 'smoothstep',
-    style: { stroke: 'var(--color-accent-500)', strokeWidth: 1.5 },
+    // La rama toma el color de su nodo destino: al colorear un nodo se tiñe
+    // toda la rama que cuelga de él, que es como se lee un mapa a golpe de vista.
+    style: {
+      stroke: colors.get(l.target.data.id) ?? mapColor ?? 'var(--color-accent-500)',
+      strokeWidth: 1.5,
+    },
   }))
 
   return { nodes: flowNodes, edges }
@@ -200,7 +234,7 @@ function signature(nodes: IdeaNode[]): string {
   return nodes
     .map(
       (n) =>
-        `${n.id}:${n.parentId}:${n.order}:${n.collapsed ? 1 : 0}:${n.x ?? ''}:${n.y ?? ''}:${n.linkedQuestId ?? ''}:${n.text}`,
+        `${n.id}:${n.parentId}:${n.order}:${n.collapsed ? 1 : 0}:${n.x ?? ''}:${n.y ?? ''}:${n.linkedQuestId ?? ''}:${n.color ?? ''}:${n.rating ?? ''}:${n.note ? 1 : 0}:${n.text}`,
     )
     .sort()
     .join('|')
@@ -208,10 +242,18 @@ function signature(nodes: IdeaNode[]): string {
 
 const nodeTypes = { idea: IdeaFlowNode }
 
-export function GraphView({ mapId, rootId, layout }: GraphViewProps) {
+/**
+ * Abre el panel de personalización de un nodo. Vive en un contexto porque el
+ * modal tiene que montarse fuera del lienzo: dentro de una tarjeta, React Flow
+ * se queda los gestos de arrastre y el panel no se deja usar.
+ */
+const OpenDetailsContext = createContext<(id: string) => void>(() => {})
+
+export function GraphView({ mapId, rootId, layout, mapColor = null }: GraphViewProps) {
   const settings = useSettings()
   const dark = resolveDark(settings.theme)
   const data = useLiveQuery(() => db.ideaNodes.where('mapId').equals(mapId).toArray(), [mapId])
+  const [detailsId, setDetailsId] = useState<string | null>(null)
 
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
@@ -222,13 +264,13 @@ export function GraphView({ mapId, rootId, layout }: GraphViewProps) {
     if (!data) return
     const rootNode = findRoot(data)
     if (!rootNode) return
-    const built = build(data, rootNode, layout)
+    const built = build(data, rootNode, layout, mapColor)
     setNodes(built.nodes)
     setEdges(built.edges)
     // Depende de la firma y del layout, no del array: no se rehace al arrastrar
     // (posición en vuelo) salvo que cambie la estructura, el texto o la vista.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig, rootId, layout])
+  }, [sig, rootId, layout, mapColor])
 
   if (data === undefined) {
     return (
@@ -239,34 +281,43 @@ export function GraphView({ mapId, rootId, layout }: GraphViewProps) {
   }
 
   return (
-    <div className="h-[68vh] min-h-[420px] overflow-hidden rounded-2xl border border-line/10 glass-panel">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodeDragStop={(_e, node) => void setNodePosition(node.id, node.position.x, node.position.y)}
-        colorMode={dark ? 'dark' : 'light'}
-        fitView
-        fitViewOptions={{ padding: 0.25 }}
-        minZoom={0.2}
-        maxZoom={1.75}
-        proOptions={{ hideAttribution: true }}
-        nodesConnectable={false}
-        elevateNodesOnSelect
-        zoomOnDoubleClick={false}
-      >
-        <Background gap={22} size={1} color="var(--color-line)" style={{ opacity: 0.12 }} />
-        <Controls showInteractive={false} />
-      </ReactFlow>
-    </div>
+    <OpenDetailsContext.Provider value={setDetailsId}>
+      <div className="h-[68vh] min-h-[420px] overflow-hidden rounded-2xl border border-line/10 glass-panel">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodeDragStop={(_e, node) => void setNodePosition(node.id, node.position.x, node.position.y)}
+          colorMode={dark ? 'dark' : 'light'}
+          fitView
+          fitViewOptions={{ padding: 0.25 }}
+          minZoom={0.2}
+          maxZoom={1.75}
+          proOptions={{ hideAttribution: true }}
+          nodesConnectable={false}
+          elevateNodesOnSelect
+          zoomOnDoubleClick={false}
+        >
+          <Background gap={22} size={1} color="var(--color-line)" style={{ opacity: 0.12 }} />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+      </div>
+
+      {detailsId && <NodeDetailsModal nodeId={detailsId} onClose={() => setDetailsId(null)} />}
+    </OpenDetailsContext.Provider>
   )
 }
 
-/** Nodo del mapa en las vistas gráficas: tarjeta con el texto, plegar y añadir. */
+/**
+ * Nodo del mapa en las vistas gráficas: tarjeta con el texto, sus estrellas y
+ * las acciones (personalizar, añadir, plegar). El color efectivo tiñe el borde
+ * y el fondo; sin color, el estilo neutro de siempre.
+ */
 function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
-  const { text, collapsed, hasChildren, linked, layout, mapId } = data
+  const { text, collapsed, hasChildren, linked, layout, mapId, color, rating, note } = data
+  const openDetails = useContext(OpenDetailsContext)
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(text)
 
@@ -290,58 +341,91 @@ function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
 
   return (
     <div
-      className={`group relative flex items-center gap-1.5 rounded-xl border bg-surface-800 px-3 py-2 shadow-sm transition-colors ${
-        linked ? 'border-accent-500/50' : 'border-line/15 hover:border-accent-500/40'
+      className={`group relative flex flex-col gap-1 rounded-xl border bg-surface-800 px-3 py-2 shadow-sm transition-colors ${
+        color ? '' : linked ? 'border-accent-500/50' : 'border-line/15 hover:border-accent-500/40'
       }`}
-      style={{ width: NODE_W, minHeight: NODE_H }}
+      style={{
+        width: NODE_W,
+        minHeight: NODE_H,
+        // El color propio manda sobre el estilo neutro: borde saturado y un
+        // fondo apenas teñido para que el texto siga legible en ambos temas.
+        ...(color ? { borderColor: tint(color, '99'), backgroundColor: tint(color, '1f') } : {}),
+      }}
     >
       <Handle type="target" position={Position.Top} className={handleClass} />
 
-      {linked && (
-        <span className="shrink-0 text-accent-400" title="Vinculado a una misión" aria-hidden="true">
-          <SwordIcon className="size-3.5" />
+      <div className="flex items-center gap-1.5">
+        {linked && (
+          <span className="shrink-0 text-accent-400" title="Vinculado a una misión" aria-hidden="true">
+            <SwordIcon className="size-3.5" />
+          </span>
+        )}
+
+        {note && (
+          <span className="shrink-0 text-ink-faint" title={note}>
+            <NoteIcon className="size-3.5" />
+          </span>
+        )}
+
+        {editing ? (
+          <textarea
+            autoFocus
+            value={value}
+            // Crece con el texto, igual que la tarjeta: nunca recorta.
+            rows={wrapLines(value, textWidthFor(linked, !!note)).length}
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                ;(e.target as HTMLTextAreaElement).blur()
+              }
+              if (e.key === 'Escape') {
+                setValue(text)
+                setEditing(false)
+              }
+            }}
+            aria-label="Texto de la idea"
+            className="nodrag nopan min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent p-0 text-sm leading-5 text-ink outline-none focus:shadow-none"
+          />
+        ) : (
+          <button
+            onDoubleClick={() => setEditing(true)}
+            className="min-w-0 flex-1 whitespace-pre-wrap break-words text-left text-sm font-medium leading-5 text-ink"
+            title="Doble clic para editar · arrastra para mover"
+          >
+            {text || <span className="text-ink-faint">Sin texto</span>}
+          </button>
+        )}
+
+        {/* Personalizar la idea: color, estrellas y nota. */}
+        <button
+          onClick={() => openDetails(id)}
+          aria-label="Personalizar idea"
+          title="Color, valoración y nota"
+          className="nodrag nopan flex size-5 shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity hover:bg-ink/10 hover:text-accent-300 group-hover:opacity-100"
+        >
+          <PaletteIcon className="size-3.5" />
+        </button>
+
+        {/* Añadir sub-idea (aparece al pasar el ratón). */}
+        <button
+          onClick={() => void addChild(mapId, id, '')}
+          aria-label="Añadir sub-idea"
+          className="nodrag nopan flex size-5 shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity hover:bg-ink/10 hover:text-accent-300 group-hover:opacity-100"
+        >
+          <PlusIcon className="size-3.5" />
+        </button>
+      </div>
+
+      {/* Valoración: insignia de solo lectura; se puntúa desde el panel. */}
+      {rating !== null && (
+        <span className="flex items-center gap-px text-amber-400" aria-label={`Valoración: ${rating} de 5`}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <StarIcon key={n} className="size-3" filled={n <= rating} />
+          ))}
         </span>
       )}
-
-      {editing ? (
-        <textarea
-          autoFocus
-          value={value}
-          // Crece con el texto, igual que la tarjeta: nunca recorta.
-          rows={wrapLines(value, TEXT_W - (linked ? ICON_W : 0)).length}
-          onChange={(e) => setValue(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              ;(e.target as HTMLTextAreaElement).blur()
-            }
-            if (e.key === 'Escape') {
-              setValue(text)
-              setEditing(false)
-            }
-          }}
-          aria-label="Texto de la idea"
-          className="nodrag nopan min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent p-0 text-sm leading-5 text-ink outline-none focus:shadow-none"
-        />
-      ) : (
-        <button
-          onDoubleClick={() => setEditing(true)}
-          className="min-w-0 flex-1 whitespace-pre-wrap break-words text-left text-sm font-medium leading-5 text-ink"
-          title="Doble clic para editar · arrastra para mover"
-        >
-          {text || <span className="text-ink-faint">Sin texto</span>}
-        </button>
-      )}
-
-      {/* Añadir sub-idea (aparece al pasar el ratón). */}
-      <button
-        onClick={() => void addChild(mapId, id, '')}
-        aria-label="Añadir sub-idea"
-        className="nodrag nopan flex size-5 shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity hover:bg-ink/10 hover:text-accent-300 group-hover:opacity-100"
-      >
-        <PlusIcon className="size-3.5" />
-      </button>
 
       <Handle type="source" position={Position.Bottom} className={handleClass} />
 

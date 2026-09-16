@@ -386,3 +386,47 @@ export function SearchIcon({ className }: { className?: string }) {
     </Icon>
   )
 }
+
+/**
+ * Estrella de valoración. Es la excepción a la regla de "solo línea": rellena
+ * marca las estrellas ganadas y hueca las que faltan, que es lo que hace legible
+ * un rating de un vistazo.
+ */
+export function StarIcon({ className, filled = false }: { className?: string; filled?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`shrink-0 ${className ?? 'size-4'}`}
+      aria-hidden="true"
+    >
+      <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9L12 3.5z" />
+    </svg>
+  )
+}
+
+/** Paleta: personalizar colores. */
+export function PaletteIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M12 3a9 9 0 1 0 0 18c1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.1 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.3-9-7.3z" />
+      <circle cx="7.5" cy="12" r="1" />
+      <circle cx="10" cy="8" r="1" />
+      <circle cx="15" cy="8.5" r="1" />
+    </Icon>
+  )
+}
+
+/** Nota: apuntes internos de una idea. */
+export function NoteIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3h11A1.5 1.5 0 0 1 19 4.5v15a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5v-15z" />
+      <path d="M8.5 8h7M8.5 12h7M8.5 16h4" />
+    </Icon>
+  )
+}

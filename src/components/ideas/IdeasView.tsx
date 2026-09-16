@@ -2,9 +2,10 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { IdeaMap, IdeaView } from '../../db/types'
-import { createMap, deleteMap, renameMap, setMapView, setNodeText } from '../../db/repo/ideas'
+import { createMap, deleteMap, renameMap, setMapColor, setMapView, setNodeText } from '../../db/repo/ideas'
+import { ColorPicker } from '../ui/ColorPicker'
 import { ConfirmButton } from '../ui/ConfirmButton'
-import { HierarchyIcon, PlusIcon } from '../ui/icons'
+import { HierarchyIcon, PaletteIcon, PlusIcon } from '../ui/icons'
 import { OutlineView } from './OutlineView'
 import { findRoot } from './tree'
 
@@ -121,7 +122,14 @@ function Gallery({ maps, onOpen }: { maps: IdeaMap[]; onOpen: (id: string) => vo
                 onClick={() => onOpen(m.id)}
                 className="group flex flex-col gap-2 rounded-2xl border border-line/10 glass-panel p-4 text-left transition-colors hover:border-accent-500/30"
               >
-                <span className="flex size-9 items-center justify-center rounded-xl bg-accent-500/10 text-accent-300" aria-hidden="true">
+                {/* El icono lleva el color del árbol: la galería se lee por color. */}
+                <span
+                  className={`flex size-9 items-center justify-center rounded-xl ${
+                    m.color ? '' : 'bg-accent-500/10 text-accent-300'
+                  }`}
+                  style={m.color ? { backgroundColor: `${m.color}1f`, color: m.color } : undefined}
+                  aria-hidden="true"
+                >
                   <HierarchyIcon className="size-5" />
                 </span>
                 <p className="line-clamp-2 font-semibold text-ink group-hover:text-accent-300">{m.title}</p>
@@ -173,6 +181,7 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
         </button>
         <MapTitle map={map} rootId={root?.id ?? null} />
         <div className="flex items-center gap-2">
+          <MapColorMenu map={map} />
           <ViewSwitcher value={mode} onChange={(v) => void setMapView(map.id, v)} />
           <ConfirmButton
             label="Eliminar"
@@ -188,7 +197,7 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
       {!root ? (
         <p className="py-10 text-center text-sm text-ink-faint">No se encontró la raíz de este mapa.</p>
       ) : mode === 'outline' ? (
-        <OutlineView mapId={map.id} rootId={root.id} />
+        <OutlineView mapId={map.id} rootId={root.id} mapColor={map.color ?? null} />
       ) : (
         <Suspense
           fallback={
@@ -197,7 +206,12 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
             </div>
           }
         >
-          <GraphView mapId={map.id} rootId={root.id} layout={mode === 'radial' ? 'radial' : 'tree'} />
+          <GraphView
+            mapId={map.id}
+            rootId={root.id}
+            layout={mode === 'radial' ? 'radial' : 'tree'}
+            mapColor={map.color ?? null}
+          />
         </Suspense>
       )}
     </div>
@@ -234,6 +248,64 @@ function MapTitle({ map, rootId }: { map: IdeaMap; rootId: string | null }) {
       className="min-w-0 flex-1 border-none bg-transparent text-lg font-bold text-ink placeholder-ink-faint outline-none focus:shadow-none"
       placeholder="Idea central"
     />
+  )
+}
+
+/**
+ * Color del árbol entero: lo heredan todas las ideas que no tengan color
+ * propio, así que es la forma rápida de dar identidad a un mapa sin ir nodo a
+ * nodo. Desplegable compacto junto al conmutador de vistas.
+ */
+function MapColorMenu({ map }: { map: IdeaMap }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const color = map.color ?? null
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', onDoc)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label="Color del árbol"
+        title="Color del árbol"
+        className="flex size-9 items-center justify-center rounded-lg border border-line/10 glass-input text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
+        style={color ? { color } : undefined}
+      >
+        <PaletteIcon className="size-4.5" />
+      </button>
+
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Color del árbol"
+          className="absolute right-0 z-40 mt-1 w-64 rounded-xl border border-line/10 glass-strong p-3 shadow-2xl"
+          style={{ animation: 'menu-pop 0.14s ease-out both' }}
+        >
+          <p className="mb-2 text-[0.625rem] font-semibold tracking-wide text-ink-faint uppercase">
+            Color del árbol
+          </p>
+          <ColorPicker value={color} onChange={(c) => void setMapColor(map.id, c)} allowNone allowCustom />
+          <p className="mt-2 text-xs text-ink-faint">
+            Tiñe las ramas y las ideas que no tengan un color propio.
+          </p>
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -65,6 +65,14 @@ export async function setMapView(id: string, view: IdeaView): Promise<void> {
   await db.ideaMaps.update(id, { view, updatedAt: Date.now(), syncStatus: 'pending' })
 }
 
+/**
+ * Color del árbol entero: tiñe las ramas y los nodos sin color propio. null
+ * vuelve al acento de la app.
+ */
+export async function setMapColor(id: string, color: string | null): Promise<void> {
+  await db.ideaMaps.update(id, { color, updatedAt: Date.now(), syncStatus: 'pending' })
+}
+
 export async function reorderMaps(ids: string[]): Promise<void> {
   await db.transaction('rw', db.ideaMaps, async () => {
     for (let i = 0; i < ids.length; i++) {
@@ -141,6 +149,27 @@ export async function addSiblingAfter(nodeId: string, text = ''): Promise<string
 
 export async function setNodeText(id: string, text: string): Promise<void> {
   await db.ideaNodes.update(id, { text: text.trim(), updatedAt: Date.now(), syncStatus: 'pending' })
+}
+
+/** Color propio del nodo (hex). null = hereda el del mapa. */
+export async function setNodeColor(id: string, color: string | null): Promise<void> {
+  await db.ideaNodes.update(id, { color, updatedAt: Date.now(), syncStatus: 'pending' })
+}
+
+/**
+ * Valoración de 1 a 5 estrellas. Cualquier valor fuera de ese rango (o null)
+ * deja el nodo sin valorar, que es también cómo se quita pulsando la estrella
+ * ya marcada.
+ */
+export async function setNodeRating(id: string, rating: number | null): Promise<void> {
+  const value = rating === null || rating < 1 || rating > 5 ? null : Math.round(rating)
+  await db.ideaNodes.update(id, { rating: value, updatedAt: Date.now(), syncStatus: 'pending' })
+}
+
+/** Nota interna del nodo. Vacía se guarda como null (no hay nota). */
+export async function setNodeNote(id: string, note: string): Promise<void> {
+  const t = note.trim()
+  await db.ideaNodes.update(id, { note: t || null, updatedAt: Date.now(), syncStatus: 'pending' })
 }
 
 export async function setCollapsed(id: string, collapsed: boolean): Promise<void> {

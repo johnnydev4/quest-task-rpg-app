@@ -253,6 +253,11 @@ export interface IdeaMap {
   title: string
   /** Última vista usada, para reabrir el mapa como se dejó. */
   view: IdeaView
+  /**
+   * Color del árbol entero (hex): tiñe las ramas y los nodos que no tengan
+   * color propio. null/ausente = color de acento de la app.
+   */
+  color?: string | null
   /** Posición manual (arrastrar y soltar) en la galería de mapas. */
   order: number
   createdAt: number
@@ -280,6 +285,15 @@ export interface IdeaNode {
   y?: number | null
   /** Orden entre hermanos. */
   order: number
+  /**
+   * Color propio del nodo (hex). null/ausente = hereda el color del mapa, y
+   * este a su vez el acento de la app.
+   */
+  color?: string | null
+  /** Valoración de 1 a 5 estrellas (importancia/confianza). null = sin valorar. */
+  rating?: number | null
+  /** Nota interna del nodo: contexto que no cabe en el título de la idea. */
+  note?: string | null
   /** Vínculo opcional con una quest del sistema RPG (Fase 2 de esta feature). */
   linkedQuestId?: string | null
   createdAt: number

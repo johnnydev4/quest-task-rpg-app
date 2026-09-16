@@ -30,6 +30,63 @@ const GAP_Y = 62
 /** Distancia entre anillos concéntricos en la vista radial. */
 const RADIAL_RING = 200
 
+// El texto no se recorta: envuelve en varias líneas y el nodo crece. Estas
+// medidas replican la caja real (px-3, gap-1.5, botón de añadir y, si lo hay,
+// el icono de misión) para poder calcular la altura antes de pintar.
+const TEXT_LINE_H = 20
+const NODE_PAD_Y = 8
+/** Ancho útil del texto dentro de la tarjeta (sin icono de misión). */
+const TEXT_W = NODE_W - 24 - 20 - 6
+/** Lo que roba el icono de "vinculado a una misión". */
+const ICON_W = 20
+
+let measureCtx: CanvasRenderingContext2D | null = null
+
+/** Ancho en píxeles de un texto con la tipografía del nodo (aprox. por canvas). */
+function textWidth(s: string): number {
+  if (!measureCtx && typeof document !== 'undefined') {
+    const ctx = document.createElement('canvas').getContext('2d')
+    if (ctx) {
+      ctx.font = "500 14px 'Inter Variable', ui-sans-serif, system-ui, sans-serif"
+      measureCtx = ctx
+    }
+  }
+  if (measureCtx) return measureCtx.measureText(s).width
+  return s.length * 7 // fallback sin DOM (SSR/tests)
+}
+
+/** Parte el texto en las líneas que ocuparía dentro de `width` píxeles. */
+export function wrapLines(text: string, width: number): string[] {
+  const lines: string[] = []
+  for (const para of text.split('\n')) {
+    let line = ''
+    for (const word of para.split(/\s+/).filter(Boolean)) {
+      const next = line ? `${line} ${word}` : word
+      if (line && textWidth(next) > width) {
+        lines.push(line)
+        line = word
+      } else {
+        line = next
+      }
+      // Palabra suelta más ancha que la caja: se corta por caracteres.
+      while (textWidth(line) > width && line.length > 1) {
+        let cut = line.length
+        while (cut > 1 && textWidth(line.slice(0, cut)) > width) cut--
+        lines.push(line.slice(0, cut))
+        line = line.slice(cut)
+      }
+    }
+    lines.push(line)
+  }
+  return lines.length ? lines : ['']
+}
+
+/** Altura que necesita un nodo para mostrar todo su texto. */
+function nodeHeight(text: string, linked: boolean): number {
+  const lines = wrapLines(text || 'Sin texto', TEXT_W - (linked ? ICON_W : 0)).length
+  return Math.max(NODE_H, NODE_PAD_Y * 2 + lines * TEXT_LINE_H)
+}
+
 export type GraphLayout = 'tree' | 'radial'
 
 interface GraphViewProps {
@@ -87,7 +144,21 @@ function build(
     }
   } else {
     positioned = tree<IdeaNode>().nodeSize([NODE_W + GAP_X, NODE_H + GAP_Y])(root)
-    for (const d of positioned.descendants()) auto.set(d.data.id, { x: d.x, y: d.y })
+    // d3 separa las filas con una altura fija; como los nodos crecen según su
+    // texto, recolocamos cada nivel apilando la altura real más alta de la fila
+    // anterior para que nunca se solapen.
+    const rowTop = new Map<number, number>()
+    const rowH = new Map<number, number>()
+    for (const d of positioned.descendants()) {
+      const h = nodeHeight(d.data.text, !!d.data.linkedQuestId)
+      rowH.set(d.depth, Math.max(rowH.get(d.depth) ?? 0, h))
+    }
+    let y = 0
+    for (let depth = 0; depth <= positioned.height; depth++) {
+      rowTop.set(depth, y)
+      y += (rowH.get(depth) ?? NODE_H) + GAP_Y
+    }
+    for (const d of positioned.descendants()) auto.set(d.data.id, { x: d.x, y: rowTop.get(d.depth) ?? d.y })
   }
 
   const flowNodes: FlowNode[] = positioned.descendants().map((d) => {
@@ -233,25 +304,30 @@ function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
       )}
 
       {editing ? (
-        <input
+        <textarea
           autoFocus
           value={value}
+          // Crece con el texto, igual que la tarjeta: nunca recorta.
+          rows={wrapLines(value, TEXT_W - (linked ? ICON_W : 0)).length}
           onChange={(e) => setValue(e.target.value)}
           onBlur={commit}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              ;(e.target as HTMLTextAreaElement).blur()
+            }
             if (e.key === 'Escape') {
               setValue(text)
               setEditing(false)
             }
           }}
           aria-label="Texto de la idea"
-          className="nodrag nopan min-w-0 flex-1 border-none bg-transparent text-sm text-ink outline-none focus:shadow-none"
+          className="nodrag nopan min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent p-0 text-sm leading-5 text-ink outline-none focus:shadow-none"
         />
       ) : (
         <button
           onDoubleClick={() => setEditing(true)}
-          className="min-w-0 flex-1 truncate text-left text-sm font-medium text-ink"
+          className="min-w-0 flex-1 whitespace-pre-wrap break-words text-left text-sm font-medium leading-5 text-ink"
           title="Doble clic para editar · arrastra para mover"
         >
           {text || <span className="text-ink-faint">Sin texto</span>}

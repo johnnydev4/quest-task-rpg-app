@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Task } from '../../db/types'
 import { formatDue, startOfToday } from '../../lib/dates'
+import { recursOnDay } from '../../lib/recurrence'
 import { moveOverdueToToday, setTaskCompleted, skipOverdue } from '../../db/repo/tasks'
 import { CheckCircleIcon, ForwardIcon, HistoryIcon, SunIcon } from '../ui/icons'
 
@@ -55,6 +56,10 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
   }
 
   const allIds = visible.map((t) => t.id)
+  // Tareas que la repetición ya asigna a hoy (a diario o por día de la semana):
+  // solo se pueden completar o saltar; "traer a hoy" sería redundante.
+  const recursToday = (t: Task) => t.recurrenceRule !== null && recursOnDay(t.recurrenceRule)
+  const movableIds = visible.filter((t) => !recursToday(t)).map((t) => t.id)
 
   return (
     <div
@@ -72,7 +77,9 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
             <p className="text-sm font-semibold text-ink">
               {visible.length} {visible.length === 1 ? 'tarea vencida' : 'tareas vencidas'}
             </p>
-            <p className="text-xs text-ink-muted">Sáltalas o tráelas al día de hoy.</p>
+            <p className="text-xs text-ink-muted">
+              {movableIds.length === 0 ? 'Complétalas o sáltalas.' : 'Sáltalas o tráelas al día de hoy.'}
+            </p>
           </div>
           <button
             onClick={close}
@@ -112,14 +119,16 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
               >
                 <ForwardIcon className="size-4" />
               </button>
-              <button
-                onClick={() => void handle(moveOverdueToToday, [t.id])}
-                aria-label={`Agregar ${t.title} a hoy`}
-                title="Agregar a hoy"
-                className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-accent-500/10 hover:text-accent-400"
-              >
-                <SunIcon className="size-4" />
-              </button>
+              {!recursToday(t) && (
+                <button
+                  onClick={() => void handle(moveOverdueToToday, [t.id])}
+                  aria-label={`Agregar ${t.title} a hoy`}
+                  title="Agregar a hoy"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-accent-500/10 hover:text-accent-400"
+                >
+                  <SunIcon className="size-4" />
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -132,13 +141,15 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
           >
             Saltar todas
           </button>
-          <button
-            onClick={() => void handle(moveOverdueToToday, allIds)}
-            disabled={busy}
-            className="flex-1 rounded-xl bg-accent-600 px-3 py-2 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500 disabled:opacity-50"
-          >
-            Agregar a hoy
-          </button>
+          {movableIds.length > 0 && (
+            <button
+              onClick={() => void handle(moveOverdueToToday, movableIds)}
+              disabled={busy}
+              className="flex-1 rounded-xl bg-accent-600 px-3 py-2 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500 disabled:opacity-50"
+            >
+              Agregar a hoy
+            </button>
+          )}
         </div>
       </div>
     </div>

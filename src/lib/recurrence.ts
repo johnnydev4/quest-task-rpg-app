@@ -55,6 +55,19 @@ export function firstDayOfWeekOnOrAfter(fromMs: number, daysOfWeek: number[]): n
   return d.getTime()
 }
 
+/**
+ * ¿La recurrencia ya asigna la tarea al día de `date`? Cierto si repite todos
+ * los días (cada 1 día) o si sus días de la semana incluyen el de `date`. Se usa
+ * en el aviso de vencidas: si ya toca hoy por repetición, no ofrecemos "traer a
+ * hoy" (sería redundante), solo completar o saltar.
+ */
+export function recursOnDay(rule: RecurrenceRule, date: Date = new Date()): boolean {
+  if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+    return rule.daysOfWeek.includes(date.getDay())
+  }
+  return rule.unit === 'day' && rule.every === 1
+}
+
 /** ¿La recurrencia permite crear la siguiente ocurrencia en `nextMs`? */
 export function allowsNext(rule: RecurrenceRule, nextMs: number): boolean {
   if (rule.end.type === 'count') return rule.end.remaining > 0

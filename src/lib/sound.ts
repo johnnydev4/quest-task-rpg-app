@@ -23,6 +23,25 @@ function getCtx(): AudioContext | null {
   }
 }
 
+/**
+ * Reanuda el contexto si hace falta y ejecuta `schedule` SOLO cuando ya está
+ * corriendo. Es clave para los avisos que no nacen de un clic (fin de fase del
+ * Pomodoro): si la pestaña estuvo en segundo plano el navegador suspende el
+ * audio, y `resume()` es asíncrono. Agendar los tonos antes de que reanude los
+ * clava en un `currentTime` congelado que, al volver el reloj, ya quedó en el
+ * pasado y no suena nada. Esperando a `resume()` los tonos se agendan sobre el
+ * reloj ya en marcha y se oyen en cuanto el contexto vuelve a estar activo.
+ */
+function playWhenReady(schedule: (audio: AudioContext) => void): void {
+  const audio = getCtx()
+  if (!audio) return
+  if (audio.state === 'suspended') {
+    audio.resume().then(() => schedule(audio)).catch(() => undefined)
+  } else {
+    schedule(audio)
+  }
+}
+
 interface Tone {
   type: OscillatorType
   from: number
@@ -49,19 +68,20 @@ function playTone(audio: AudioContext, tone: Tone): void {
 }
 
 export function playCompletion(id: CompletionSoundId, volume: number): void {
-  const audio = getCtx()
-  if (!audio || volume <= 0) return
+  if (volume <= 0) return
   const v = Math.min(1, volume)
-  if (id === 'pop') {
-    playTone(audio, { type: 'sine', from: 520, to: 165, dur: 0.13, peak: v * 0.5 })
-    playTone(audio, { type: 'sine', from: 950, to: 420, dur: 0.06, peak: v * 0.15 })
-  } else if (id === 'chime') {
-    playTone(audio, { type: 'sine', from: 1046.5, dur: 0.5, peak: v * 0.25 })
-    playTone(audio, { type: 'sine', from: 1568, delay: 0.015, dur: 0.35, peak: v * 0.1 })
-  } else {
-    playTone(audio, { type: 'triangle', from: 1900, dur: 0.045, peak: v * 0.4 })
-    playTone(audio, { type: 'square', from: 3800, dur: 0.02, peak: v * 0.06 })
-  }
+  playWhenReady((audio) => {
+    if (id === 'pop') {
+      playTone(audio, { type: 'sine', from: 520, to: 165, dur: 0.13, peak: v * 0.5 })
+      playTone(audio, { type: 'sine', from: 950, to: 420, dur: 0.06, peak: v * 0.15 })
+    } else if (id === 'chime') {
+      playTone(audio, { type: 'sine', from: 1046.5, dur: 0.5, peak: v * 0.25 })
+      playTone(audio, { type: 'sine', from: 1568, delay: 0.015, dur: 0.35, peak: v * 0.1 })
+    } else {
+      playTone(audio, { type: 'triangle', from: 1900, dur: 0.045, peak: v * 0.4 })
+      playTone(audio, { type: 'square', from: 3800, dur: 0.02, peak: v * 0.06 })
+    }
+  })
 }
 
 let lastScrollAt = 0
@@ -122,11 +142,12 @@ export function playSidebarHover(volume: number): void {
 
 /** Aviso suave de cambio de fase del Pomodoro (foco ⇄ descanso). */
 export function playPhaseChange(volume: number): void {
-  const audio = getCtx()
-  if (!audio || volume <= 0) return
+  if (volume <= 0) return
   const v = Math.min(1, volume)
-  playTone(audio, { type: 'sine', from: 660, dur: 0.35, peak: v * 0.25 })
-  playTone(audio, { type: 'sine', from: 880, delay: 0.18, dur: 0.45, peak: v * 0.2 })
+  playWhenReady((audio) => {
+    playTone(audio, { type: 'sine', from: 660, dur: 0.35, peak: v * 0.25 })
+    playTone(audio, { type: 'sine', from: 880, delay: 0.18, dur: 0.45, peak: v * 0.2 })
+  })
 }
 
 /**
@@ -134,23 +155,25 @@ export function playPhaseChange(volume: number): void {
  * presentes que el aviso de foco→descanso, porque hay que volver al trabajo.
  */
 export function playBreakEnd(volume: number): void {
-  const audio = getCtx()
-  if (!audio || volume <= 0) return
+  if (volume <= 0) return
   const v = Math.min(1, volume)
-  const notes = [784, 988, 1319]
-  notes.forEach((freq, i) => {
-    playTone(audio, { type: 'triangle', from: freq, delay: i * 0.22, dur: 0.32, peak: v * 0.32 })
+  playWhenReady((audio) => {
+    const notes = [784, 988, 1319]
+    notes.forEach((freq, i) => {
+      playTone(audio, { type: 'triangle', from: freq, delay: i * 0.22, dur: 0.32, peak: v * 0.32 })
+    })
   })
 }
 
 /** Arpegio ascendente (C-E-G-C) con brillo final: la recompensa "especial" del level-up. */
 export function playLevelUp(volume: number): void {
-  const audio = getCtx()
-  if (!audio || volume <= 0) return
+  if (volume <= 0) return
   const v = Math.min(1, volume)
-  const notes = [523.25, 659.25, 783.99, 1046.5]
-  notes.forEach((freq, i) => {
-    playTone(audio, { type: 'sine', from: freq, delay: i * 0.09, dur: 0.45, peak: v * 0.22 })
+  playWhenReady((audio) => {
+    const notes = [523.25, 659.25, 783.99, 1046.5]
+    notes.forEach((freq, i) => {
+      playTone(audio, { type: 'sine', from: freq, delay: i * 0.09, dur: 0.45, peak: v * 0.22 })
+    })
+    playTone(audio, { type: 'sine', from: 2093, delay: 0.36, dur: 0.55, peak: v * 0.08 })
   })
-  playTone(audio, { type: 'sine', from: 2093, delay: 0.36, dur: 0.55, peak: v * 0.08 })
 }

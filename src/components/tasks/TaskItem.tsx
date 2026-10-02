@@ -175,6 +175,8 @@ export function TaskItem({
   const subDone = subtasks?.filter((s) => s.completed).length ?? 0
 
   const overdue = task.dueAt !== null && !task.completed && isOverdue(task.dueAt)
+  // Prioridad alta: resplandor pulsante que reclama la atención (no en completadas).
+  const highPriority = task.priority === 'high' && !task.completed
   const taskTags = (tagsById ? task.tagIds.map((id) => tagsById.get(id)).filter(Boolean) : []) as Tag[]
   // Barra de objetivo pomodoro: minutos de foco de hoy vinculados a esta tarea.
   const pomo = usePomodoroProgress({ taskId: task.id }, task.pomodoroMinutes)
@@ -186,7 +188,7 @@ export function TaskItem({
     <div
       className={`group flex items-center gap-3 rounded-xl border task-opaque px-3 py-1.5 transition-colors ${
         picked ? 'border-accent-400/60 bg-accent-500/10' : 'border-line/5 hover:border-line/15'
-      }`}
+      } ${highPriority && !picked ? 'task-priority-high' : ''}`}
       onContextMenu={(e) => {
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })

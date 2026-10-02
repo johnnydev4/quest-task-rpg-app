@@ -42,6 +42,16 @@ const TEXT_W = NODE_W - 24 - (20 + 6) * 2
 const ICON_W = 20
 /** Alto de la fila de estrellas cuando el nodo está valorado. */
 const RATING_H = 16
+/** Caja de la nota interna bajo el título (texto más pequeño y tenue). */
+const NOTE_LINE_H = 16
+/** Separación de la nota: su borde superior (pt-1) y el margen (mt-1). */
+const NOTE_PAD_Y = 9
+/** Ancho útil de la nota: ocupa toda la tarjeta menos su relleno lateral. */
+const NOTE_W = NODE_W - 24
+
+// Tipografías reales de cada parte de la tarjeta, para medir igual que se pinta.
+const NODE_FONT = "500 14px 'Inter Variable', ui-sans-serif, system-ui, sans-serif"
+const NOTE_FONT = "400 12px 'Inter Variable', ui-sans-serif, system-ui, sans-serif"
 
 /**
  * Mismo color con transparencia (hex de 8 dígitos). Los colores vienen de la
@@ -54,36 +64,35 @@ function tint(color: string, alpha: string): string {
 
 let measureCtx: CanvasRenderingContext2D | null = null
 
-/** Ancho en píxeles de un texto con la tipografía del nodo (aprox. por canvas). */
-function textWidth(s: string): number {
+/** Ancho en píxeles de un texto con la tipografía indicada (aprox. por canvas). */
+function textWidth(s: string, font: string = NODE_FONT): number {
   if (!measureCtx && typeof document !== 'undefined') {
-    const ctx = document.createElement('canvas').getContext('2d')
-    if (ctx) {
-      ctx.font = "500 14px 'Inter Variable', ui-sans-serif, system-ui, sans-serif"
-      measureCtx = ctx
-    }
+    measureCtx = document.createElement('canvas').getContext('2d')
   }
-  if (measureCtx) return measureCtx.measureText(s).width
+  if (measureCtx) {
+    measureCtx.font = font
+    return measureCtx.measureText(s).width
+  }
   return s.length * 7 // fallback sin DOM (SSR/tests)
 }
 
 /** Parte el texto en las líneas que ocuparía dentro de `width` píxeles. */
-export function wrapLines(text: string, width: number): string[] {
+export function wrapLines(text: string, width: number, font: string = NODE_FONT): string[] {
   const lines: string[] = []
   for (const para of text.split('\n')) {
     let line = ''
     for (const word of para.split(/\s+/).filter(Boolean)) {
       const next = line ? `${line} ${word}` : word
-      if (line && textWidth(next) > width) {
+      if (line && textWidth(next, font) > width) {
         lines.push(line)
         line = word
       } else {
         line = next
       }
       // Palabra suelta más ancha que la caja: se corta por caracteres.
-      while (textWidth(line) > width && line.length > 1) {
+      while (textWidth(line, font) > width && line.length > 1) {
         let cut = line.length
-        while (cut > 1 && textWidth(line.slice(0, cut)) > width) cut--
+        while (cut > 1 && textWidth(line.slice(0, cut), font) > width) cut--
         lines.push(line.slice(0, cut))
         line = line.slice(cut)
       }
@@ -98,11 +107,12 @@ function textWidthFor(linked: boolean, hasNote: boolean): number {
   return TEXT_W - (linked ? ICON_W : 0) - (hasNote ? ICON_W : 0)
 }
 
-/** Altura que necesita un nodo para mostrar todo su texto (y sus estrellas). */
+/** Altura que necesita un nodo para mostrar todo su texto, estrellas y nota. */
 function nodeHeight(n: IdeaNode): number {
   const lines = wrapLines(n.text || 'Sin texto', textWidthFor(!!n.linkedQuestId, !!n.note)).length
   const rating = n.rating ? RATING_H : 0
-  return Math.max(NODE_H, NODE_PAD_Y * 2 + lines * TEXT_LINE_H + rating)
+  const note = n.note ? NOTE_PAD_Y + wrapLines(n.note, NOTE_W, NOTE_FONT).length * NOTE_LINE_H : 0
+  return Math.max(NODE_H, NODE_PAD_Y * 2 + lines * TEXT_LINE_H + rating + note)
 }
 
 export type GraphLayout = 'tree' | 'radial'
@@ -390,9 +400,9 @@ function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
           />
         ) : (
           <button
-            onDoubleClick={() => setEditing(true)}
-            className="min-w-0 flex-1 whitespace-pre-wrap break-words text-left text-sm font-medium leading-5 text-ink"
-            title="Doble clic para editar · arrastra para mover"
+            onClick={() => setEditing(true)}
+            className="nodrag nopan min-w-0 flex-1 cursor-text whitespace-pre-wrap break-words text-left text-sm font-medium leading-5 text-ink"
+            title="Clic para editar · arrastra el nodo para moverlo"
           >
             {text || <span className="text-ink-faint">Sin texto</span>}
           </button>
@@ -425,6 +435,13 @@ function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
             <StarIcon key={n} className="size-3" filled={n <= rating} />
           ))}
         </span>
+      )}
+
+      {/* Nota interna a la vista: el contexto que no cabe en el título de la idea. */}
+      {note && (
+        <p className="mt-1 whitespace-pre-wrap break-words border-t border-line/10 pt-1 text-xs leading-4 text-ink-faint">
+          {note}
+        </p>
       )}
 
       <Handle type="source" position={Position.Bottom} className={handleClass} />

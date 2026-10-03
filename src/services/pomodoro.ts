@@ -8,6 +8,7 @@ import { emitToast } from '../lib/events'
 import { playBreakEnd, playPhaseChange } from '../lib/sound'
 import { notificationService } from './notifications'
 import { setAmbientSuspended, startAmbient, stopAmbient } from './ambient'
+import { keepScreenAwake } from './wakeLock'
 
 export type PomodoroPhase = 'focus' | 'short' | 'long'
 export type PomodoroStatus = 'idle' | 'running' | 'paused'
@@ -175,6 +176,9 @@ class PomodoroEngine {
   private publish(): void {
     this.snapshot = this.toSnapshot()
     this.syncDocumentTitle()
+    // Durante un descanso en marcha, impide que salte el protector de pantalla
+    // o se suspenda el equipo (el usuario se aleja del teclado).
+    keepScreenAwake(this.state.status === 'running' && this.state.phase !== 'focus')
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state))
     } catch {

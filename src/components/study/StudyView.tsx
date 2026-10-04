@@ -215,9 +215,12 @@ function Controls({ timer }: { timer: PomodoroSnapshot }) {
 export function StudyView() {
   const timer = useTimer()
   const settings = useSettings()
-  const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
+  // Solo tareas pendientes CON un pomodoro asignado pueden vincularse al foco.
   const pendingTasks =
-    useLiveQuery(async () => (await db.tasks.toArray()).filter((t) => !t.completed), []) ?? []
+    useLiveQuery(
+      async () => (await db.tasks.toArray()).filter((t) => !t.completed && t.pomodoroMinutes != null),
+      [],
+    ) ?? []
   const todayMinutes =
     useLiveQuery(async () => {
       const sessions = await db.studySessions.where('dateKey').equals(localDateKey()).toArray()
@@ -232,12 +235,15 @@ export function StudyView() {
     async () => (timer.linkHabitId ? await db.habits.get(timer.linkHabitId) : undefined),
     [timer.linkHabitId],
   )
+  // Solo hábitos activos CON un pomodoro asignado pueden vincularse al foco.
   const activeHabits =
     useLiveQuery(async () => {
       const all = await db.habits.toArray()
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      return all.filter((h) => h.endDate === null || h.endDate >= today.getTime())
+      return all.filter(
+        (h) => (h.endDate === null || h.endDate >= today.getTime()) && h.pomodoroMinutes != null,
+      )
     }, []) ?? []
 
   const progress = timer.totalMs > 0 ? 1 - timer.remainingMs / timer.totalMs : 0
@@ -272,7 +278,7 @@ export function StudyView() {
     setSoundPaused(!soundPaused)
   }
 
-  // Selectores de vínculo (tarea/hábito/lista): disponibles antes de la sesión
+  // Selectores de vínculo (tarea/hábito): disponibles antes de la sesión
   // y también durante la sesión minimizada (el vínculo no cambia la duración).
   // Duraciones de la sesión, editables antes de empezar y durante la sesión
   // minimizada. El control de la fase en curso ajusta el tiempo restante al
@@ -307,7 +313,7 @@ export function StudyView() {
   )
 
   const linkSelectors = (
-    <div className="grid w-full gap-4 sm:grid-cols-3">
+    <div className="grid w-full gap-4 sm:grid-cols-2">
       <label className="space-y-1.5">
         <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Vincular a tarea</span>
         <select
@@ -336,21 +342,6 @@ export function StudyView() {
             <option key={h.id} value={h.id}>
               {h.title}
               {h.pomodoroMinutes != null ? ` · ${h.pomodoroMinutes} min` : ''}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="space-y-1.5">
-        <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Vincular a lista</span>
-        <select
-          value={timer.linkListId ?? ''}
-          onChange={(e) => void pomodoro.setLink({ listId: e.target.value || null })}
-          className={selectClass}
-        >
-          <option value="">Sin lista</option>
-          {lists.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
             </option>
           ))}
         </select>
@@ -484,7 +475,6 @@ export function StudyView() {
           onClick={() =>
             pomodoro.start({
               taskId: timer.linkTaskId,
-              listId: timer.linkListId,
               habitId: timer.linkHabitId,
             })
           }

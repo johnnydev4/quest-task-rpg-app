@@ -42,6 +42,48 @@ function playWhenReady(schedule: (audio: AudioContext) => void): void {
   }
 }
 
+let keepAliveSource: AudioBufferSourceNode | null = null
+
+/**
+ * Mantiene el AudioContext "en marcha" durante toda la sesión de Pomodoro con
+ * una fuente silenciosa en bucle. Sin esto, cuando el usuario deja la pestaña
+ * en segundo plano durante el descanso (se aleja del teclado), el navegador
+ * suspende el audio y el aviso de fin de descanso no puede reanudarse sin un
+ * gesto: el usuario no oye nada (o lo oye recién al volver a la pestaña).
+ *
+ * Debe arrancarse desde un gesto (iniciar/reanudar), que es justo cuando empieza
+ * cada fase: así el contexto queda desbloqueado y corriendo para toda la fase.
+ */
+export function startAudioKeepAlive(): void {
+  const audio = getCtx()
+  if (!audio || keepAliveSource) return
+  try {
+    // Un segundo de silencio en bucle: mantiene vivo el hilo de audio sin sonar.
+    const buffer = audio.createBuffer(1, audio.sampleRate, audio.sampleRate)
+    const src = audio.createBufferSource()
+    src.buffer = buffer
+    src.loop = true
+    const gain = audio.createGain()
+    gain.gain.value = 0
+    src.connect(gain)
+    gain.connect(audio.destination)
+    src.start()
+    keepAliveSource = src
+  } catch {
+    // Sin audio: el temporizador sigue; solo el aviso podría no sonar en segundo plano.
+  }
+}
+
+export function stopAudioKeepAlive(): void {
+  try {
+    keepAliveSource?.stop()
+  } catch {
+    // ya estaba detenido
+  }
+  keepAliveSource?.disconnect()
+  keepAliveSource = null
+}
+
 interface Tone {
   type: OscillatorType
   from: number

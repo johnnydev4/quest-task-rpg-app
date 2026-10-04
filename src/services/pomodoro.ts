@@ -5,7 +5,7 @@ import { getSettings } from '../db/repo/settings'
 import { applyXp } from '../db/repo/progress'
 import { localDateKey } from '../lib/dates'
 import { emitToast } from '../lib/events'
-import { playBreakEnd, playPhaseChange } from '../lib/sound'
+import { playBreakEnd, playPhaseChange, startAudioKeepAlive, stopAudioKeepAlive } from '../lib/sound'
 import { notificationService } from './notifications'
 import { setAmbientSuspended, startAmbient, stopAmbient } from './ambient'
 import { keepScreenAwake } from './wakeLock'
@@ -264,6 +264,9 @@ class PomodoroEngine {
         pomodorosDone: 0,
       }
       if (s.soundEnabled) startAmbient(s.ambientSound, s.ambientVolume)
+      // Desde el gesto de iniciar: mantiene el audio vivo toda la sesión para que
+      // el aviso de fin de descanso suene aunque la pestaña quede en segundo plano.
+      startAudioKeepAlive()
       this.startTicking()
       this.publish()
     })
@@ -337,6 +340,7 @@ class PomodoroEngine {
     this.state.status = 'paused'
     this.state.remainingMs = Math.max(0, this.state.endsAt - Date.now())
     stopAmbient()
+    stopAudioKeepAlive()
     this.stopTicking()
     this.publish()
   }
@@ -346,6 +350,9 @@ class PomodoroEngine {
     this.state.status = 'running'
     this.state.runStartedAt = Date.now()
     this.state.endsAt = Date.now() + this.state.remainingMs
+    // Cada fase (también el descanso) arranca aquí, desde el clic de "Reanudar":
+    // es el gesto que desbloquea y mantiene vivo el audio durante toda la fase.
+    startAudioKeepAlive()
     if (this.state.phase === 'focus') {
       // Foco que arranca tras un descanso (quedó en pausa): marca el inicio real.
       this.state.focusStartedAt ??= Date.now()
@@ -368,6 +375,7 @@ class PomodoroEngine {
   /** Detiene y descarta la fase actual (no registra nada). */
   reset(): void {
     stopAmbient()
+    stopAudioKeepAlive()
     this.stopTicking()
     const totalMs = this.state.totalMs
     this.state = { ...fresh(totalMs), pomodorosDone: 0 }
@@ -447,6 +455,7 @@ class PomodoroEngine {
     this.state.runStartedAt = null
     this.state.status = 'idle'
     stopAmbient()
+    stopAudioKeepAlive()
     this.stopTicking()
     return pending ? await this.creditFocus(elapsedMs, false) : true
   }

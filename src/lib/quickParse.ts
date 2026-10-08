@@ -1,4 +1,5 @@
-import type { RecurrenceRule } from '../db/types'
+import type { Priority, RecurrenceRule } from '../db/types'
+import { PRIORITY_LABEL } from './priority'
 import { describeRule } from './recurrence'
 
 /**
@@ -13,6 +14,8 @@ export interface QuickParseResult {
   dueAt: number | null
   dueHasTime: boolean
   recurrenceRule: RecurrenceRule | null
+  /** Prioridad detectada en el texto (!alta/!media/!baja); null si no se escribió. */
+  priority: Priority | null
   tagNames: string[]
   /** Resumen legible de lo detectado, para la vista previa bajo el input. */
   chips: string[]
@@ -61,6 +64,25 @@ const MONTH_NAMES: Record<string, number> = {
 }
 
 const DAY_ALTERNATION = 'lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo'
+
+/**
+ * Prioridad escrita como "!alta" (acepta género, inglés y sinónimos). Las
+ * claves van en orden de longitud descendente para que la alternancia del
+ * regex no corte "media" quedándose en "medi".
+ */
+const PRIORITY_WORDS: Record<string, Priority> = {
+  urgente: 'high',
+  alta: 'high',
+  alto: 'high',
+  high: 'high',
+  media: 'medium',
+  medio: 'medium',
+  medium: 'medium',
+  normal: 'medium',
+  baja: 'low',
+  bajo: 'low',
+  low: 'low',
+}
 
 interface RecurrenceUnitMatch {
   unit: RecurrenceRule['unit']
@@ -142,6 +164,7 @@ export function parseQuickAdd(raw: string, lists: QuickParseList[] = []): QuickP
   let date: Date | null = null
   let rule: RecurrenceRule | null = null
   let ruleWeekday: number | null = null
+  let priority: Priority | null = null
 
   const consume = (re: RegExp, handler: (m: RegExpMatchArray) => void): void => {
     const m = s.match(re)
@@ -155,6 +178,13 @@ export function parseQuickAdd(raw: string, lists: QuickParseList[] = []): QuickP
     tagNames.push(m[1])
   }
   s = s.replace(/(?:^|\s)#[\p{L}\p{N}_-]+/gu, ' ')
+
+  // 1b) Prioridad: !alta / !media / !baja (acepta género, inglés y sinónimos).
+  // Gana la última escrita, por si el usuario se corrige sobre la marcha.
+  const prioWords = Object.keys(PRIORITY_WORDS).sort((a, b) => b.length - a.length).join('|')
+  const prioRe = new RegExp(`(?:^|\\s)!(${prioWords})\\b`, 'gi')
+  for (const m of s.matchAll(prioRe)) priority = PRIORITY_WORDS[m[1].toLowerCase()]
+  s = s.replace(prioRe, ' ')
 
   // 2) Hora — antes que la fecha, para que "de la mañana" no se confunda con "mañana".
   consume(
@@ -329,6 +359,7 @@ export function parseQuickAdd(raw: string, lists: QuickParseList[] = []): QuickP
       chips.push(`🔁 ${describeRule(r).toLowerCase()}`)
     }
   }
+  if (priority !== null) chips.push(`⚡ ${PRIORITY_LABEL[priority]}`)
   for (const t of tagNames) chips.push(`#${t}`)
 
   const finalTitle = title || raw.trim()
@@ -338,6 +369,7 @@ export function parseQuickAdd(raw: string, lists: QuickParseList[] = []): QuickP
     dueAt,
     dueHasTime,
     recurrenceRule: rule,
+    priority,
     tagNames,
     chips,
     listId: null,

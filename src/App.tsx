@@ -424,6 +424,7 @@ export default function App() {
             : null),
       dueHasTime: parsed.dueHasTime,
       recurrenceRule: parsed.recurrenceRule,
+      priority: parsed.priority,
     })
   }
 

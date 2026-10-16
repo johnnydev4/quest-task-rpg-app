@@ -505,10 +505,47 @@ textarea:focus {
   }
 }
 
+/*
+ * Ola de gradiente rojo que barre el banner de lado a lado, sumándose al
+ * resplandor. Una banda diagonal translúcida de peligro se desplaza en bucle.
+ * El fondo se tilea (background-size 200%) para que el ciclo sea continuo.
+ */
+@keyframes priority-wave {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
 /* Doble clase para ganar en especificidad a la utilidad de borde de Tailwind. */
 .task-opaque.task-priority-high {
+  position: relative;
+  /* Nuevo contexto de apilamiento: la ola (z-index -1) queda sobre la
+     superficie pero bajo el texto, sin escaparse del banner. */
+  isolation: isolate;
   border-color: color-mix(in srgb, var(--t-danger) 50%, transparent);
   animation: priority-glow 1.8s ease-in-out infinite;
+}
+
+.task-opaque.task-priority-high::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    color-mix(in srgb, var(--t-danger) 4%, transparent) 20%,
+    color-mix(in srgb, var(--t-danger) 22%, transparent) 50%,
+    color-mix(in srgb, var(--t-danger) 4%, transparent) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: priority-wave 3.2s linear infinite;
 }
 
 /* Respeta la preferencia de menos movimiento (spec §13: accesibilidad). */

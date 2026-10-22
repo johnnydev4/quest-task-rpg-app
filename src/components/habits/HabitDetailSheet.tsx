@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import { deleteHabit, updateHabit } from '../../db/repo/habits'
@@ -13,6 +13,29 @@ import { CustomMinutesInput } from '../tasks/TaskDetail'
 import { DayPicker } from './DayPicker'
 
 const POMODORO_PRESETS = [10, 15, 25, 45, 60, 90]
+
+/**
+ * Tarjeta de cristal líquido con una etiqueta y su control, igual que los
+ * grupos del detalle de tarea (`Group`), para que los ajustes del hábito
+ * tengan el mismo aspecto Liquid Glass agrupado.
+ */
+function Section({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3 overflow-hidden rounded-2xl border border-line/5 glass-panel p-4">
+      <span className="block text-xs font-semibold tracking-wide text-ink-faint uppercase">{label}</span>
+      {children}
+    </div>
+  )
+}
+
+/** Pastilla de opción (días, pomodoro, lista) con el estilo del detalle de tarea. */
+function pillClass(selected: boolean) {
+  return `rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors ${
+    selected
+      ? 'border-accent-500/50 bg-accent-500/15 text-accent-300'
+      : 'border-line/10 text-ink-muted hover:bg-ink/5'
+  }`
+}
 
 /**
  * Hoja de ajustes de un hábito (como el menú de una tarea): título, días,
@@ -44,11 +67,9 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
     setTitle(null)
   }
 
-  const sectionLabel = 'block text-xs font-semibold tracking-wide text-ink-faint uppercase'
-
   return (
     <Sheet title="Ajustar hábito" onClose={onClose}>
-      <div className="space-y-5 pb-2">
+      <div className="space-y-4 pb-2">
         {/* Título */}
         <input
           value={title ?? habit.title}
@@ -56,21 +77,19 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
           onBlur={saveTitle}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
           aria-label="Título del hábito"
-          className="w-full border-none bg-transparent text-xl font-semibold text-ink outline-none focus:shadow-none"
+          className="w-full border-none bg-transparent px-1 text-xl font-semibold text-ink outline-none focus:shadow-none"
         />
 
         {/* Días programados */}
-        <div className="space-y-2">
-          <span className={sectionLabel}>Días a cumplir</span>
+        <Section label="Días a cumplir">
           <DayPicker
             value={habit.daysOfWeek}
             onChange={(days) => days.length > 0 && void updateHabit(habit.id, { daysOfWeek: [...days].sort() })}
           />
-        </div>
+        </Section>
 
         {/* Fecha límite / indefinido */}
-        <div className="space-y-2">
-          <span className={sectionLabel}>Duración</span>
+        <Section label="Duración">
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex cursor-pointer items-center gap-1.5 text-sm text-ink-dim">
               <input
@@ -89,7 +108,7 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
                 type="button"
                 onClick={() => setCalOpen((v) => !v)}
                 aria-expanded={calOpen}
-                className="flex items-center gap-1.5 rounded-lg border border-line/10 px-3 py-1.5 text-sm text-ink-dim transition-colors hover:bg-ink/5"
+                className="flex items-center gap-1.5 rounded-xl border border-line/10 px-3 py-1.5 text-sm text-ink-dim transition-colors hover:bg-ink/5"
               >
                 Hasta el {endLabel}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`size-3.5 transition-transform ${calOpen ? 'rotate-90' : ''}`} aria-hidden="true">
@@ -108,32 +127,26 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
               }}
             />
           )}
-        </div>
+        </Section>
 
         {/* Aviso */}
-        <div className="space-y-2">
-          <span className={sectionLabel}>Recordarme</span>
+        <Section label="Recordarme">
           <TimeSelect
             value={habit.reminderTime ?? ''}
             onChange={(v) => void updateHabit(habit.id, { reminderTime: v || null })}
             noneLabel="Sin aviso"
             ariaLabel="Hora del aviso del hábito"
           />
-        </div>
+        </Section>
 
         {/* Pomodoro */}
-        <div className="space-y-2">
-          <span className={sectionLabel}>Pomodoro</span>
+        <Section label="Pomodoro">
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => void updateHabit(habit.id, { pomodoroMinutes: null })}
               aria-pressed={habit.pomodoroMinutes == null}
-              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                habit.pomodoroMinutes == null
-                  ? 'border-accent-500/50 bg-accent-500/15 text-accent-300'
-                  : 'border-line/10 text-ink-muted hover:bg-ink/5'
-              }`}
+              className={pillClass(habit.pomodoroMinutes == null)}
             >
               Sin pomodoro
             </button>
@@ -143,11 +156,7 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
                 type="button"
                 onClick={() => void updateHabit(habit.id, { pomodoroMinutes: m })}
                 aria-pressed={habit.pomodoroMinutes === m}
-                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  habit.pomodoroMinutes === m
-                    ? 'border-accent-500/50 bg-accent-500/15 text-accent-300'
-                    : 'border-line/10 text-ink-muted hover:bg-ink/5'
-                }`}
+                className={pillClass(habit.pomodoroMinutes === m)}
               >
                 {m} min
               </button>
@@ -176,21 +185,16 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
               ▶ Empezar ahora · objetivo {habit.pomodoroMinutes} min
             </button>
           )}
-        </div>
+        </Section>
 
         {/* Lista (atributo RPG): el XP del hábito sube ese atributo */}
-        <div className="space-y-2">
-          <span className={sectionLabel}>Lista</span>
+        <Section label="Lista">
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => void updateHabit(habit.id, { listId: null })}
               aria-pressed={habit.listId == null}
-              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                habit.listId == null
-                  ? 'border-accent-500/50 bg-accent-500/15 text-accent-300'
-                  : 'border-line/10 text-ink-muted hover:bg-ink/5'
-              }`}
+              className={pillClass(habit.listId == null)}
             >
               Sin lista
             </button>
@@ -200,11 +204,7 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
                 type="button"
                 onClick={() => void updateHabit(habit.id, { listId: l.id })}
                 aria-pressed={habit.listId === l.id}
-                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  habit.listId === l.id
-                    ? 'border-accent-500/50 bg-accent-500/15 text-accent-300'
-                    : 'border-line/10 text-ink-muted hover:bg-ink/5'
-                }`}
+                className={`flex items-center gap-1.5 ${pillClass(habit.listId === l.id)}`}
               >
                 <span
                   className={`size-2 rounded-full ${l.color ? '' : 'border-2 border-ink-muted'}`}
@@ -215,10 +215,10 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
               </button>
             ))}
           </div>
-        </div>
+        </Section>
 
         {/* Eliminar */}
-        <div className="flex items-center justify-between gap-3 border-t border-line/5 pt-3">
+        <div className="flex items-center justify-between gap-3 px-1 pt-1">
           <span className="min-w-0 text-xs text-ink-faint">
             {lastDone ? `Último cumplimiento: ${formatDateTime(lastDone)}` : 'Aún sin cumplimientos'}
           </span>

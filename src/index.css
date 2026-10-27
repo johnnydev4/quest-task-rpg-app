@@ -222,6 +222,19 @@ a {
 }
 
 /*
+ * Cabecera pegajosa DENTRO de un panel que ya es cristal (detalle de tarea y
+ * hoja de hábito en escritorio). El panel ya aporta su tinte; si la cabecera
+ * usara otra capa completa (.glass-bar/.glass-strong) el tinte se duplicaría y
+ * se vería como una franja opaca más oscura que el cuerpo. Aquí solo va el
+ * tinte mínimo para tapar el contenido al hacer scroll, más blur para el
+ * efecto frosted, de modo que la cabecera se funde con el panel.
+ */
+.glass-header {
+  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(16% * var(--t-glass-op))), transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+/*
  * Controles de formulario (inputs, selects) en cristal: translúcidos con brillo
  * superior. Sin backdrop-filter a propósito: anidado dentro de un panel que ya
  * lo usa, iOS Safari lo ignora y el control se ve opaco/plano.

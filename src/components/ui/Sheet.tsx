@@ -48,7 +48,7 @@ export function Sheet({ title, onClose, children }: SheetProps) {
         }
         style={{ animation: `${side ? 'slide-in-right 0.28s' : 'sheet-up 0.26s'} ease-out both` }}
       >
-        <div className={`sticky top-0 z-10 ${side ? 'glass-bar' : 'glass-strong'}`}>
+        <div className={`sticky top-0 z-10 ${side ? 'glass-header' : 'glass-strong'}`}>
           {!side && (
             <div className="flex justify-center pt-2.5">
               <span className="h-1 w-9 rounded-full bg-ink/25" aria-hidden="true" />

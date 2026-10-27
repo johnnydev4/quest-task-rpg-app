@@ -1079,7 +1079,7 @@ export default function App() {
           style={{ animation: 'slide-in-right 0.28s ease-out both' }}
           aria-label="Detalle de la tarea"
         >
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-strong px-5 py-4">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-bar px-5 py-4">
             <h2 className="text-lg font-semibold text-ink">Detalles</h2>
             <button
               onClick={() => setDetailId(null)}

@@ -43,12 +43,12 @@ export function Sheet({ title, onClose, children }: SheetProps) {
         aria-label={title}
         className={
           side
-            ? 'relative h-full w-[25rem] max-w-full overflow-y-auto overscroll-contain border-l border-line/10 glass-strong shadow-2xl'
+            ? 'relative h-full w-[25rem] max-w-full overflow-y-auto overscroll-contain border-l border-line/10 glass-bar shadow-2xl'
             : 'relative max-h-[82dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-line/5 glass-strong shadow-2xl'
         }
         style={{ animation: `${side ? 'slide-in-right 0.28s' : 'sheet-up 0.26s'} ease-out both` }}
       >
-        <div className="sticky top-0 z-10 glass-strong">
+        <div className={`sticky top-0 z-10 ${side ? 'glass-bar' : 'glass-strong'}`}>
           {!side && (
             <div className="flex justify-center pt-2.5">
               <span className="h-1 w-9 rounded-full bg-ink/25" aria-hidden="true" />

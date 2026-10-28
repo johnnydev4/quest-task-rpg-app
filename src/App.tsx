@@ -12,7 +12,7 @@ import { createTask, reorderTasks } from './db/repo/tasks'
 import { markOverdueNoticeShown } from './db/repo/progress'
 import { NO_DAY_SECTION } from './db/repo/daySections'
 import { getOrCreateTag } from './db/repo/tags'
-import { emitConfigOpened, onCompletion, onConfigOpened, onOpenStudy } from './lib/events'
+import { emitConfigOpened, onCompletion, onConfigOpened, onOpenHabit, onOpenStudy } from './lib/events'
 import { MISSIONS_ENABLED } from './lib/features'
 import type { QuickParseResult } from './lib/quickParse'
 import { playCompletion, playLevelUp } from './lib/sound'
@@ -51,6 +51,8 @@ import { WeeklyQuestBanner } from './components/quests/WeeklyQuestBanner'
 import { IdeasView } from './components/ideas/IdeasView'
 import { HabitsView } from './components/habits/HabitsView'
 import { HabitsDoneToday, PendingHabits, useTodayHabits } from './components/habits/HabitsToday'
+import { HabitDetailContent } from './components/habits/HabitDetailSheet'
+import { Sheet } from './components/ui/Sheet'
 import { CheckSquareIcon, FlameIcon } from './components/ui/icons'
 import { pomodoro } from './services/pomodoro'
 
@@ -177,6 +179,20 @@ export default function App() {
     () =>
       onConfigOpened((d) => {
         if (d.source !== 'task-detail') setDetailId(null)
+      }),
+    [],
+  )
+  // Detalle de hábito: vive aquí (como el de tarea) para que el panel lateral
+  // empuje el contenido y no oscurezca la pantalla. Lo abren las tarjetas vía evento.
+  const [habitDetailId, setHabitDetailId] = useState<string | null>(null)
+  useEffect(() => onOpenHabit((id) => setHabitDetailId(id)), [])
+  useEffect(() => {
+    if (habitDetailId) emitConfigOpened('habit-detail')
+  }, [habitDetailId])
+  useEffect(
+    () =>
+      onConfigOpened((d) => {
+        if (d.source !== 'habit-detail') setHabitDetailId(null)
       }),
     [],
   )
@@ -1095,6 +1111,39 @@ export default function App() {
             <TaskDetailContent taskId={detailId} onClose={() => setDetailId(null)} />
           </div>
         </aside>
+      )}
+
+      {/* Detalle de hábito en escritorio: mismo panel lateral que la tarea (no oscurece) */}
+      {habitDetailId && isDesktop && (
+        <aside
+          key={habitDetailId}
+          className="sticky top-0 hidden h-dvh w-[25rem] max-w-[45vw] shrink-0 overflow-y-auto border-l border-line/10 glass-bar lg:block"
+          style={{ animation: 'slide-in-right 0.28s ease-out both' }}
+          aria-label="Ajustar hábito"
+        >
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-header px-5 py-4">
+            <h2 className="text-lg font-semibold text-ink">Ajustar hábito</h2>
+            <button
+              onClick={() => setHabitDetailId(null)}
+              aria-label="Cerrar detalle"
+              className="flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-5" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="p-5">
+            <HabitDetailContent habitId={habitDetailId} onClose={() => setHabitDetailId(null)} />
+          </div>
+        </aside>
+      )}
+
+      {/* Detalle de hábito en móvil: hoja inferior (como el modal de tarea) */}
+      {habitDetailId && !isDesktop && (
+        <Sheet title="Ajustar hábito" onClose={() => setHabitDetailId(null)}>
+          <HabitDetailContent habitId={habitDetailId} onClose={() => setHabitDetailId(null)} />
+        </Sheet>
       )}
 
       {overdueNotice && view.kind === 'today' && (

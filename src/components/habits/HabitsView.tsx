@@ -1,16 +1,15 @@
-import { useEffect, useId, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import { createHabit, reorderHabits, updateHabit } from '../../db/repo/habits'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { COMBO_TIERS, habitEnded, RAINBOW_GRADIENT } from '../../lib/habits'
-import { emitConfigOpened, onConfigOpened } from '../../lib/events'
+import { emitOpenHabit } from '../../lib/events'
 import { TimeSelect } from '../ui/TimeSelect'
 import { SortMenu } from '../ui/SortMenu'
 import { DayPicker } from './DayPicker'
 import { HabitCard } from './HabitCard'
-import { HabitDetailSheet } from './HabitDetailSheet'
 
 const inputClass =
   'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
@@ -32,20 +31,9 @@ export function HabitsView() {
   const [indefinite, setIndefinite] = useState(false)
   const [reminderTime, setReminderTime] = useState('')
   const [pomodoroMin, setPomodoroMin] = useState('')
-  // Tocar un hábito abre su hoja de ajustes (solo un panel de config a la vez).
-  const instanceId = useId()
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const openHabit = (id: string) => {
-    emitConfigOpened(instanceId)
-    setEditingId(id)
-  }
-  useEffect(
-    () =>
-      onConfigOpened((d) => {
-        if (d.source !== instanceId) setEditingId(null)
-      }),
-    [instanceId],
-  )
+  // Tocar un hábito abre su detalle en el panel lateral que gestiona App
+  // (mismo comportamiento que una tarea: empuja el contenido, no oscurece).
+  const openHabit = (id: string) => emitOpenHabit(id)
 
   const [habitSort, setHabitSort] = useState<HabitSortMode>(
     () => (localStorage.getItem('quest-habit-sort') as HabitSortMode) || 'created',
@@ -217,7 +205,6 @@ export function HabitsView() {
         </div>
       )}
 
-      {editingId && <HabitDetailSheet habitId={editingId} onClose={() => setEditingId(null)} />}
 
       {/* Leyenda de la escalera de combos */}
       <div className="rounded-2xl border border-line/5 glass-panel p-4">

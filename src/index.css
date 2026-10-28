@@ -230,7 +230,7 @@ a {
  * efecto frosted, de modo que la cabecera se funde con el panel.
  */
 .glass-header {
-  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(16% * var(--t-glass-op))), transparent);
+  background-color: color-mix(in srgb, var(--t-glass) min(100%, calc(8% * var(--t-glass-op))), transparent);
   backdrop-filter: blur(12px) saturate(140%);
 }
 

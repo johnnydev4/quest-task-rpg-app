@@ -1,8 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { Habit } from '../../db/types'
-import { emitConfigOpened, onConfigOpened } from '../../lib/events'
+import { emitOpenHabit } from '../../lib/events'
 import { localDateKey } from '../../lib/dates'
 import { habitEnded, isScheduledToday } from '../../lib/habits'
 import { reorderHabits } from '../../db/repo/habits'
@@ -10,7 +10,6 @@ import { useBulkMove } from '../../lib/bulkMove'
 import { useSelection } from '../../lib/selection'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { HabitCard } from './HabitCard'
-import { HabitDetailSheet } from './HabitDetailSheet'
 
 /**
  * Hábitos que tocan hoy, partidos en pendientes y completados. Al completar,
@@ -60,26 +59,12 @@ export function useTodayHabits(): { pendingHabits: Habit[]; completedHabits: Hab
 }
 
 /**
- * Abre la hoja de ajustes de un hábito. Solo un panel de configuración a la vez
- * en toda la app: al abrir se avisa (cierra el detalle de tarea u otras hojas)
- * y se escucha para cerrarse cuando abre otro.
+ * Abre el detalle de un hábito en el panel lateral que gestiona App (mismo
+ * comportamiento que una tarea: empuja el contenido, no oscurece la pantalla).
  */
 function useHabitSheet() {
-  const instanceId = useId()
-  const [editingId, setEditingId] = useState<string | null>(null)
-  useEffect(
-    () =>
-      onConfigOpened((d) => {
-        if (d.source !== instanceId) setEditingId(null)
-      }),
-    [instanceId],
-  )
-  const openHabit = (id: string) => {
-    emitConfigOpened(instanceId)
-    setEditingId(id)
-  }
-  const sheet = editingId && <HabitDetailSheet habitId={editingId} onClose={() => setEditingId(null)} />
-  return { openHabit, sheet }
+  const openHabit = (id: string) => emitOpenHabit(id)
+  return { openHabit, sheet: null }
 }
 
 /**

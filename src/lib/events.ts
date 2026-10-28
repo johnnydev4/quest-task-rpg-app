@@ -40,6 +40,23 @@ export function onConfigOpened(handler: (detail: ConfigOpenedDetail) => void): (
   return () => window.removeEventListener(CONFIG_EVENT, listener)
 }
 
+/**
+ * Pedido de abrir el detalle de un hábito. Lo emiten las tarjetas de hábito
+ * (lista y vista Hoy) y lo escucha App, que renderiza el panel lateral junto
+ * al detalle de tarea (mismo comportamiento: empuja el contenido, no oscurece).
+ */
+const OPEN_HABIT_EVENT = 'quest:open-habit'
+
+export function emitOpenHabit(id: string): void {
+  window.dispatchEvent(new CustomEvent<string>(OPEN_HABIT_EVENT, { detail: id }))
+}
+
+export function onOpenHabit(handler: (id: string) => void): () => void {
+  const listener = (e: Event) => handler((e as CustomEvent<string>).detail)
+  window.addEventListener(OPEN_HABIT_EVENT, listener)
+  return () => window.removeEventListener(OPEN_HABIT_EVENT, listener)
+}
+
 /** Pedido de ir a la vista Estudio (p. ej. al iniciar un pomodoro desde una tarea, que abra en pantalla completa). */
 const OPEN_STUDY_EVENT = 'quest:open-study'
 

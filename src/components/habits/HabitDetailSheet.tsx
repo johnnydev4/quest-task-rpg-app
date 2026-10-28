@@ -7,7 +7,6 @@ import { emitOpenStudy, emitToast } from '../../lib/events'
 import { pomodoro } from '../../services/pomodoro'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { MiniCalendar } from '../ui/MiniCalendar'
-import { Sheet } from '../ui/Sheet'
 import { TimeSelect } from '../ui/TimeSelect'
 import { CustomMinutesInput } from '../tasks/TaskDetail'
 import { DayPicker } from './DayPicker'
@@ -38,10 +37,12 @@ function pillClass(selected: boolean) {
 }
 
 /**
- * Hoja de ajustes de un hábito (como el menú de una tarea): título, días,
- * fecha límite o indefinido, hora del aviso, pomodoro y eliminar.
+ * Contenido del detalle de un hábito (como el menú de una tarea): título, días,
+ * fecha límite o indefinido, hora del aviso, pomodoro y eliminar. Sin contenedor:
+ * lo coloca App dentro del panel lateral (escritorio) o de la hoja inferior (móvil),
+ * igual que el detalle de tarea.
  */
-export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClose: () => void }) {
+export function HabitDetailContent({ habitId, onClose }: { habitId: string; onClose: () => void }) {
   const habit = useLiveQuery(() => db.habits.get(habitId), [habitId])
   const lists = useLiveQuery(() => db.lists.orderBy('order').toArray(), []) ?? []
   // Último cumplimiento con su hora exacta (los registros viejos solo tienen createdAt).
@@ -68,8 +69,7 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
   }
 
   return (
-    <Sheet title="Ajustar hábito" onClose={onClose}>
-      <div className="space-y-4 pb-2">
+    <div className="space-y-4 pb-2">
         {/* Título */}
         <input
           value={title ?? habit.title}
@@ -91,7 +91,7 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
         {/* Fecha límite / indefinido */}
         <Section label="Duración">
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-1.5 text-sm text-ink-dim">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-dim">
               <input
                 type="checkbox"
                 checked={habit.endDate === null}
@@ -99,8 +99,14 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
                   void updateHabit(habit.id, { endDate: e.target.checked ? null : startOfDayOffset(30) })
                 }
                 aria-label="Hábito indefinido"
-                className="size-4 accent-accent-500"
+                className="peer sr-only"
               />
+              {/* Indicador redondo (como el círculo de completar), no cuadrado */}
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-ink-muted transition-all peer-checked:border-accent-500 peer-checked:bg-accent-500 peer-checked:[&_svg]:opacity-100">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="size-3 opacity-0 transition-opacity" aria-hidden="true">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+              </span>
               Indefinido
             </label>
             {habit.endDate !== null && (
@@ -231,7 +237,6 @@ export function HabitDetailSheet({ habitId, onClose }: { habitId: string; onClos
             }}
           />
         </div>
-      </div>
-    </Sheet>
+    </div>
   )
 }

@@ -1248,11 +1248,12 @@ export function CustomMinutesInput({
         Personalizado{current !== null ? ` · ${current} min` : ''}
       </span>
       <input
-        type="number"
-        min={1}
-        max={180}
+        type="text"
+        inputMode="numeric"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        // Solo dígitos: se escribe el número a mano (sin flechas de incremento).
+        onChange={(e) => setValue(e.target.value.replace(/\D/g, '').slice(0, 3))}
+        onKeyDown={(e) => e.key === 'Enter' && valid && onApply(parsed)}
         placeholder="min"
         aria-label="Minutos personalizados de pomodoro"
         className="w-20 rounded-md border border-line/10 glass-input px-2 py-1.5 text-center text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/60"

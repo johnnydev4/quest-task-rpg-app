@@ -5,7 +5,6 @@ import type { List, Tag, Task } from '../../db/types'
 import { deleteTask, setTaskCompleted, skipOverdueToNearest, updateTask } from '../../db/repo/tasks'
 import { formatDateTime, formatDue, formatDueTime, isOverdue, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
-import { playHoverTick } from '../../lib/sound'
 import { useSettings } from '../../lib/useSettings'
 import { useSelection } from '../../lib/selection'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
@@ -193,12 +192,6 @@ export function TaskItem({
       onContextMenu={(e) => {
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
-      }}
-      onMouseEnter={() => {
-        // Tic ASMR sutil solo en dispositivos con puntero (escritorio).
-        if (settings.soundEnabled && window.matchMedia('(hover: hover)').matches) {
-          playHoverTick(settings.soundVolume)
-        }
       }}
     >
       {barColor && (

@@ -5,7 +5,6 @@ import type { List, Tag, Task } from '../../db/types'
 import { deleteTask, setTaskCompleted, skipOverdueToNearest, updateTask } from '../../db/repo/tasks'
 import { formatDateTime, formatDue, formatDueTime, isOverdue, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { PRIORITY_CHIP_CLASS, PRIORITY_LABEL } from '../../lib/priority'
-import { useSettings } from '../../lib/useSettings'
 import { useSelection } from '../../lib/selection'
 import { usePomodoroProgress } from '../../lib/usePomodoroProgress'
 import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
@@ -162,7 +161,6 @@ export function TaskItem({
   showOverdueActions = false,
   hideTodayChip = false,
 }: TaskItemProps) {
-  const settings = useSettings()
   const selection = useSelection()
   const picked = selection.has(task.id)
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)

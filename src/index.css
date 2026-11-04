@@ -581,6 +581,34 @@ textarea:focus {
   --prio: var(--t-info);
 }
 
+/*
+ * Selectores de color "Libre": el degradado arcoíris lo pinta un <span> y el
+ * <input type="color"> va superpuesto solo para abrir el picker. Anulamos el
+ * chrome nativo del input (la caja/cuadrado del swatch) para que nunca se dibuje
+ * encima del círculo; así el círculo entero muestra los colores.
+ */
+input[type='color'] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type='color']::-webkit-color-swatch {
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+}
+input[type='color']::-moz-color-swatch {
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+}
+
 /* Respeta la preferencia de menos movimiento (spec §13: accesibilidad). */
 @media (prefers-reduced-motion: reduce) {
   *,

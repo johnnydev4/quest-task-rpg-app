@@ -1,4 +1,5 @@
 import type { AmbientSoundId } from '../db/types'
+import { t } from '../lib/i18n'
 
 /**
  * Sonidos ambientales generados con Web Audio (sin descargas, funcionan offline):
@@ -6,10 +7,10 @@ import type { AmbientSoundId } from '../db/types'
  */
 
 export const AMBIENT_SOUNDS: { id: AmbientSoundId; label: string }[] = [
-  { id: 'none', label: 'Ninguno' },
-  { id: 'rain', label: 'Lluvia' },
-  { id: 'white', label: 'Ruido blanco' },
-  { id: 'brown', label: 'Ruido marrón' },
+  { id: 'none', label: t('None', 'Ninguno') },
+  { id: 'rain', label: t('Rain', 'Lluvia') },
+  { id: 'white', label: t('White noise', 'Ruido blanco') },
+  { id: 'brown', label: t('Brown noise', 'Ruido marrón') },
 ]
 
 let ctx: AudioContext | null = null

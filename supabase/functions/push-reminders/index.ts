@@ -43,6 +43,8 @@ interface Subscription {
   p256dh: string
   auth: string
   time_zone: string
+  /** Idioma de la app ('en' | 'es'); ausente en esquemas viejos. */
+  lang?: string | null
 }
 
 interface SyncRow {
@@ -51,6 +53,9 @@ interface SyncRow {
   id: string
   data: Record<string, unknown> | null
 }
+
+type Lang = 'en' | 'es'
+const tr = (lang: Lang, en: string, es: string) => (lang === 'es' ? es : en)
 
 interface Pending {
   userId: string
@@ -95,6 +100,7 @@ function dueReminders(
   userId: string,
   rows: SyncRow[],
   nowMs: number,
+  lang: Lang,
 ): Pending[] {
   const tasks = new Map(rows.filter((r) => r.table_name === 'tasks').map((r) => [r.id, r.data]))
   const out: Pending[] = []
@@ -112,8 +118,8 @@ function dueReminders(
       userId,
       // `remindAt` cambia en cada repetición, así que cada disparo es único.
       dedupeKey: `r:${row.id}:${r.remindAt}`,
-      title: 'Recordatorio',
-      body: task.title ?? 'Tarea pendiente',
+      title: tr(lang, 'Reminder', 'Recordatorio'),
+      body: task.title ?? tr(lang, 'Pending task', 'Tarea pendiente'),
       tag: `reminder-${row.id}`,
     })
   }
@@ -126,6 +132,7 @@ function dueHabits(
   rows: SyncRow[],
   now: Date,
   timeZone: string,
+  lang: Lang,
 ): Pending[] {
   const { dateKey, hm, dayOfWeek } = localParts(now, timeZone)
   const doneToday = new Set(
@@ -154,8 +161,8 @@ function dueHabits(
       userId,
       // Una sola vez al día por hábito.
       dedupeKey: `h:${row.id}:${dateKey}`,
-      title: '🔁 Hábito pendiente',
-      body: h.title ?? 'Tienes un hábito por cumplir',
+      title: tr(lang, '🔁 Habit pending', '🔁 Hábito pendiente'),
+      body: h.title ?? tr(lang, 'You have a habit to complete', 'Tienes un hábito por cumplir'),
       tag: `habit-${row.id}`,
     })
   }
@@ -229,7 +236,8 @@ Deno.serve(async (req) => {
 
   const { data: subs, error: subsError } = await supabase
     .from('push_subscriptions')
-    .select('endpoint, user_id, p256dh, auth, time_zone')
+    // `*` en vez de columnas sueltas: si la columna `lang` aún no existe, no rompe.
+    .select('*')
     // Dispositivo con la app abierta: su temporizador in-app ya avisa, se salta.
     .lt('last_seen_at', new Date(nowMs - IDLE_MS).toISOString())
   if (subsError) return new Response(subsError.message, { status: 500 })
@@ -256,8 +264,10 @@ Deno.serve(async (req) => {
     const userRows = (rows as SyncRow[]).filter((r) => r.user_id === userId)
     // La zona horaria es del dispositivo; con varios, manda el primero (misma persona).
     const timeZone = userSubs[0].time_zone || 'UTC'
-    pending.push(...dueReminders(userId, userRows, nowMs))
-    pending.push(...dueHabits(userId, userRows, now, timeZone))
+    // Idioma de la app en ese dispositivo (inglés por defecto).
+    const lang: Lang = userSubs[0].lang === 'es' ? 'es' : 'en'
+    pending.push(...dueReminders(userId, userRows, nowMs, lang))
+    pending.push(...dueHabits(userId, userRows, now, timeZone, lang))
   }
   if (!pending.length) return Response.json({ sent: 0 })
 

@@ -3,6 +3,7 @@ import { updateTask } from '../../../db/repo/tasks'
 import { RECURRENCE_UNITS, describeRule } from '../../../lib/recurrence'
 import { dateInputToMs, msToDateInput, startOfDayOffset } from '../../../lib/dates'
 import { GlassSelect, numberOptions, type GlassOption } from '../../ui/GlassSelect'
+import { t } from '../../../lib/i18n'
 
 interface RecurrenceSectionProps {
   task: Task
@@ -13,9 +14,9 @@ const dateInputClass =
 
 /** Fin de recurrencia como opciones para el desplegable de cristal. */
 const END_OPTIONS: GlassOption<'never' | 'count' | 'until'>[] = [
-  { value: 'never', label: 'para siempre' },
-  { value: 'count', label: 'N veces más' },
-  { value: 'until', label: 'hasta fecha' },
+  { value: 'never', label: t('forever', 'para siempre') },
+  { value: 'count', label: t('N more times', 'N veces más') },
+  { value: 'until', label: t('until date', 'hasta fecha') },
 ]
 
 export function RecurrenceSection({ task }: RecurrenceSectionProps) {
@@ -36,7 +37,7 @@ export function RecurrenceSection({ task }: RecurrenceSectionProps) {
           <path d="m7 22-4-4 4-4" />
           <path d="M21 13v1a4 4 0 0 1-4 4H3" />
         </svg>
-        Repetir tarea…
+        {t('Repeat task…', 'Repetir tarea…')}
       </button>
     )
   }
@@ -54,14 +55,14 @@ export function RecurrenceSection({ task }: RecurrenceSectionProps) {
   return (
     <div className="space-y-2 rounded-lg border border-line/5 glass-input px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-1.5 text-xs text-ink-dim">
-        <span>Cada</span>
+        <span>{t('Every', 'Cada')}</span>
         <GlassSelect
           value={rule.every}
           options={numberOptions(1, 60)}
           onChange={(v) =>
             updateTask(task.id, { recurrenceRule: { ...rule, every: Math.max(1, v) } })
           }
-          ariaLabel="Intervalo de repetición"
+          ariaLabel={t('Repeat interval', 'Intervalo de repetición')}
         />
         <GlassSelect
           value={rule.unit}
@@ -70,14 +71,14 @@ export function RecurrenceSection({ task }: RecurrenceSectionProps) {
             label: rule.every === 1 ? u.label : u.plural,
           }))}
           onChange={(v) => updateTask(task.id, { recurrenceRule: { ...rule, unit: v } })}
-          ariaLabel="Unidad de repetición"
+          ariaLabel={t('Repeat unit', 'Unidad de repetición')}
         />
         <span>·</span>
         <GlassSelect
           value={rule.end.type}
           options={END_OPTIONS}
           onChange={(v) => setEnd(v)}
-          ariaLabel="Fin de la recurrencia"
+          ariaLabel={t('Recurrence end', 'Fin de la recurrencia')}
           minWidthClass="min-w-36"
         />
         {rule.end.type === 'count' && (
@@ -89,7 +90,7 @@ export function RecurrenceSection({ task }: RecurrenceSectionProps) {
                 recurrenceRule: { ...rule, end: { type: 'count', remaining: Math.max(1, v) } },
               })
             }
-            ariaLabel="Repeticiones restantes"
+            ariaLabel={t('Remaining repetitions', 'Repeticiones restantes')}
           />
         )}
         {rule.end.type === 'until' && (
@@ -101,19 +102,21 @@ export function RecurrenceSection({ task }: RecurrenceSectionProps) {
               if (ms !== null)
                 updateTask(task.id, { recurrenceRule: { ...rule, end: { type: 'until', date: ms } } })
             }}
-            aria-label="Fecha de fin de recurrencia"
+            aria-label={t('Recurrence end date', 'Fecha de fin de recurrencia')}
             className={dateInputClass}
           />
         )}
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[0.6875rem] text-ink-faint">{describeRule(rule)} — al completar se crea la siguiente</span>
+        <span className="text-[0.6875rem] text-ink-faint">
+          {describeRule(rule)} — {t('completing it creates the next one', 'al completar se crea la siguiente')}
+        </span>
         <button
           type="button"
           onClick={() => updateTask(task.id, { recurrenceRule: null })}
           className="text-[0.6875rem] text-ink-faint transition-colors hover:text-danger"
         >
-          Quitar
+          {t('Remove', 'Quitar')}
         </button>
       </div>
     </div>

@@ -1,20 +1,21 @@
 import type { ThemeMode } from '../db/types'
+import { t } from './i18n'
 
 export const ACCENT_PRESETS = [
-  { name: 'Violeta', color: '#8b5cf6' },
-  { name: 'Índigo', color: '#6366f1' },
-  { name: 'Azul', color: '#3b82f6' },
-  { name: 'Esmeralda', color: '#10b981' },
-  { name: 'Rosa', color: '#ec4899' },
-  { name: 'Ámbar', color: '#f59e0b' },
+  { name: t('Violet', 'Violeta'), color: '#8b5cf6' },
+  { name: t('Indigo', 'Índigo'), color: '#6366f1' },
+  { name: t('Blue', 'Azul'), color: '#3b82f6' },
+  { name: t('Emerald', 'Esmeralda'), color: '#10b981' },
+  { name: t('Pink', 'Rosa'), color: '#ec4899' },
+  { name: t('Amber', 'Ámbar'), color: '#f59e0b' },
 ]
 
 /** Accesibilidad: tamaños de texto ofrecidos en Ajustes (multiplican la raíz). */
 export const FONT_SCALES = [
-  { id: 'sm', label: 'Pequeño', scale: 0.9 },
+  { id: 'sm', label: t('Small', 'Pequeño'), scale: 0.9 },
   { id: 'md', label: 'Normal', scale: 1 },
-  { id: 'lg', label: 'Grande', scale: 1.15 },
-  { id: 'xl', label: 'Enorme', scale: 1.3 },
+  { id: 'lg', label: t('Large', 'Grande'), scale: 1.15 },
+  { id: 'xl', label: t('Huge', 'Enorme'), scale: 1.3 },
 ] as const
 
 /** Escala del texto global. Se limita al rango de los presets por seguridad. */

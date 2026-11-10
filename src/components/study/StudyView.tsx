@@ -7,6 +7,7 @@ import { AMBIENT_SOUNDS, setAmbientSuspended, startAmbient, stopAmbient } from '
 import { getSettings, updateSettings } from '../../db/repo/settings'
 import { useSettings } from '../../lib/useSettings'
 import { localDateKey } from '../../lib/dates'
+import { t } from '../../lib/i18n'
 
 function useTimer(): PomodoroSnapshot {
   return useSyncExternalStore(pomodoro.subscribe, pomodoro.getSnapshot)
@@ -92,7 +93,7 @@ function Ring({
               if (e.key === 'Enter') commit()
               else if (e.key === 'Escape') setEditing(false)
             }}
-            aria-label="Editar el tiempo del reloj"
+            aria-label={t('Edit the clock time', 'Editar el tiempo del reloj')}
             className="w-40 rounded-lg border border-accent-500/60 bg-transparent text-center font-mono text-5xl font-bold text-ink tabular-nums outline-none"
           />
         ) : onEdit ? (
@@ -102,7 +103,7 @@ function Ring({
               setDraft(label)
               setEditing(true)
             }}
-            title="Toca para editar el tiempo"
+            title={t('Tap to edit the time', 'Toca para editar el tiempo')}
             className="rounded-lg font-mono text-5xl font-bold text-ink tabular-nums transition-colors hover:text-accent-300"
           >
             {label}
@@ -163,7 +164,7 @@ function DurationStepper({
     <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line/10 glass-input px-3.5 py-2 lg:w-auto lg:flex-col lg:justify-center lg:gap-1.5 lg:px-4 lg:py-3">
       <span className="text-xs font-semibold tracking-wide text-ink-muted uppercase">{label}</span>
       <div className="flex items-center gap-1.5">
-        <button type="button" onClick={() => adjustDuration(settingKey, -step, min, max)} aria-label={`Reducir ${label}`} className={stepBtn}>
+        <button type="button" onClick={() => adjustDuration(settingKey, -step, min, max)} aria-label={`${t('Decrease', 'Reducir')} ${label}`} className={stepBtn}>
           −
         </button>
         {/* Solo lectura: escribir aquí no reprogramaba la fase en curso, así que
@@ -171,12 +172,12 @@ function DurationStepper({
             únicamente con − y +, que sí aplican al instante. */}
         <span
           role="status"
-          aria-label={`Minutos de ${label}`}
+          aria-label={t(`${label} minutes`, `Minutos de ${label}`)}
           className="w-12 text-center text-xl font-bold text-ink tabular-nums select-none lg:w-14 lg:text-2xl"
         >
           {value}
         </span>
-        <button type="button" onClick={() => adjustDuration(settingKey, step, min, max)} aria-label={`Aumentar ${label}`} className={stepBtn}>
+        <button type="button" onClick={() => adjustDuration(settingKey, step, min, max)} aria-label={`${t('Increase', 'Aumentar')} ${label}`} className={stepBtn}>
           +
         </button>
         <span className="pl-0.5 text-[0.6875rem] text-ink-faint">min</span>
@@ -192,21 +193,21 @@ function Controls({ timer }: { timer: PomodoroSnapshot }) {
     <div className="flex flex-wrap items-center justify-center gap-2">
       {timer.status === 'running' ? (
         <button onClick={() => pomodoro.pause()} className={btn}>
-          Pausar
+          {t('Pause', 'Pausar')}
         </button>
       ) : (
         <button
           onClick={() => pomodoro.resume()}
           className="rounded-xl bg-accent-600 px-5 py-2.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500"
         >
-          Reanudar
+          {t('Resume', 'Reanudar')}
         </button>
       )}
       <button onClick={() => pomodoro.skip()} className={btn}>
-        Saltar fase
+        {t('Skip phase', 'Saltar fase')}
       </button>
       <button onClick={() => pomodoro.finish()} className={btn}>
-        Terminar
+        {t('Finish', 'Terminar')}
       </button>
     </div>
   )
@@ -286,7 +287,7 @@ export function StudyView() {
   const durationSteppers = (
     <div className="flex w-full max-w-sm flex-col gap-2 lg:max-w-none lg:flex-row lg:flex-wrap lg:items-stretch lg:justify-center">
       <DurationStepper
-        label="Foco"
+        label={t('Focus', 'Foco')}
         settingKey="pomodoroFocusMin"
         value={settings.pomodoroFocusMin}
         step={5}
@@ -294,7 +295,7 @@ export function StudyView() {
         max={180}
       />
       <DurationStepper
-        label="Descanso"
+        label={t('Break', 'Descanso')}
         settingKey="pomodoroShortBreakMin"
         value={settings.pomodoroShortBreakMin}
         step={1}
@@ -302,7 +303,7 @@ export function StudyView() {
         max={60}
       />
       <DurationStepper
-        label="D. largo"
+        label={t('Long break', 'D. largo')}
         settingKey="pomodoroLongBreakMin"
         value={settings.pomodoroLongBreakMin}
         step={5}
@@ -315,13 +316,13 @@ export function StudyView() {
   const linkSelectors = (
     <div className="grid w-full gap-4 sm:grid-cols-2">
       <label className="space-y-1.5">
-        <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Vincular a tarea</span>
+        <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">{t('Link to task', 'Vincular a tarea')}</span>
         <select
           value={timer.linkTaskId ?? ''}
           onChange={(e) => void pomodoro.setLink({ taskId: e.target.value || null })}
           className={selectClass}
         >
-          <option value="">Sin tarea</option>
+          <option value="">{t('No task', 'Sin tarea')}</option>
           {pendingTasks.map((t) => (
             <option key={t.id} value={t.id}>
               {t.title}
@@ -331,13 +332,13 @@ export function StudyView() {
         </select>
       </label>
       <label className="space-y-1.5">
-        <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Vincular a hábito</span>
+        <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">{t('Link to habit', 'Vincular a hábito')}</span>
         <select
           value={timer.linkHabitId ?? ''}
           onChange={(e) => void pomodoro.setLink({ habitId: e.target.value || null })}
           className={selectClass}
         >
-          <option value="">Sin hábito</option>
+          <option value="">{t('No habit', 'Sin hábito')}</option>
           {activeHabits.map((h) => (
             <option key={h.id} value={h.id}>
               {h.title}
@@ -362,15 +363,18 @@ export function StudyView() {
           }`}
         >
           {PHASE_LABEL[timer.phase]}
-          {timer.status === 'paused' && ' · en pausa'}
+          {timer.status === 'paused' && ` · ${t('paused', 'en pausa')}`}
         </span>
         <Ring
           progress={progress}
           label={mmss(timer.remainingMs)}
-          sub={linkedTask?.title ?? linkedHabit?.title ?? 'Sesión de estudio'}
+          sub={linkedTask?.title ?? linkedHabit?.title ?? t('Study session', 'Sesión de estudio')}
           onEdit={(ms) => pomodoro.setRemaining(ms)}
         />
-        <div className="flex items-center gap-1.5" aria-label={`${timer.pomodorosDone} pomodoros completados`}>
+        <div
+          className="flex items-center gap-1.5"
+          aria-label={t(`${timer.pomodorosDone} pomodoros completed`, `${timer.pomodorosDone} pomodoros completados`)}
+        >
           {Array.from({ length: Math.max(4, timer.pomodorosDone) }).map((_, i) => (
             <span
               key={i}
@@ -399,7 +403,7 @@ export function StudyView() {
             {settings.ambientSound !== 'none' && (
               <button
                 onClick={toggleSoundPause}
-                aria-label={soundPaused ? 'Reanudar sonido ambiental' : 'Pausar sonido ambiental'}
+                aria-label={soundPaused ? t('Resume ambient sound', 'Reanudar sonido ambiental') : t('Pause ambient sound', 'Pausar sonido ambiental')}
                 className="flex size-7 items-center justify-center rounded-full border border-line/10 text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
               >
                 {soundPaused ? (
@@ -435,7 +439,7 @@ export function StudyView() {
               <path d="m21 3-7 7" />
               <path d="m3 21 7-7" />
             </svg>
-            Pantalla completa
+            {t('Full screen', 'Pantalla completa')}
           </button>
         </div>
       )
@@ -445,8 +449,8 @@ export function StudyView() {
       <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-8 bg-surface-900/85 px-6 backdrop-blur-xl">
         <button
           onClick={() => pomodoro.setMinimized(true)}
-          aria-label="Minimizar modo estudio"
-          title="Minimizar: el temporizador sigue mientras usas la app"
+          aria-label={t('Minimize study mode', 'Minimizar modo estudio')}
+          title={t('Minimize: the timer keeps running while you use the app', t('Minimize: the timer keeps running while you use the app', 'Minimizar: el temporizador sigue mientras usas la app'))}
           // Arriba a la IZQUIERDA: los avisos (ToastStack) salen arriba a la derecha y tapaban este botón.
           className="absolute top-[max(1rem,env(safe-area-inset-top))] left-4 flex size-10 items-center justify-center rounded-xl border border-line/10 text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
         >
@@ -468,7 +472,7 @@ export function StudyView() {
         <Ring
           progress={0}
           label={mmss(settings.pomodoroFocusMin * 60_000)}
-          sub="Listo para enfocar"
+          sub={t('Ready to focus', 'Listo para enfocar')}
           onEdit={(ms) => void updateSettings({ pomodoroFocusMin: Math.max(1, Math.round(ms / 60_000)) })}
         />
         <button
@@ -480,23 +484,27 @@ export function StudyView() {
           }
           className="rounded-xl bg-accent-600 px-8 py-3 text-base font-semibold text-on-accent shadow-lg shadow-accent-600/25 transition-all hover:bg-accent-500 active:scale-95"
         >
-          Iniciar foco
+          {t('Start focus', 'Iniciar foco')}
         </button>
         {durationSteppers}
         <p className="text-xs text-ink-faint">
-          Hoy llevas <span className="font-semibold text-accent-300">{todayMinutes} min</span> de foco
+          {t('Today you have ', 'Hoy llevas ')}
+          <span className="font-semibold text-accent-300">{todayMinutes} min</span>
+          {t(' of focus', ' de foco')}
         </p>
       </div>
 
       {linkSelectors}
       <p className="text-[0.6875rem] text-ink-faint">
-        El temporizador siempre usa la duración configurada aquí. Si la tarea o el hábito vinculado
-        tiene un objetivo de pomodoro, su barra se va llenando con tus minutos de foco.
+        {t(
+          'The timer always uses the duration set here. If the linked task or habit has a pomodoro goal, its bar fills up with your focus minutes.',
+          'El temporizador siempre usa la duración configurada aquí. Si la tarea o el hábito vinculado tiene un objetivo de pomodoro, su barra se va llenando con tus minutos de foco.',
+        )}
       </p>
 
       <div className="space-y-1.5">
         <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">
-          Sonido ambiental durante el foco
+          {t('Ambient sound during focus', 'Sonido ambiental durante el foco')}
         </span>
         <div className="flex flex-wrap gap-2">
           {AMBIENT_SOUNDS.map((s) => (
@@ -522,7 +530,7 @@ export function StudyView() {
             step={0.05}
             value={settings.ambientVolume}
             onChange={(e) => updateSettings({ ambientVolume: Number(e.target.value) })}
-            aria-label="Volumen ambiental"
+            aria-label={t('Ambient volume', 'Volumen ambiental')}
             className="glass-range mt-2 w-full max-w-xs"
             style={{ '--fill': `${settings.ambientVolume * 100}%` } as React.CSSProperties}
           />
@@ -530,8 +538,10 @@ export function StudyView() {
       </div>
 
       <p className="text-xs text-ink-faint">
-        Cada minuto de foco real suma 1 XP. Durante una sesión, cambiar la duración de la fase en curso
-        ajusta el tiempo restante al momento.
+        {t(
+          'Every real minute of focus adds 1 XP. During a session, changing the current phase duration adjusts the remaining time instantly.',
+          'Cada minuto de foco real suma 1 XP. Durante una sesión, cambiar la duración de la fase en curso ajusta el tiempo restante al momento.',
+        )}
       </p>
     </div>
   )

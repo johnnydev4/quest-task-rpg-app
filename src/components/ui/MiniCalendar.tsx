@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { LOCALE, t } from '../../lib/i18n'
 
 /** Lunes primero, como el resto de la app. */
-const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+const WEEKDAYS = t('M T W T F S S', 'L M X J V S D').split(' ')
 
 interface MiniCalendarProps {
   /** Día seleccionado (medianoche local) o null. */
@@ -104,28 +105,28 @@ export function MiniCalendar({ value, onSelect }: MiniCalendarProps) {
     }
   }, [])
 
-  const monthLabel = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(first)
+  const monthLabel = new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' }).format(first)
   const navBtn =
     'flex size-7 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink'
 
   return (
     <div ref={rootRef} className="touch-pan-y rounded-xl border border-line/10 glass-input p-2.5">
       <div className="mb-1.5 flex items-center justify-between px-1">
-        <button type="button" onClick={() => shift(-1)} aria-label="Mes anterior" className={navBtn}>
+        <button type="button" onClick={() => shift(-1)} aria-label={t('Previous month', 'Mes anterior')} className={navBtn}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
         <span className="text-sm font-semibold text-ink capitalize">{monthLabel}</span>
-        <button type="button" onClick={() => shift(1)} aria-label="Mes siguiente" className={navBtn}>
+        <button type="button" onClick={() => shift(1)} aria-label={t('Next month', 'Mes siguiente')} className={navBtn}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
             <path d="M9 6l6 6-6 6" />
           </svg>
         </button>
       </div>
       <div ref={gridRef} className="grid grid-cols-7 gap-0.5 text-center">
-        {WEEKDAYS.map((d) => (
-          <span key={d} className="py-1 text-[0.625rem] font-semibold text-ink-faint">
+        {WEEKDAYS.map((d, i) => (
+          <span key={i} className="py-1 text-[0.625rem] font-semibold text-ink-faint">
             {d}
           </span>
         ))}
@@ -141,7 +142,7 @@ export function MiniCalendar({ value, onSelect }: MiniCalendarProps) {
               key={i}
               type="button"
               onClick={() => onSelect(dayMs)}
-              aria-label={`Día ${i + 1}`}
+              aria-label={`${t('Day', 'Día')} ${i + 1}`}
               aria-pressed={selected}
               className={`mx-auto flex size-8 items-center justify-center rounded-full text-sm transition-colors ${
                 selected

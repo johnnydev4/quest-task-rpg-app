@@ -1,11 +1,12 @@
 import type { Priority } from '../db/types'
+import { t } from './i18n'
 
 export const PRIORITIES: Priority[] = ['low', 'medium', 'high']
 
 export const PRIORITY_LABEL: Record<Priority, string> = {
-  low: 'Baja',
-  medium: 'Media',
-  high: 'Alta',
+  low: t('Low', 'Baja'),
+  medium: t('Medium', 'Media'),
+  high: t('High', 'Alta'),
 }
 
 export const PRIORITY_WEIGHT: Record<Priority, number> = {

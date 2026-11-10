@@ -1,4 +1,5 @@
 import { StarIcon } from './icons'
+import { t } from '../../lib/i18n'
 
 interface StarRatingProps {
   /** Estrellas ganadas (1-5) o null si el elemento aún no se ha valorado. */
@@ -18,12 +19,12 @@ const STARS = [1, 2, 3, 4, 5]
  * valoración, que es la forma natural de "deshacer" sin un botón extra.
  * Sin `onChange` se pinta como insignia de solo lectura.
  */
-export function StarRating({ value, onChange, className = 'size-4', label = 'Valoración' }: StarRatingProps) {
+export function StarRating({ value, onChange, className = 'size-4', label = t('Rating', 'Valoración') }: StarRatingProps) {
   const filled = value ?? 0
 
   if (!onChange) {
     return (
-      <span className="inline-flex items-center gap-px text-amber-400" title={`${filled} de 5`} aria-label={`${label}: ${filled} de 5`}>
+      <span className="inline-flex items-center gap-px text-amber-400" title={t(`${filled} of 5`, `${filled} de 5`)} aria-label={`${label}: ${t(`${filled} of 5`, `${filled} de 5`)}`}>
         {STARS.map((n) => (
           <StarIcon key={n} className={className} filled={n <= filled} />
         ))}
@@ -38,9 +39,9 @@ export function StarRating({ value, onChange, className = 'size-4', label = 'Val
           key={n}
           type="button"
           onClick={() => onChange(value === n ? null : n)}
-          aria-label={`${n} estrella${n === 1 ? '' : 's'}`}
+          aria-label={t(`${n} star${n === 1 ? '' : 's'}`, `${n} estrella${n === 1 ? '' : 's'}`)}
           aria-pressed={n <= filled}
-          title={value === n ? 'Quitar valoración' : `${n} de 5`}
+          title={value === n ? t('Remove rating', 'Quitar valoración') : t(`${n} of 5`, `${n} de 5`)}
           className={`rounded p-0.5 transition-transform hover:scale-110 ${
             n <= filled ? 'text-amber-400' : 'text-ink-faint hover:text-amber-300'
           }`}

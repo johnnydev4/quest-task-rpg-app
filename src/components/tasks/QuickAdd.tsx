@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { parseQuickAdd, type QuickParseList, type QuickParseResult } from '../../lib/quickParse'
 import { FolderIcon } from '../ui/icons'
+import { t } from '../../lib/i18n'
 
 interface QuickAddProps {
   placeholder: string
@@ -60,7 +61,7 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
     <div className="space-y-1.5">
       {parsed && (parsed.chips.length > 0 || suggestion !== null) && (
         <div className="flex flex-wrap items-center gap-1.5 px-1" aria-live="polite">
-          <span className="text-[0.6875rem] text-ink-faint">Detectado:</span>
+          <span className="text-[0.6875rem] text-ink-faint">{t('Detected:', 'Detectado:')}</span>
           {parsed.chips.map((chip) => (
             <span
               key={chip}
@@ -92,7 +93,7 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
               }`}
             >
               <FolderIcon className="size-3" />
-              {picked ? suggestion.name : `Añadir a ${suggestion.name}`}
+              {picked ? suggestion.name : `${t('Add to', 'Añadir a')} ${suggestion.name}`}
               {/* Atajo sólo útil con teclado físico: se oculta en táctil. */}
               <kbd className="ml-0.5 hidden rounded border border-current/30 px-1 text-[0.5625rem] font-normal opacity-70 [@media(pointer:fine)]:inline">
                 {picked ? '↓' : 'Tab'}
@@ -108,7 +109,7 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
-          aria-label="Añadir tarea"
+          aria-label={t('Add task', 'Añadir tarea')}
           enterKeyHint="done"
           // glass-panel (con blur propio): el contenedor de alrededor es
           // transparente, así que aquí no hay anidamiento que iOS ignore.
@@ -116,7 +117,7 @@ export function QuickAdd({ placeholder, lists, onAdd }: QuickAddProps) {
         />
         <button
           type="submit"
-          aria-label="Añadir"
+          aria-label={t('Add', 'Añadir')}
           className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-accent-600 text-on-accent shadow-lg shadow-accent-600/25 transition-colors hover:bg-accent-500 active:scale-95"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="size-5" aria-hidden="true">

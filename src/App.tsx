@@ -55,6 +55,7 @@ import { HabitDetailContent } from './components/habits/HabitDetailSheet'
 import { Sheet } from './components/ui/Sheet'
 import { CheckSquareIcon, FlameIcon } from './components/ui/icons'
 import { pomodoro } from './services/pomodoro'
+import { t } from './lib/i18n'
 
 // Recharts es pesado: se carga solo al entrar a Estadísticas.
 const StatsView = lazy(() => import('./components/stats/StatsView'))
@@ -489,7 +490,7 @@ export default function App() {
         // vuelven solas a Hoy. Aquí se decide saltarlas, completarlas o
         // eliminarlas; hasta entonces no retoman su ciclo normal.
         key: 'overdue',
-        title: 'Vencidas',
+        title: t('Overdue', 'Vencidas'),
         tasks: sortPending(
           displayPending.filter((t) => t.recurrenceRule !== null && t.dueAt !== null && t.dueAt < sod),
           taskSort,
@@ -502,13 +503,13 @@ export default function App() {
         // no aparecen aquí (viven en "Todas", donde se pueden reprogramar).
         // Lo repartido en momentos del día se pinta más abajo, en su sección.
         key: 'today',
-        title: 'Hoy',
+        title: t('Today', 'Hoy'),
         tasks: sortPending(todayLoose, taskSort),
         hideTodayChip: true,
       },
       {
         key: 'done',
-        title: 'Completadas hoy',
+        title: t('Completed today', 'Completadas hoy'),
         tasks: sortCompleted(tasks.filter((t) => settled(t) && (t.completedAt ?? 0) >= sod)),
         collapsible: true,
       },
@@ -517,12 +518,12 @@ export default function App() {
     sections = [
       {
         key: 'future',
-        title: 'Programadas',
+        title: t('Scheduled', 'Programadas'),
         tasks: sortPending(displayPending.filter((t) => t.dueAt !== null && t.dueAt >= tomorrow), taskSort),
       },
       {
         key: 'nodate',
-        title: 'Sin fecha',
+        title: t('No date', 'Sin fecha'),
         tasks: sortPending(displayPending.filter((t) => t.dueAt === null), taskSort),
         collapsible: true,
       },
@@ -540,7 +541,7 @@ export default function App() {
       {
         // Categoría desplegable para las tareas atrasadas.
         key: 'overdue',
-        title: 'Vencidas',
+        title: t('Overdue', 'Vencidas'),
         tasks: sortPending(shown.filter(isOverdue), taskSort),
         collapsible: true,
         showMoveToToday: true,
@@ -548,7 +549,7 @@ export default function App() {
       { key: 'pending', tasks: sortPending(shown.filter((t) => !isOverdue(t)), taskSort) },
       {
         key: 'done',
-        title: 'Completadas',
+        title: t('Completed', 'Completadas'),
         tasks: sortCompleted(tasks.filter((t) => settled(t) && visibleInAll(t) && matchesSearch(t))).slice(0, 100),
         collapsible: true,
       },
@@ -558,7 +559,7 @@ export default function App() {
       { key: 'pending', tasks: sortPending(displayPending.filter((t) => t.listId === view.listId), taskSort) },
       {
         key: 'done',
-        title: 'Completadas',
+        title: t('Completed', 'Completadas'),
         tasks: sortCompleted(tasks.filter((t) => settled(t) && t.listId === view.listId)).slice(0, 100),
         collapsible: true,
       },
@@ -568,7 +569,7 @@ export default function App() {
       { key: 'pending', tasks: sortPending(displayPending.filter((t) => t.tagIds.includes(view.tagId)), taskSort) },
       {
         key: 'done',
-        title: 'Completadas',
+        title: t('Completed', 'Completadas'),
         tasks: sortCompleted(tasks.filter((t) => settled(t) && t.tagIds.includes(view.tagId))).slice(0, 100),
         collapsible: true,
       },
@@ -598,9 +599,9 @@ export default function App() {
         }`}
       >
         <CheckSquareIcon className="size-3.5" />
-        <span className="hidden sm:inline">{selection.active ? 'Cancelar' : 'Seleccionar'}</span>
+        <span className="hidden sm:inline">{selection.active ? t('Cancel', 'Cancelar') : t('Select', 'Seleccionar')}</span>
       </button>
-      <SortMenu value={taskSort} options={TASK_SORT_OPTIONS} onChange={changeTaskSort} label="Ordenar tareas" />
+      <SortMenu value={taskSort} options={TASK_SORT_OPTIONS} onChange={changeTaskSort} label={t('Sort tasks', 'Ordenar tareas')} />
     </div>
   )
   // En "Todas" el orden y el filtro viven juntos en una barra propia, que sigue
@@ -608,7 +609,7 @@ export default function App() {
   const listFilterOptions = useMemo(
     () => [
       ...lists.map((l) => ({ id: l.id, label: l.name, color: l.color, emoji: l.emoji })),
-      { id: NO_LIST, label: 'Sin lista', color: null },
+      { id: NO_LIST, label: t('No list', 'Sin lista'), color: null },
     ],
     [lists],
   )
@@ -630,19 +631,19 @@ export default function App() {
   )
   const viewTitle =
     view.kind === 'today'
-      ? 'Hoy'
+      ? t('Today', 'Hoy')
       : view.kind === 'upcoming'
-        ? 'Próximas'
+        ? t('Upcoming', 'Próximas')
         : view.kind === 'quests'
-          ? 'Misiones'
+          ? t('Quests', 'Misiones')
           : view.kind === 'ideas'
             ? 'Ideas'
           : view.kind === 'habits'
-            ? 'Hábitos'
+            ? t('Habits', 'Hábitos')
             : view.kind === 'calendar'
-            ? 'Calendario'
+            ? t('Calendar', 'Calendario')
             : view.kind === 'all'
-              ? 'Todas'
+              ? t('All', 'Todas')
               : view.kind === 'study'
                 ? 'Pomodoro'
                 : view.kind === 'stats'
@@ -655,17 +656,17 @@ export default function App() {
   // contador de pendientes). Las vistas de tareas muestran su contador.
   const viewDescription =
     view.kind === 'quests'
-      ? 'Acepta retos, completa tareas y gana experiencia.'
+      ? t('Take on challenges, complete tasks and earn experience.', 'Acepta retos, completa tareas y gana experiencia.')
       : view.kind === 'ideas'
-        ? 'Descompón ideas y tareas complejas en un árbol.'
+        ? t('Break ideas and complex tasks down into a tree.', 'Descompón ideas y tareas complejas en un árbol.')
       : view.kind === 'habits'
-        ? 'Construye rutinas y encadena tus combos.'
+        ? t('Build routines and chain your combos.', 'Construye rutinas y encadena tus combos.')
         : view.kind === 'calendar'
-          ? 'Tus tareas organizadas por fecha.'
+          ? t('Your tasks organized by date.', 'Tus tareas organizadas por fecha.')
           : view.kind === 'study'
-            ? 'Enfócate con sesiones de pomodoro.'
+            ? t('Focus with pomodoro sessions.', 'Enfócate con sesiones de pomodoro.')
             : view.kind === 'stats'
-              ? 'Tu progreso, tus rachas y tus récords.'
+              ? t('Your progress, streaks and records.', 'Tu progreso, tus rachas y tus récords.')
               : null
 
   const pendingInView =
@@ -743,7 +744,7 @@ export default function App() {
           <div className="absolute inset-0 h-dvh w-full glass-strong px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)]">
             <button
               onClick={() => setDrawerOpen(false)}
-              aria-label="Cerrar menú"
+              aria-label={t('Close menu', 'Cerrar menú')}
               className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-10 flex size-11 items-center justify-center rounded-xl text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-6" aria-hidden="true">
@@ -761,7 +762,7 @@ export default function App() {
           <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6">
             <button
               onClick={() => setDrawerOpen(true)}
-              aria-label="Abrir menú"
+              aria-label={t('Open menu', 'Abrir menú')}
               className="flex size-8 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-ink/5 lg:hidden"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4.5" aria-hidden="true">
@@ -784,7 +785,9 @@ export default function App() {
                 <h1 className="truncate text-xl font-bold text-ink">{viewTitle}</h1>
                 {isTaskView ? (
                   <p className="text-xs text-ink-faint">
-                    {pendingInView === 0 ? 'Sin pendientes' : `${pendingInView} pendiente${pendingInView === 1 ? '' : 's'}`}
+                    {pendingInView === 0
+                      ? t('Nothing pending', 'Sin pendientes')
+                      : t(`${pendingInView} pending`, `${pendingInView} pendiente${pendingInView === 1 ? '' : 's'}`)}
                   </p>
                 ) : (
                   viewDescription && <p className="truncate text-xs text-ink-faint">{viewDescription}</p>
@@ -794,7 +797,7 @@ export default function App() {
             {currentList && (
               <button
                 onClick={() => setListModal({ mode: 'edit', listId: currentList.id })}
-                aria-label="Editar lista"
+                aria-label={t('Edit list', 'Editar lista')}
                 className="flex size-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5" aria-hidden="true">
@@ -816,14 +819,14 @@ export default function App() {
                       className="shrink-0 rounded-md px-1.5 py-0.5 text-[0.6875rem] font-bold"
                       style={{ color, backgroundColor: `color-mix(in srgb, ${color} 18%, transparent)` }}
                     >
-                      Nv {stat.level}
+                      {t('Lv', 'Nv')} {stat.level}
                     </span>
                     <div
                       className="relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-ink/5"
                       role="progressbar"
                       aria-valuenow={stat.intoLevel}
                       aria-valuemax={stat.needed}
-                      aria-label={`Nivel de la lista ${currentList.name}`}
+                      aria-label={t(`${currentList.name} list level`, `Nivel de la lista ${currentList.name}`)}
                     >
                       <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
                     </div>
@@ -840,14 +843,14 @@ export default function App() {
           <div className={`px-4 pb-3 sm:px-6 lg:hidden ${currentList ? 'hidden' : ''}`}>
             <div className="flex items-center gap-2">
               <span className="rounded-md bg-accent-500/15 px-1.5 py-0.5 text-[0.6875rem] font-bold text-accent-300">
-                Nv {level}
+                {t('Lv', 'Nv')} {level}
               </span>
               <div
                 className="relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-ink/5"
                 role="progressbar"
                 aria-valuenow={intoLevel}
                 aria-valuemax={needed}
-                aria-label={`Progreso al nivel ${level + 1}`}
+                aria-label={t(`Progress to level ${level + 1}`, `Progreso al nivel ${level + 1}`)}
               >
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-accent-400 to-accent-600 transition-all duration-500"
@@ -896,7 +899,7 @@ export default function App() {
             <Suspense
               fallback={
                 <div className="flex justify-center py-16">
-                  <div className="size-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label="Cargando estadísticas" />
+                  <div className="size-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label={t('Loading stats', 'Cargando estadísticas')} />
                 </div>
               }
             >
@@ -908,9 +911,12 @@ export default function App() {
               {MISSIONS_ENABLED && <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />}
               {isEmpty && pendingHabits.length === 0 && daySections.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
-                  <p className="font-medium text-ink-dim">Nada para hoy</p>
+                  <p className="font-medium text-ink-dim">{t('Nothing for today', 'Nada para hoy')}</p>
                   <p className="max-w-xs text-sm text-ink-faint">
-                    Añade una tarea abajo y empieza a ganar terreno, una a la vez.
+                    {t(
+                      'Add a task below and start gaining ground, one at a time.',
+                      'Añade una tarea abajo y empieza a ganar terreno, una a la vez.',
+                    )}
                   </p>
                 </div>
               ) : (
@@ -938,12 +944,12 @@ export default function App() {
                       onDropOnZone={
                         s.key === 'today' ? (zone, ids) => bulk.toDayZone(zone, ids, 'task') : undefined
                       }
-                      // Con momentos creados, "Hoy" se queda visible aunque no
+                      // Con momentos creados, t('Today', 'Hoy') se queda visible aunque no
                       // tenga nada: es la zona a la que devolver lo que salga de ellos.
                       alwaysShow={s.key === 'today' && daySections.length > 0}
                       emptyHint={
                         s.key === 'today' && daySections.length > 0
-                          ? 'Sin momento asignado'
+                          ? t('No time of day', 'Sin momento asignado')
                           : undefined
                       }
                       // Los hábitos de hoy viven dentro de la propia sección "Hoy"
@@ -971,7 +977,7 @@ export default function App() {
                     options={listFilterOptions}
                     hidden={hiddenLists}
                     onChange={changeHiddenLists}
-                    label="Listas"
+                    label={t('Lists', 'Listas')}
                   />
                   {taskSortMenu}
                 </div>
@@ -981,29 +987,32 @@ export default function App() {
                   <div className="flex size-14 items-center justify-center rounded-2xl glass-panel text-3xl">✨</div>
                   {view.kind === 'all' && allSearch.trim() ? (
                     <>
-                      <p className="font-medium text-ink-dim">Nada coincide con la búsqueda</p>
+                      <p className="font-medium text-ink-dim">{t('Nothing matches your search', 'Nada coincide con la búsqueda')}</p>
                       <button
                         onClick={() => setAllSearch('')}
                         className="text-sm font-medium text-accent-400 transition-colors hover:text-accent-300"
                       >
-                        Limpiar búsqueda
+                        {t('Clear search', 'Limpiar búsqueda')}
                       </button>
                     </>
                   ) : view.kind === 'all' && hasListFilter ? (
                     <>
-                      <p className="font-medium text-ink-dim">Nada con este filtro</p>
+                      <p className="font-medium text-ink-dim">{t('Nothing with this filter', 'Nada con este filtro')}</p>
                       <button
                         onClick={() => changeHiddenLists(new Set())}
                         className="text-sm font-medium text-accent-400 transition-colors hover:text-accent-300"
                       >
-                        Mostrar todas las listas
+                        {t('Show all lists', 'Mostrar todas las listas')}
                       </button>
                     </>
                   ) : (
                     <>
-                      <p className="font-medium text-ink-dim">Sin tareas aún</p>
+                      <p className="font-medium text-ink-dim">{t('No tasks yet', 'Sin tareas aún')}</p>
                       <p className="max-w-xs text-sm text-ink-faint">
-                        Añade una tarea abajo y empieza a ganar terreno, una a la vez.
+                        {t(
+                          'Add a task below and start gaining ground, one at a time.',
+                          'Añade una tarea abajo y empieza a ganar terreno, una a la vez.',
+                        )}
                       </p>
                     </>
                   )}
@@ -1045,13 +1054,13 @@ export default function App() {
                 >
                   <span className="shrink-0 text-sm font-semibold text-ink">
                     {selection.count === 0
-                      ? 'Nada seleccionado'
-                      : `${selection.count} seleccionad${selection.count === 1 ? 'o' : 'os'}`}
+                      ? t('Nothing selected', 'Nada seleccionado')
+                      : t(`${selection.count} selected`, `${selection.count} seleccionad${selection.count === 1 ? 'o' : 'os'}`)}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-xs text-ink-faint">
                     {selection.count === 0
-                      ? 'Marca tareas y hábitos para moverlos juntos'
-                      : 'Arrástralas juntas o edítalas en bloque'}
+                      ? t('Check tasks and habits to move them together', 'Marca tareas y hábitos para moverlos juntos')
+                      : t('Drag them together or edit them in bulk', 'Arrástralas juntas o edítalas en bloque')}
                   </span>
                   {(() => {
                     const taskIds = selection.ids.filter((id) => selection.kindOf(id) === 'task')
@@ -1061,7 +1070,7 @@ export default function App() {
                     onClick={() => selection.clear()}
                     className="shrink-0 rounded-lg border border-line/10 px-2.5 py-1.5 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
                   >
-                    Listo
+                    {t('Done', 'Listo')}
                   </button>
                 </div>
               </div>
@@ -1070,14 +1079,14 @@ export default function App() {
               <QuickAdd
                 placeholder={
                   view.kind === 'today'
-                    ? 'Añadir tarea para hoy…'
+                    ? t('Add a task for today…', 'Añadir tarea para hoy…')
                     : view.kind === 'upcoming'
-                      ? 'Añadir tarea para mañana…'
+                      ? t('Add a task for tomorrow…', 'Añadir tarea para mañana…')
                       : view.kind === 'list'
-                        ? `Añadir a ${currentList?.name ?? 'la lista'}…`
+                        ? t(`Add to ${currentList?.name ?? 'the list'}…`, `Añadir a ${currentList?.name ?? 'la lista'}…`)
                         : view.kind === 'tag'
-                          ? `Añadir con #${currentTag?.name ?? 'etiqueta'}…`
-                          : 'Añadir tarea…'
+                          ? t(`Add with #${currentTag?.name ?? 'tag'}…`, `Añadir con #${currentTag?.name ?? 'etiqueta'}…`)
+                          : t('Add a task…', 'Añadir tarea…')
                 }
                 lists={quickAddLists}
                 onAdd={handleQuickAdd}
@@ -1093,13 +1102,13 @@ export default function App() {
           key={detailId}
           className="sticky top-0 hidden h-dvh w-[25rem] max-w-[45vw] shrink-0 overflow-y-auto border-l border-line/10 glass-bar lg:block"
           style={{ animation: 'slide-in-right 0.28s ease-out both' }}
-          aria-label="Detalle de la tarea"
+          aria-label={t('Task details', 'Detalle de la tarea')}
         >
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-header px-5 py-4">
-            <h2 className="text-lg font-semibold text-ink">Detalles</h2>
+            <h2 className="text-lg font-semibold text-ink">{t('Details', 'Detalles')}</h2>
             <button
               onClick={() => setDetailId(null)}
-              aria-label="Cerrar detalle"
+              aria-label={t('Close details', 'Cerrar detalle')}
               className="flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-5" aria-hidden="true">
@@ -1119,13 +1128,13 @@ export default function App() {
           key={habitDetailId}
           className="sticky top-0 hidden h-dvh w-[25rem] max-w-[45vw] shrink-0 overflow-y-auto border-l border-line/10 glass-bar lg:block"
           style={{ animation: 'slide-in-right 0.28s ease-out both' }}
-          aria-label="Ajustar hábito"
+          aria-label={t('Edit habit', 'Ajustar hábito')}
         >
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line/5 glass-header px-5 py-4">
-            <h2 className="text-lg font-semibold text-ink">Ajustar hábito</h2>
+            <h2 className="text-lg font-semibold text-ink">{t('Edit habit', 'Ajustar hábito')}</h2>
             <button
               onClick={() => setHabitDetailId(null)}
-              aria-label="Cerrar detalle"
+              aria-label={t('Close details', 'Cerrar detalle')}
               className="flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-5" aria-hidden="true">
@@ -1141,7 +1150,7 @@ export default function App() {
 
       {/* Detalle de hábito en móvil: hoja inferior (como el modal de tarea) */}
       {habitDetailId && !isDesktop && (
-        <Sheet title="Ajustar hábito" onClose={() => setHabitDetailId(null)}>
+        <Sheet title={t('Edit habit', 'Ajustar hábito')} onClose={() => setHabitDetailId(null)}>
           <HabitDetailContent habitId={habitDetailId} onClose={() => setHabitDetailId(null)} />
         </Sheet>
       )}

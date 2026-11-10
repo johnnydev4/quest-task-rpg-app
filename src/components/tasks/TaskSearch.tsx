@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { SearchIcon } from '../ui/icons'
+import { t } from '../../lib/i18n'
 
 /**
  * Buscador de tareas por nombre (pestaña "Todas"). Un botón compacto que se
@@ -9,7 +10,7 @@ import { SearchIcon } from '../ui/icons'
 export function TaskSearch({
   value,
   onChange,
-  label = 'Buscar tarea',
+  label = t('Search tasks', 'Buscar tarea'),
 }: {
   value: string
   onChange: (value: string) => void
@@ -37,7 +38,7 @@ export function TaskSearch({
         className="flex items-center gap-1.5 rounded-lg border border-line/10 glass-input px-2.5 py-1.5 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
       >
         <SearchIcon className="size-3.5" />
-        <span className="hidden sm:inline">Buscar</span>
+        <span className="hidden sm:inline">{t('Search', 'Buscar')}</span>
       </button>
     )
   }
@@ -53,14 +54,14 @@ export function TaskSearch({
         onKeyDown={(e) => {
           if (e.key === 'Escape') close()
         }}
-        placeholder="Buscar tarea…"
+        placeholder={t('Search tasks…', 'Buscar tarea…')}
         aria-label={label}
         className="w-32 bg-transparent py-1.5 text-xs text-ink placeholder:text-ink-faint focus:outline-none sm:w-44"
       />
       <button
         type="button"
         onClick={close}
-        aria-label="Cerrar búsqueda"
+        aria-label={t('Close search', 'Cerrar búsqueda')}
         className="flex size-6 shrink-0 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-ink/10 hover:text-ink"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">

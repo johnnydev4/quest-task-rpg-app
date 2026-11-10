@@ -4,6 +4,7 @@ import { levelFromXp, STAT_XP_BASE } from '../../lib/level'
 import { dailyXpCap } from '../../lib/xp'
 import { localDateKey } from '../../lib/dates'
 import { emitToast } from '../../lib/events'
+import { t } from '../../lib/i18n'
 
 const PROFILE_ID = 'me'
 
@@ -116,8 +117,8 @@ export async function applyXp(
 
   if (result.capped) {
     emitToast({
-      title: 'Tope diario de XP',
-      body: 'Ya alcanzaste el máximo de hoy. Vuelve mañana para seguir subiendo.',
+      title: t('Daily XP cap', 'Tope diario de XP'),
+      body: t("You've hit today's max. Come back tomorrow to keep leveling up.", 'Ya alcanzaste el máximo de hoy. Vuelve mañana para seguir subiendo.'),
     })
   }
   return result

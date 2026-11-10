@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import { monthKeyOf, themeForMonthKey, weekOfMonth } from '../../lib/questThemes'
 import { SwordIcon, TrophyIcon } from '../ui/icons'
+import { t } from '../../lib/i18n'
 
 /**
  * La misión de la semana en curso, destacada entre las tareas normales (side
@@ -64,7 +65,7 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="font-semibold">{theme.epicTitle}</span>
-          <span className="block text-xs opacity-80">¿Aceptas el desafío de este mes?</span>
+          <span className="block text-xs opacity-80">{t("Do you accept this month's challenge?", '¿Aceptas el desafío de este mes?')}</span>
         </span>
         <span className="flex shrink-0 gap-2">
           <button
@@ -72,13 +73,13 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
             style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
           >
-            <SwordIcon className="size-3.5" /> Aceptar el reto
+            <SwordIcon className="size-3.5" /> {t('Accept the challenge', 'Aceptar el reto')}
           </button>
           <button
             onClick={decline}
             className="rounded-lg border border-line/15 px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-ink/5"
           >
-            Ahora no
+            {t('Not now', 'Ahora no')}
           </button>
         </span>
       </div>
@@ -96,7 +97,7 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
         <button
           type="button"
           onClick={dismiss}
-          aria-label="Cerrar misión conquistada"
+          aria-label={t('Close conquered quest', 'Cerrar misión conquistada')}
           className="absolute top-2 right-2 z-10 flex size-7 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/10 hover:text-ink"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
@@ -119,15 +120,15 @@ export function WeeklyQuestBanner({ onOpen }: { onOpen: () => void }) {
       <div className="relative">
         <div className={`flex items-center justify-between gap-2 ${quest.completed ? 'pr-8' : ''}`}>
           <p className="flex items-center gap-1.5 text-[0.6875rem] font-bold tracking-widest uppercase" style={{ color: theme.colorA }}>
-            <SwordIcon className="size-3.5" /> Misión de la semana {week} · {theme.creature}
+            <SwordIcon className="size-3.5" /> {t(`Week ${week} quest`, `Misión de la semana ${week}`)} · {theme.creature}
           </p>
           <span className="flex shrink-0 items-center gap-1 text-[0.6875rem] font-medium text-ink-muted">
             {quest.completed ? (
               <>
-                <TrophyIcon className="size-3.5" /> Conquistada
+                <TrophyIcon className="size-3.5" /> {t('Conquered', 'Conquistada')}
               </>
             ) : steps.length > 0 ? (
-              `${done}/${steps.length} pasos`
+              `${done}/${steps.length} ${t('steps', 'pasos')}`
             ) : (
               `+${quest.xpValue} XP`
             )}

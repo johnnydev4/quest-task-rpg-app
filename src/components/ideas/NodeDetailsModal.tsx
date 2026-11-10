@@ -5,6 +5,7 @@ import { setNodeColor, setNodeNote, setNodeRating, setNodeText } from '../../db/
 import { ColorPicker } from '../ui/ColorPicker'
 import { Modal } from '../ui/Modal'
 import { StarRating } from '../ui/StarRating'
+import { t } from '../../lib/i18n'
 
 interface NodeDetailsModalProps {
   nodeId: string
@@ -59,7 +60,7 @@ export function NodeDetailsModal({ nodeId, onClose }: NodeDetailsModalProps) {
   const inherited = map?.color ?? null
 
   return (
-    <Modal title="Personalizar idea" onClose={close}>
+    <Modal title={t('Customize idea', 'Personalizar idea')} onClose={close}>
       <div className="space-y-5">
         <label className="block space-y-1.5">
           <span className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Idea</span>
@@ -67,13 +68,13 @@ export function NodeDetailsModal({ nodeId, onClose }: NodeDetailsModalProps) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onBlur={commitText}
-            placeholder="Escribe una idea…"
+            placeholder={t('Write an idea…', 'Escribe una idea…')}
             className="w-full rounded-xl border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/40"
           />
         </label>
 
         <div className="space-y-2">
-          <span className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Color de la idea</span>
+          <span className="text-xs font-semibold tracking-wide text-ink-faint uppercase">{t('Idea color', 'Color de la idea')}</span>
           <ColorPicker
             value={node.color ?? null}
             onChange={(c) => void setNodeColor(nodeId, c)}
@@ -82,15 +83,15 @@ export function NodeDetailsModal({ nodeId, onClose }: NodeDetailsModalProps) {
           />
           <p className="text-xs text-ink-faint">
             {node.color
-              ? 'Este nodo y la rama que lo cuelga usan este color.'
+              ? t('This node and its branch use this color.', 'Este nodo y la rama que lo cuelga usan este color.')
               : inherited
-                ? 'Sin color propio: hereda el color del mapa.'
-                : 'Sin color propio: usa el acento de la app.'}
+                ? t("No color of its own: inherits the map's color.", 'Sin color propio: hereda el color del mapa.')
+                : t('No color of its own: uses the app accent.', 'Sin color propio: usa el acento de la app.')}
           </p>
         </div>
 
         <div className="space-y-2">
-          <span className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Valoración</span>
+          <span className="text-xs font-semibold tracking-wide text-ink-faint uppercase">{t('Rating', 'Valoración')}</span>
           <div className="flex items-center gap-3">
             <StarRating
               value={node.rating ?? null}
@@ -98,19 +99,19 @@ export function NodeDetailsModal({ nodeId, onClose }: NodeDetailsModalProps) {
               className="size-6"
             />
             <span className="text-xs text-ink-faint">
-              {node.rating ? `${node.rating} de 5` : 'Sin valorar'}
+              {node.rating ? t(`${node.rating} of 5`, `${node.rating} de 5`) : t('Not rated', 'Sin valorar')}
             </span>
           </div>
         </div>
 
         <label className="block space-y-1.5">
-          <span className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Nota interna</span>
+          <span className="text-xs font-semibold tracking-wide text-ink-faint uppercase">{t('Internal note', 'Nota interna')}</span>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             onBlur={commitNote}
             rows={5}
-            placeholder="Contexto, dudas, enlaces… lo que no cabe en el título de la idea."
+            placeholder={t("Context, questions, links… anything that doesn't fit in the idea's title.", t("Context, questions, links… anything that doesn't fit in the idea's title.", 'Contexto, dudas, enlaces… lo que no cabe en el título de la idea.'))}
             className="w-full resize-y rounded-xl border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/40"
           />
         </label>
@@ -119,7 +120,7 @@ export function NodeDetailsModal({ nodeId, onClose }: NodeDetailsModalProps) {
           onClick={close}
           className="w-full rounded-xl bg-accent-500/15 px-4 py-2.5 text-sm font-semibold text-accent-300 transition-colors hover:bg-accent-500/25"
         >
-          Listo
+          {t('Done', 'Listo')}
         </button>
       </div>
     </Modal>

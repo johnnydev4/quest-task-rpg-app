@@ -9,6 +9,7 @@ import { playBreakEnd, playPhaseChange, startAudioKeepAlive, stopAudioKeepAlive 
 import { notificationService } from './notifications'
 import { setAmbientSuspended, startAmbient, stopAmbient } from './ambient'
 import { keepScreenAwake } from './wakeLock'
+import { t } from '../lib/i18n'
 
 export type PomodoroPhase = 'focus' | 'short' | 'long'
 export type PomodoroStatus = 'idle' | 'running' | 'paused'
@@ -52,9 +53,9 @@ const STORAGE_KEY = 'quest-pomodoro-v1'
 const TICK_MS = 500
 
 export const PHASE_LABEL: Record<PomodoroPhase, string> = {
-  focus: 'Foco',
-  short: 'Descanso corto',
-  long: 'Descanso largo',
+  focus: t('Focus', 'Foco'),
+  short: t('Short break', 'Descanso corto'),
+  long: t('Long break', 'Descanso largo'),
 }
 
 /** Título original de la pestaña, para restaurarlo al parar el temporizador. */
@@ -426,15 +427,17 @@ class PomodoroEngine {
       const listId = await this.resolveListId()
       await applyXp(focusMinutes, listId, { touchStreak: false })
       emitToast({
-        title: `Sesión de foco: ${focusMinutes} min`,
-        body: completed ? `+${focusMinutes} XP · ¡bien ahí!` : `+${focusMinutes} XP · guardado`,
+        title: `${t('Focus session', 'Sesión de foco')}: ${focusMinutes} min`,
+        body: completed
+          ? `+${focusMinutes} XP · ${t('nice work!', '¡bien ahí!')}`
+          : `+${focusMinutes} XP · ${t('saved', 'guardado')}`,
       })
       return true
     } catch {
       this.state.focusCounted = false
       emitToast({
-        title: 'No se pudo guardar el foco',
-        body: 'Vuelve a intentarlo con "Terminar".',
+        title: t("Couldn't save the focus session", 'No se pudo guardar el foco'),
+        body: t('Try again with "Finish".', 'Vuelve a intentarlo con "Terminar".'),
       })
       return false
     }
@@ -495,8 +498,8 @@ class PomodoroEngine {
         : 'short'
       : 'focus'
     await notificationService.notify(
-      wasFocus ? '☕ Hora de descansar' : '🎯 De vuelta al foco',
-      wasFocus ? PHASE_LABEL[nextPhase] : 'Empieza otra sesión de foco',
+      wasFocus ? t('☕ Time for a break', '☕ Hora de descansar') : t('🎯 Back to focus', '🎯 De vuelta al foco'),
+      wasFocus ? PHASE_LABEL[nextPhase] : t('Start another focus session', 'Empieza otra sesión de foco'),
     )
 
     const totalMs = await this.phaseDurationMs(nextPhase)

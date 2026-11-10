@@ -1,5 +1,6 @@
 import type { Habit, HabitLog, List, StudySession, Tag, Task } from '../db/types'
 import { PRIORITY_LABEL } from './priority'
+import { LOCALE, t } from './i18n'
 
 export type StatsRange = '7d' | '30d' | '12m' | 'custom'
 
@@ -19,10 +20,10 @@ function dayKey(d: Date): string {
 /** Genera cubetas diarias o mensuales para el rango elegido. */
 export function makeBuckets(range: StatsRange, customFrom?: number, customTo?: number): Bucket[] {
   const buckets: Bucket[] = []
-  const dayFmt = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' })
+  const dayFmt = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short' })
   // En vista Semana el eje muestra el nombre del día (p. ej. "lun 3").
-  const weekFmt = new Intl.DateTimeFormat('es', { weekday: 'short', day: 'numeric' })
-  const monthFmt = new Intl.DateTimeFormat('es', { month: 'short' })
+  const weekFmt = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric' })
+  const monthFmt = new Intl.DateTimeFormat(LOCALE, { month: 'short' })
 
   if (range === '12m') {
     const now = new Date()
@@ -98,7 +99,7 @@ export function focusEntityOptions(
   return [...totals.entries()]
     .map(([key, minutes]) => {
       const [kind, id] = key.split(':') as [FocusEntityKind, string]
-      const title = (kind === 'task' ? taskTitle.get(id) : habitTitle.get(id)) ?? 'Sin nombre'
+      const title = (kind === 'task' ? taskTitle.get(id) : habitTitle.get(id)) ?? t('Untitled', 'Sin nombre')
       return { key, kind, title, minutes }
     })
     .sort((a, b) => b.minutes - a.minutes)
@@ -193,7 +194,7 @@ export function computeStats(
 
   // Historial de rachas: días activos consecutivos, de todas las tareas completadas.
   const activeDays = [...new Set(completed.map((t) => dayKey(new Date(t.completedAt!))))].sort()
-  const fmt = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' })
+  const fmt = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short' })
   const streakHistory: { start: string; end: string; days: number }[] = []
   let runStart: string | null = null
   let prev: Date | null = null
@@ -332,7 +333,7 @@ export function contributionCalendar(
 
   const grid: (ContributionDay | null)[][] = []
   const monthLabels: { column: number; label: string }[] = []
-  const monthFmt = new Intl.DateTimeFormat('es', { month: 'short' })
+  const monthFmt = new Intl.DateTimeFormat(LOCALE, { month: 'short' })
   const cursor = new Date(start)
   let lastMonth = -1
   for (let col = 0; col < weeks; col++) {

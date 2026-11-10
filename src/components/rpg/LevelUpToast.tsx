@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { isNewTitleAt, titleForLevel } from '../../lib/titles'
+import { t } from '../../lib/i18n'
 
 interface LevelUpToastProps {
   level: number
@@ -34,13 +35,13 @@ export function LevelUpToast({ level, onDone }: LevelUpToastProps) {
         <div className="flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 text-xl font-bold text-on-accent shadow-lg shadow-accent-500/40">
           {level}
         </div>
-        <p className="text-xl font-bold text-ink">¡Nivel {level}!</p>
+        <p className="text-xl font-bold text-ink">{t(`Level ${level}!`, `¡Nivel ${level}!`)}</p>
         {newTitle ? (
           <p className="flex items-center gap-1.5 rounded-full border border-accent-500/40 bg-accent-500/10 px-3 py-1 text-sm font-semibold text-accent-300">
-            ⚔ Nuevo título: {titleForLevel(level)}
+            ⚔ {t('New title', 'Nuevo título')}: {titleForLevel(level)}
           </p>
         ) : (
-          <p className="text-sm text-ink-muted">Tu constancia está dando frutos</p>
+          <p className="text-sm text-ink-muted">{t('Your consistency is paying off', 'Tu constancia está dando frutos')}</p>
         )}
       </div>
     </div>

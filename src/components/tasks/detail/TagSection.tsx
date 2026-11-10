@@ -3,6 +3,7 @@ import type { Tag, Task } from '../../../db/types'
 import { updateTask } from '../../../db/repo/tasks'
 import { createTag, deleteTag } from '../../../db/repo/tags'
 import { PALETTE } from '../../../lib/colors'
+import { t } from '../../../lib/i18n'
 
 interface TagSectionProps {
   task: Task
@@ -73,12 +74,16 @@ export function TagSection({ task, tags }: TagSectionProps) {
                 className="inline-flex items-center gap-1.5 rounded-full hover:opacity-80"
               >
                 {!armed && <span className="size-1.5 rounded-full" style={{ backgroundColor: tag.color }} aria-hidden="true" />}
-                {armed ? '¿Borrar?' : tag.name}
+                {armed ? t('Delete?', '¿Borrar?') : tag.name}
               </button>
               <button
                 type="button"
                 onClick={() => remove(tag.id)}
-                aria-label={armed ? `Confirmar borrar etiqueta ${tag.name}` : `Borrar etiqueta ${tag.name}`}
+                aria-label={
+                  armed
+                    ? `${t('Confirm deleting tag', 'Confirmar borrar etiqueta')} ${tag.name}`
+                    : `${t('Delete tag', 'Borrar etiqueta')} ${tag.name}`
+                }
                 className="inline-flex size-4 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-ink/10"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="size-3">
@@ -88,14 +93,14 @@ export function TagSection({ task, tags }: TagSectionProps) {
             </span>
           )
         })}
-        {tags.length === 0 && <span className="text-xs text-ink-faint">Aún no hay etiquetas.</span>}
+        {tags.length === 0 && <span className="text-xs text-ink-faint">{t('No tags yet.', 'Aún no hay etiquetas.')}</span>}
       </div>
       <form onSubmit={addTag} className="flex gap-2">
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          placeholder="Nueva etiqueta…"
-          aria-label="Nueva etiqueta"
+          placeholder={t('New tag…', 'Nueva etiqueta…')}
+          aria-label={t('New tag', 'Nueva etiqueta')}
           className="w-full rounded-lg border border-line/10 glass-input px-3 py-1.5 text-xs text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
         />
       </form>

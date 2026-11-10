@@ -2,13 +2,19 @@ import { uid } from '../../lib/uid'
 import { db } from '../db'
 import type { Attachment } from '../types'
 import { recordDeletion } from './tombstones'
+import { t } from '../../lib/i18n'
 
 /** Límite defensivo para no llenar IndexedDB con archivos gigantes. */
 export const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 
 export async function createAttachment(taskId: string, file: File): Promise<string> {
   if (file.size > MAX_ATTACHMENT_BYTES) {
-    throw new Error(`El archivo supera el máximo de ${Math.round(MAX_ATTACHMENT_BYTES / 1024 / 1024)} MB`)
+    throw new Error(
+      t(
+        `The file exceeds the ${Math.round(MAX_ATTACHMENT_BYTES / 1024 / 1024)} MB limit`,
+        `El archivo supera el máximo de ${Math.round(MAX_ATTACHMENT_BYTES / 1024 / 1024)} MB`,
+      ),
+    )
   }
   const now = Date.now()
   const attachment: Attachment = {

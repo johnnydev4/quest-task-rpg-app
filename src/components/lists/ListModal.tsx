@@ -4,6 +4,7 @@ import { createList, deleteList, moveList, updateList } from '../../db/repo/list
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
 import { ConfirmButton } from '../ui/ConfirmButton'
+import { t } from '../../lib/i18n'
 
 /**
  * Un emoji completo: pictograma base + sus modificadores (tono de piel,
@@ -59,22 +60,22 @@ export function ListModal({ list, onClose }: ListModalProps) {
   }
 
   return (
-    <Modal title={list ? 'Editar lista' : 'Nueva lista'} onClose={onClose}>
+    <Modal title={list ? t('Edit list', 'Editar lista') : t('New list', 'Nueva lista')} onClose={onClose}>
       <form onSubmit={save} className="space-y-5">
         <div className="space-y-1.5">
-          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Nombre</span>
+          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">{t('Name', 'Nombre')}</span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. Hogar, Finanzas, Trabajo…"
-            aria-label="Nombre de la lista"
+            placeholder={t('E.g. Home, Finance, Work…', 'Ej. Hogar, Finanzas, Trabajo…')}
+            aria-label={t('List name', 'Nombre de la lista')}
             autoFocus
             className="w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
           />
         </div>
 
         <div className="space-y-1.5">
-          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Color (opcional)</span>
+          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">{t('Color (optional)', 'Color (opcional)')}</span>
           <ColorPicker value={color} onChange={setColor} allowCustom />
         </div>
 
@@ -103,21 +104,21 @@ export function ListModal({ list, onClose }: ListModalProps) {
             <input
               value={emoji}
               onChange={(e) => handleCustomEmoji(e.target.value)}
-              placeholder="Otro…"
+              placeholder={t('Other…', 'Otro…')}
               maxLength={12}
-              aria-label="Emoji personalizado de la lista"
+              aria-label={t('Custom list emoji', 'Emoji personalizado de la lista')}
               aria-invalid={emojiError}
               className={`w-20 rounded-lg border glass-input px-2 py-2 text-center text-sm text-ink placeholder-ink-faint outline-none ${
                 emojiError ? 'border-danger/60' : 'border-line/10 focus:border-accent-500/60'
               }`}
             />
           </div>
-          {emojiError && <p className="text-[0.6875rem] text-danger">Solo se admiten emojis (ni texto ni números).</p>}
+          {emojiError && <p className="text-[0.6875rem] text-danger">{t('Only emojis are allowed (no text or numbers).', 'Solo se admiten emojis (ni texto ni números).')}</p>}
         </div>
 
         {list && (
           <div className="space-y-1.5">
-            <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Posición</span>
+            <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">{t('Position', 'Posición')}</span>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -127,7 +128,7 @@ export function ListModal({ list, onClose }: ListModalProps) {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
                   <path d="M12 19V5M5 12l7-7 7 7" />
                 </svg>
-                Subir
+                {t('Move up', 'Subir')}
               </button>
               <button
                 type="button"
@@ -137,7 +138,7 @@ export function ListModal({ list, onClose }: ListModalProps) {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
                   <path d="M12 5v14M19 12l-7 7-7-7" />
                 </svg>
-                Bajar
+                {t('Move down', 'Bajar')}
               </button>
             </div>
           </div>
@@ -146,8 +147,8 @@ export function ListModal({ list, onClose }: ListModalProps) {
         <div className="flex items-center justify-between border-t border-line/5 pt-4">
           {list ? (
             <ConfirmButton
-              label="Eliminar lista"
-              confirmLabel="¿Seguro? Toca de nuevo"
+              label={t('Delete list', 'Eliminar lista')}
+              confirmLabel={t('Sure? Tap again', '¿Seguro? Toca de nuevo')}
               onConfirm={async () => {
                 await deleteList(list.id)
                 onClose()
@@ -160,7 +161,7 @@ export function ListModal({ list, onClose }: ListModalProps) {
             type="submit"
             className="rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:bg-accent-500"
           >
-            {list ? 'Guardar' : 'Crear lista'}
+            {list ? t('Save', 'Guardar') : t('Create list', 'Crear lista')}
           </button>
         </div>
       </form>

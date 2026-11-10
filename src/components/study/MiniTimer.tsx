@@ -1,6 +1,7 @@
 import { useRef, useState, useSyncExternalStore } from 'react'
 import { PHASE_LABEL, pomodoro } from '../../services/pomodoro'
 import { CoffeeIcon, TargetIcon } from '../ui/icons'
+import { t } from '../../lib/i18n'
 
 function mmss(ms: number): string {
   const total = Math.ceil(ms / 1000)
@@ -95,8 +96,8 @@ export function MiniTimer({ onExpand }: { onExpand: () => void }) {
       >
         <button
           onClick={onExpand}
-          aria-label="Volver al modo estudio"
-          title="Volver al modo estudio"
+          aria-label={t('Back to study mode', 'Volver al modo estudio')}
+          title={t('Back to study mode', 'Volver al modo estudio')}
           className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80"
         >
           <span className="relative flex size-9 items-center justify-center">
@@ -124,21 +125,21 @@ export function MiniTimer({ onExpand }: { onExpand: () => void }) {
             </span>
             <span className="text-[0.625rem] text-ink-faint">
               {PHASE_LABEL[timer.phase]}
-              {timer.status === 'paused' && ' · pausa'}
+              {timer.status === 'paused' && ` · ${t('paused', 'pausa')}`}
             </span>
           </span>
         </button>
         <button
           onClick={() => pomodoro.adjustCurrentPhase(timer.phase, 5)}
-          aria-label="Añadir 5 minutos a la fase actual"
-          title="Añadir 5 minutos a la fase actual"
+          aria-label={t('Add 5 minutes to the current phase', 'Añadir 5 minutos a la fase actual')}
+          title={t('Add 5 minutes to the current phase', 'Añadir 5 minutos a la fase actual')}
           className="flex h-8 items-center justify-center rounded-full border border-line/10 px-2 text-xs font-bold text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
         >
           +5
         </button>
         <button
           onClick={() => (timer.status === 'running' ? pomodoro.pause() : void pomodoro.resume())}
-          aria-label={timer.status === 'running' ? 'Pausar temporizador' : 'Reanudar temporizador'}
+          aria-label={timer.status === 'running' ? t('Pause timer', 'Pausar temporizador') : t('Resume timer', 'Reanudar temporizador')}
           className="flex size-8 items-center justify-center rounded-full bg-accent-600 text-on-accent transition-colors hover:bg-accent-500"
         >
           {timer.status === 'running' ? (

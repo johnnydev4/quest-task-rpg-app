@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n'
 /** Horas del día (00 … 23). */
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
 /** Minutos cada 5 (00, 05 … 55): grano fino sin una rueda interminable. */
@@ -33,7 +34,7 @@ export function TimeSelect({
       <select
         value={hour}
         onChange={(e) => onChange(e.target.value ? `${e.target.value}:${minute || '00'}` : '')}
-        aria-label={`${ariaLabel} (horas)`}
+        aria-label={`${ariaLabel} (${t('hours', 'horas')})`}
         className={selectClass}
       >
         {noneLabel !== undefined && <option value="">{noneLabel}</option>}
@@ -49,7 +50,7 @@ export function TimeSelect({
           <select
             value={minute}
             onChange={(e) => onChange(`${hour}:${e.target.value}`)}
-            aria-label={`${ariaLabel} (minutos)`}
+            aria-label={`${ariaLabel} (${t('minutes', 'minutos')})`}
             className={selectClass}
           >
             {minutes.map((m) => (

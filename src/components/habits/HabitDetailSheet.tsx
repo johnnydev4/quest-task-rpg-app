@@ -10,6 +10,7 @@ import { MiniCalendar } from '../ui/MiniCalendar'
 import { TimeSelect } from '../ui/TimeSelect'
 import { CustomMinutesInput } from '../tasks/TaskDetail'
 import { DayPicker } from './DayPicker'
+import { LOCALE, t } from '../../lib/i18n'
 
 const POMODORO_PRESETS = [10, 15, 25, 45, 60, 90]
 
@@ -58,8 +59,8 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
 
   const endLabel =
     habit.endDate === null
-      ? 'Indefinido'
-      : new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' }).format(habit.endDate)
+      ? t('Indefinite', 'Indefinido')
+      : new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' }).format(habit.endDate)
 
   function saveTitle() {
     if (!habit || title === null) return
@@ -76,12 +77,12 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
           onChange={(e) => setTitle(e.target.value)}
           onBlur={saveTitle}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-          aria-label="Título del hábito"
+          aria-label={t('Habit title', 'Título del hábito')}
           className="w-full border-none bg-transparent px-1 text-xl font-semibold text-ink outline-none focus:shadow-none"
         />
 
         {/* Días programados */}
-        <Section label="Días a cumplir">
+        <Section label={t('Days to complete', 'Días a cumplir')}>
           <DayPicker
             value={habit.daysOfWeek}
             onChange={(days) => days.length > 0 && void updateHabit(habit.id, { daysOfWeek: [...days].sort() })}
@@ -89,7 +90,7 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
         </Section>
 
         {/* Fecha límite / indefinido */}
-        <Section label="Duración">
+        <Section label={t('Duration', 'Duración')}>
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-dim">
               <input
@@ -98,7 +99,7 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
                 onChange={(e) =>
                   void updateHabit(habit.id, { endDate: e.target.checked ? null : startOfDayOffset(30) })
                 }
-                aria-label="Hábito indefinido"
+                aria-label={t('Indefinite habit', 'Hábito indefinido')}
                 className="peer sr-only"
               />
               {/* Indicador redondo (como el círculo de completar), no cuadrado */}
@@ -107,7 +108,7 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
                   <path d="M5 13l4 4L19 7" />
                 </svg>
               </span>
-              Indefinido
+              {t('Indefinite', 'Indefinido')}
             </label>
             {habit.endDate !== null && (
               <button
@@ -116,7 +117,7 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
                 aria-expanded={calOpen}
                 className="flex items-center gap-1.5 rounded-xl border border-line/10 px-3 py-1.5 text-sm text-ink-dim transition-colors hover:bg-ink/5"
               >
-                Hasta el {endLabel}
+                {t('Until', 'Hasta el')} {endLabel}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`size-3.5 transition-transform ${calOpen ? 'rotate-90' : ''}`} aria-hidden="true">
                   <path d="M9 6l6 6-6 6" />
                 </svg>
@@ -136,12 +137,12 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
         </Section>
 
         {/* Aviso */}
-        <Section label="Recordarme">
+        <Section label={t('Remind me', 'Recordarme')}>
           <TimeSelect
             value={habit.reminderTime ?? ''}
             onChange={(v) => void updateHabit(habit.id, { reminderTime: v || null })}
-            noneLabel="Sin aviso"
-            ariaLabel="Hora del aviso del hábito"
+            noneLabel={t('No reminder', 'Sin aviso')}
+            ariaLabel={t('Habit reminder time', 'Hora del aviso del hábito')}
           />
         </Section>
 
@@ -154,7 +155,7 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
               aria-pressed={habit.pomodoroMinutes == null}
               className={pillClass(habit.pomodoroMinutes == null)}
             >
-              Sin pomodoro
+              {t('No pomodoro', 'Sin pomodoro')}
             </button>
             {POMODORO_PRESETS.map((m) => (
               <button
@@ -183,18 +184,21 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
                 // Abre la vista Estudio en pantalla completa (no minimizado).
                 void pomodoro.start({ habitId: habit.id })
                 emitOpenStudy()
-                emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · objetivo ${habit.pomodoroMinutes} min` })
+                emitToast({
+                  title: t('🍅 Pomodoro started', '🍅 Pomodoro iniciado'),
+                  body: `${habit.title} · ${t('goal', 'objetivo')} ${habit.pomodoroMinutes} min`,
+                })
                 onClose()
               }}
               className="w-full rounded-xl bg-accent-600 px-4 py-2.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500"
             >
-              ▶ Empezar ahora · objetivo {habit.pomodoroMinutes} min
+              ▶ {t('Start now · goal', 'Empezar ahora · objetivo')} {habit.pomodoroMinutes} min
             </button>
           )}
         </Section>
 
         {/* Lista (atributo RPG): el XP del hábito sube ese atributo */}
-        <Section label="Lista">
+        <Section label={t('List', 'Lista')}>
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
@@ -202,7 +206,7 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
               aria-pressed={habit.listId == null}
               className={pillClass(habit.listId == null)}
             >
-              Sin lista
+              {t('No list', 'Sin lista')}
             </button>
             {lists.map((l) => (
               <button
@@ -226,11 +230,13 @@ export function HabitDetailContent({ habitId, onClose }: { habitId: string; onCl
         {/* Eliminar */}
         <div className="flex items-center justify-between gap-3 px-1 pt-1">
           <span className="min-w-0 text-xs text-ink-faint">
-            {lastDone ? `Último cumplimiento: ${formatDateTime(lastDone)}` : 'Aún sin cumplimientos'}
+            {lastDone
+              ? `${t('Last completed', 'Último cumplimiento')}: ${formatDateTime(lastDone)}`
+              : t('Not completed yet', 'Aún sin cumplimientos')}
           </span>
           <ConfirmButton
-            label="Eliminar hábito"
-            confirmLabel="¿Seguro? Toca de nuevo"
+            label={t('Delete habit', 'Eliminar hábito')}
+            confirmLabel={t('Sure? Tap again', '¿Seguro? Toca de nuevo')}
             onConfirm={async () => {
               await deleteHabit(habit.id)
               onClose()

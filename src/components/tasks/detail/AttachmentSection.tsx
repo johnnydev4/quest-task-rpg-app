@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Attachment } from '../../../db/types'
 import { createAttachment, deleteAttachment } from '../../../db/repo/attachments'
+import { t } from '../../../lib/i18n'
 
 interface AttachmentSectionProps {
   taskId: string
@@ -19,7 +20,7 @@ function AttachmentThumb({ attachment }: { attachment: Attachment }) {
         target="_blank"
         rel="noreferrer"
         className="block overflow-hidden rounded-lg border border-line/10 glass-input"
-        aria-label={`Abrir ${attachment.name}`}
+        aria-label={`${t('Open', 'Abrir')} ${attachment.name}`}
       >
         {isImage ? (
           <img src={url} alt={attachment.name} className="h-20 w-full object-cover" />
@@ -35,7 +36,7 @@ function AttachmentThumb({ attachment }: { attachment: Attachment }) {
       </a>
       <button
         onClick={() => deleteAttachment(attachment.id)}
-        aria-label={`Eliminar ${attachment.name}`}
+        aria-label={`${t('Delete', 'Eliminar')} ${attachment.name}`}
         className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-surface-900 text-ink-muted opacity-0 shadow transition-opacity group-hover:opacity-100 hover:text-danger focus:opacity-100"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="size-3" aria-hidden="true">
@@ -57,7 +58,7 @@ export function AttachmentSection({ taskId, attachments }: AttachmentSectionProp
       try {
         await createAttachment(taskId, file)
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'No se pudo adjuntar el archivo')
+        setError(e instanceof Error ? e.message : t("Couldn't attach the file", 'No se pudo adjuntar el archivo'))
       }
     }
     if (inputRef.current) inputRef.current.value = ''
@@ -79,7 +80,7 @@ export function AttachmentSection({ taskId, attachments }: AttachmentSectionProp
         accept="image/*,application/pdf,.txt,.md"
         onChange={(e) => onFiles(e.target.files)}
         className="hidden"
-        aria-label="Adjuntar archivos"
+        aria-label={t('Attach files', 'Adjuntar archivos')}
       />
       <button
         type="button"
@@ -89,7 +90,7 @@ export function AttachmentSection({ taskId, attachments }: AttachmentSectionProp
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
           <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
         </svg>
-        Adjuntar imagen o archivo
+        {t('Attach image or file', 'Adjuntar imagen o archivo')}
       </button>
       {error && <p className="text-xs text-danger">{error}</p>}
     </div>

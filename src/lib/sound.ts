@@ -1,4 +1,5 @@
 import type { CompletionSoundId } from '../db/types'
+import { t } from './i18n'
 
 /**
  * Sonidos sintetizados con Web Audio API: sin assets que descargar,
@@ -6,9 +7,9 @@ import type { CompletionSoundId } from '../db/types'
  */
 
 export const COMPLETION_SOUNDS: { id: CompletionSoundId; label: string }[] = [
-  { id: 'pop', label: 'Pop suave' },
-  { id: 'chime', label: 'Campanita' },
-  { id: 'click', label: 'Click nítido' },
+  { id: 'pop', label: t('Soft pop', 'Pop suave') },
+  { id: 'chime', label: t('Little chime', 'Campanita') },
+  { id: 'click', label: t('Crisp click', 'Click nítido') },
 ]
 
 let ctx: AudioContext | null = null

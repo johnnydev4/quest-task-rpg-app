@@ -26,8 +26,10 @@ import type {
   Tag,
   Task,
 } from '../db/types'
+import { LANG, t } from './i18n'
 
-const DEMO_VERSION = 'demo-3'
+// La versión incluye el idioma: al cambiarlo se vuelve a sembrar traducida.
+const DEMO_VERSION = `demo-4-${LANG}`
 const DEMO_KEY = 'quest-demo-seeded'
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -82,7 +84,7 @@ export async function seedDemo(): Promise<void> {
     'habits', 'habitLogs', 'daySections', 'studySessions', 'ideaMaps', 'ideaNodes',
     'quests', 'questSteps', 'profile', 'tombstones',
   ] as const
-  for (const t of tables) await db.table(t).clear()
+  for (const name of tables) await db.table(name).clear()
 
   const lists: List[] = []
   const list = (name: string, emoji: string, color: string, statXp: number, order: number): string => {
@@ -96,12 +98,12 @@ export async function seedDemo(): Promise<void> {
     return id
   }
   const L = {
-    work: list('Trabajo', '💼', '#6366f1', 640, 1),
+    work: list(t('Work', 'Trabajo'), '💼', '#6366f1', 640, 1),
     personal: list('Personal', '🌱', '#10b981', 410, 2),
-    health: list('Salud', '🏋️', '#f43f5e', 520, 3),
-    home: list('Hogar', '🏠', '#f59e0b', 300, 4),
-    study: list('Estudio', '📚', '#8b5cf6', 480, 5),
-    finance: list('Finanzas', '💰', '#14b8a6', 180, 6),
+    health: list(t('Health', 'Salud'), '🏋️', '#f43f5e', 520, 3),
+    home: list(t('Home', 'Hogar'), '🏠', '#f59e0b', 300, 4),
+    study: list(t('Study', 'Estudio'), '📚', '#8b5cf6', 480, 5),
+    finance: list(t('Finance', 'Finanzas'), '💰', '#14b8a6', 180, 6),
   }
   await db.lists.bulkAdd(lists)
 
@@ -112,26 +114,27 @@ export async function seedDemo(): Promise<void> {
     return id
   }
   const T = {
-    urgente: tag('urgente', '#ef4444'),
-    rapido: tag('rápido', '#22c55e'),
-    llamada: tag('llamada', '#3b82f6'),
+    urgente: tag(t('urgent', 'urgente'), '#ef4444'),
+    rapido: tag(t('quick', 'rápido'), '#22c55e'),
+    llamada: tag(t('call', 'llamada'), '#3b82f6'),
     email: tag('email', '#a855f7'),
-    compras: tag('compras', '#f59e0b'),
-    lectura: tag('lectura', '#14b8a6'),
+    compras: tag(t('shopping', 'compras'), '#f59e0b'),
+    lectura: tag(t('reading', 'lectura'), '#14b8a6'),
   }
   await db.tags.bulkAdd(tags)
 
   // Momentos del día (secciones de "Hoy").
   const sections: DaySection[] = [
-    { name: 'Mañana', order: 1 },
-    { name: 'Mediodía', order: 2 },
-    { name: 'Tarde', order: 3 },
-    { name: 'Noche', order: 4 },
+    { name: t('Morning', 'Mañana'), order: 1 },
+    { name: t('Midday', 'Mediodía'), order: 2 },
+    { name: t('Afternoon', 'Tarde'), order: 3 },
+    { name: t('Evening', 'Noche'), order: 4 },
   ].map((s) => ({ id: uid(), ...s, collapsed: false, createdAt: midnight(50), updatedAt: midnight(50), syncStatus: SYNC }))
   await db.daySections.bulkAdd(sections)
   const S = { manana: sections[0].id, mediodia: sections[1].id, tarde: sections[2].id, noche: sections[3].id }
 
   // --- Tareas ---
+  const STUDY_TASK = t('Study chapter 4 of algebra', 'Estudiar capítulo 4 de álgebra')
   const tasks: Task[] = []
   const subtasks: Subtask[] = []
   const comments: Comment[] = []
@@ -158,54 +161,54 @@ export async function seedDemo(): Promise<void> {
     order?: number
   }
   let ord = 1000
-  const addTask = (t: T2) => {
+  const addTask = (x: T2) => {
     const id = uid()
-    const prio = t.priority ?? null
+    const prio = x.priority ?? null
     const due =
-      t.dueDaysAgo === undefined || t.dueDaysAgo === null
+      x.dueDaysAgo === undefined || x.dueDaysAgo === null
         ? null
-        : t.hasTime
-          ? at(t.dueDaysAgo, t.dueH ?? 9)
-          : midnight(t.dueDaysAgo)
-    const completed = t.completedDaysAgo != null
+        : x.hasTime
+          ? at(x.dueDaysAgo, x.dueH ?? 9)
+          : midnight(x.dueDaysAgo)
+    const completed = x.completedDaysAgo != null
     tasks.push({
       id,
-      listId: t.listId ?? null,
-      title: t.title,
-      notes: t.notes ?? '',
+      listId: x.listId ?? null,
+      title: x.title,
+      notes: x.notes ?? '',
       color: null,
       priority: prio,
       dueAt: due,
-      dueHasTime: !!t.hasTime,
+      dueHasTime: !!x.hasTime,
       completed,
-      completedAt: completed ? at(t.completedDaysAgo!, t.completedH ?? 11, 20) : null,
-      recurrenceRule: t.recur ?? null,
-      tagIds: t.tagIds ?? [],
-      pomodoroMinutes: t.pomodoroMinutes ?? null,
-      daySectionId: t.section ?? null,
-      order: t.order ?? ord++,
+      completedAt: completed ? at(x.completedDaysAgo!, x.completedH ?? 11, 20) : null,
+      recurrenceRule: x.recur ?? null,
+      tagIds: x.tagIds ?? [],
+      pomodoroMinutes: x.pomodoroMinutes ?? null,
+      daySectionId: x.section ?? null,
+      order: x.order ?? ord++,
       xpValue: xpByPrio(prio),
-      createdAt: midnight((t.completedDaysAgo ?? t.dueDaysAgo ?? 3) + 2),
-      updatedAt: completed ? at(t.completedDaysAgo!, t.completedH ?? 11, 20) : at(0, 8),
+      createdAt: midnight((x.completedDaysAgo ?? x.dueDaysAgo ?? 3) + 2),
+      updatedAt: completed ? at(x.completedDaysAgo!, x.completedH ?? 11, 20) : at(0, 8),
       syncStatus: SYNC,
     })
-    if (t.subs) {
-      t.subs.forEach(([title, done], i) =>
+    if (x.subs) {
+      x.subs.forEach(([title, done], i) =>
         subtasks.push({
           id: uid(), taskId: id, title, completed: done, order: i,
           createdAt: midnight(5), updatedAt: midnight(2), syncStatus: SYNC,
         }),
       )
     }
-    if (t.comment) {
+    if (x.comment) {
       comments.push({
-        id: uid(), taskId: id, text: t.comment,
-        createdAt: at(t.completedDaysAgo ?? 1, 12), updatedAt: at(t.completedDaysAgo ?? 1, 12), syncStatus: SYNC,
+        id: uid(), taskId: id, text: x.comment,
+        createdAt: at(x.completedDaysAgo ?? 1, 12), updatedAt: at(x.completedDaysAgo ?? 1, 12), syncStatus: SYNC,
       })
     }
     // Solo recordatorios FUTUROS: uno ya vencido saltaría como aviso nada más
     // abrir la demo (ruido en la primera impresión).
-    if (t.remindDaysAgo !== undefined && due !== null && due - 30 * 60_000 > Date.now()) {
+    if (x.remindDaysAgo !== undefined && due !== null && due - 30 * 60_000 > Date.now()) {
       reminders.push({
         id: uid(), taskId: id, remindAt: due - 30 * 60_000,
         repeatCount: 0, repeatEveryMin: 10, firedCount: 0, dismissed: false,
@@ -216,68 +219,69 @@ export async function seedDemo(): Promise<void> {
   }
 
   // Pendientes de HOY (repartidas en momentos del día).
-  addTask({ title: 'Preparar la reunión de equipo', listId: L.work, priority: 'high', dueDaysAgo: 0, hasTime: true, dueH: 10, tagIds: [T.urgente], pomodoroMinutes: 50, section: S.manana,
-    notes: 'Repasar métricas del sprint y bloqueantes.', subs: [['Actualizar el tablero', true], ['Escribir la agenda', false], ['Compartir el enlace', false]], remindDaysAgo: 0 })
-  addTask({ title: 'Responder correos pendientes', listId: L.work, priority: 'medium', dueDaysAgo: 0, tagIds: [T.email], section: S.manana })
-  addTask({ title: 'Llamar al dentista', listId: L.health, priority: 'medium', dueDaysAgo: 0, hasTime: true, dueH: 12, tagIds: [T.llamada, T.rapido], section: S.mediodia })
-  addTask({ title: 'Comprar víveres de la semana', listId: L.home, dueDaysAgo: 0, tagIds: [T.compras], section: S.tarde,
-    subs: [['Verduras', false], ['Pollo', false], ['Arroz y pasta', false], ['Café', false]] })
-  addTask({ title: 'Estudiar capítulo 4 de álgebra', listId: L.study, priority: 'high', dueDaysAgo: 0, tagIds: [T.lectura], pomodoroMinutes: 75, section: S.tarde })
-  addTask({ title: 'Escribir en el diario', listId: L.personal, dueDaysAgo: 0, section: S.noche })
-  addTask({ title: 'Revisar el presupuesto del mes', listId: L.finance, priority: 'medium', dueDaysAgo: 0, section: S.noche })
+  addTask({ title: t('Prepare the team meeting', 'Preparar la reunión de equipo'), listId: L.work, priority: 'high', dueDaysAgo: 0, hasTime: true, dueH: 10, tagIds: [T.urgente], pomodoroMinutes: 50, section: S.manana,
+    notes: t('Review sprint metrics and blockers.', 'Repasar métricas del sprint y bloqueantes.'),
+    subs: [[t('Update the board', 'Actualizar el tablero'), true], [t('Write the agenda', 'Escribir la agenda'), false], [t('Share the link', 'Compartir el enlace'), false]], remindDaysAgo: 0 })
+  addTask({ title: t('Reply to pending emails', 'Responder correos pendientes'), listId: L.work, priority: 'medium', dueDaysAgo: 0, tagIds: [T.email], section: S.manana })
+  addTask({ title: t('Call the dentist', 'Llamar al dentista'), listId: L.health, priority: 'medium', dueDaysAgo: 0, hasTime: true, dueH: 12, tagIds: [T.llamada, T.rapido], section: S.mediodia })
+  addTask({ title: t('Buy groceries for the week', 'Comprar víveres de la semana'), listId: L.home, dueDaysAgo: 0, tagIds: [T.compras], section: S.tarde,
+    subs: [[t('Vegetables', 'Verduras'), false], [t('Chicken', 'Pollo'), false], [t('Rice and pasta', 'Arroz y pasta'), false], [t('Coffee', 'Café'), false]] })
+  addTask({ title: STUDY_TASK, listId: L.study, priority: 'high', dueDaysAgo: 0, tagIds: [T.lectura], pomodoroMinutes: 75, section: S.tarde })
+  addTask({ title: t('Write in the journal', 'Escribir en el diario'), listId: L.personal, dueDaysAgo: 0, section: S.noche })
+  addTask({ title: t("Review this month's budget", 'Revisar el presupuesto del mes'), listId: L.finance, priority: 'medium', dueDaysAgo: 0, section: S.noche })
 
   // Vencidas (para mostrar el aviso diario y la sección "Vencidas").
-  addTask({ title: 'Renovar el seguro del coche', listId: L.finance, priority: 'high', dueDaysAgo: 2, tagIds: [T.urgente] })
-  addTask({ title: 'Devolver el libro a la biblioteca', listId: L.personal, dueDaysAgo: 4, tagIds: [T.lectura] })
-  addTask({ title: 'Enviar la factura al cliente', listId: L.work, priority: 'high', dueDaysAgo: 1, tagIds: [T.email, T.urgente] })
+  addTask({ title: t('Renew the car insurance', 'Renovar el seguro del coche'), listId: L.finance, priority: 'high', dueDaysAgo: 2, tagIds: [T.urgente] })
+  addTask({ title: t('Return the book to the library', 'Devolver el libro a la biblioteca'), listId: L.personal, dueDaysAgo: 4, tagIds: [T.lectura] })
+  addTask({ title: t('Send the invoice to the client', 'Enviar la factura al cliente'), listId: L.work, priority: 'high', dueDaysAgo: 1, tagIds: [T.email, T.urgente] })
 
   // Próximas (mañana y esta/próxima semana).
-  addTask({ title: 'Cita médica anual', listId: L.health, priority: 'medium', dueDaysAgo: -1, hasTime: true, dueH: 9, remindDaysAgo: -1 })
-  addTask({ title: 'Presentación trimestral', listId: L.work, priority: 'high', dueDaysAgo: -2, hasTime: true, dueH: 15, tagIds: [T.urgente],
-    subs: [['Diseñar las diapositivas', true], ['Ensayar', false]] })
-  addTask({ title: 'Cumpleaños de mamá — comprar regalo', listId: L.personal, dueDaysAgo: -3, tagIds: [T.compras] })
-  addTask({ title: 'Pagar el alquiler', listId: L.finance, priority: 'high', dueDaysAgo: -5, hasTime: true, dueH: 10 })
-  addTask({ title: 'Cambiar las sábanas', listId: L.home, dueDaysAgo: -1 })
-  addTask({ title: 'Mantenimiento del coche', listId: L.home, priority: 'low', dueDaysAgo: -7 })
+  addTask({ title: t('Annual doctor appointment', 'Cita médica anual'), listId: L.health, priority: 'medium', dueDaysAgo: -1, hasTime: true, dueH: 9, remindDaysAgo: -1 })
+  addTask({ title: t('Quarterly presentation', 'Presentación trimestral'), listId: L.work, priority: 'high', dueDaysAgo: -2, hasTime: true, dueH: 15, tagIds: [T.urgente],
+    subs: [[t('Design the slides', 'Diseñar las diapositivas'), true], [t('Rehearse', 'Ensayar'), false]] })
+  addTask({ title: t("Mom's birthday — buy a gift", 'Cumpleaños de mamá — comprar regalo'), listId: L.personal, dueDaysAgo: -3, tagIds: [T.compras] })
+  addTask({ title: t('Pay the rent', 'Pagar el alquiler'), listId: L.finance, priority: 'high', dueDaysAgo: -5, hasTime: true, dueH: 10 })
+  addTask({ title: t('Change the bed sheets', 'Cambiar las sábanas'), listId: L.home, dueDaysAgo: -1 })
+  addTask({ title: t('Car maintenance', 'Mantenimiento del coche'), listId: L.home, priority: 'low', dueDaysAgo: -7 })
 
   // Sin fecha (backlog).
-  addTask({ title: 'Ideas para las vacaciones de verano', listId: L.personal, dueDaysAgo: null, notes: 'Playa vs montaña. Mirar vuelos.' })
-  addTask({ title: 'Ordenar el garaje', listId: L.home, dueDaysAgo: null, priority: 'low' })
-  addTask({ title: 'Aprender un atajo nuevo de teclado', listId: L.study, dueDaysAgo: null, tagIds: [T.rapido] })
+  addTask({ title: t('Summer vacation ideas', 'Ideas para las vacaciones de verano'), listId: L.personal, dueDaysAgo: null, notes: t('Beach vs mountains. Check flights.', 'Playa vs montaña. Mirar vuelos.') })
+  addTask({ title: t('Tidy up the garage', 'Ordenar el garaje'), listId: L.home, dueDaysAgo: null, priority: 'low' })
+  addTask({ title: t('Learn a new keyboard shortcut', 'Aprender un atajo nuevo de teclado'), listId: L.study, dueDaysAgo: null, tagIds: [T.rapido] })
 
   // Recurrentes (diaria y semanal), pendientes hoy.
-  addTask({ title: 'Standup diario', listId: L.work, dueDaysAgo: 0, hasTime: true, dueH: 9, section: S.manana,
+  addTask({ title: t('Daily standup', 'Standup diario'), listId: L.work, dueDaysAgo: 0, hasTime: true, dueH: 9, section: S.manana,
     recur: { every: 1, unit: 'day', end: { type: 'never' }, daysOfWeek: [1, 2, 3, 4, 5] } })
-  addTask({ title: 'Planificar la semana', listId: L.personal, dueDaysAgo: 0, hasTime: true, dueH: 18,
+  addTask({ title: t('Plan the week', 'Planificar la semana'), listId: L.personal, dueDaysAgo: 0, hasTime: true, dueH: 18,
     recur: { every: 1, unit: 'week', end: { type: 'never' }, daysOfWeek: [0] } })
 
   // Completadas HOY (para la sección "Completadas" y el XP de hoy).
-  addTask({ title: 'Hacer la cama', listId: L.home, completedDaysAgo: 0, completedH: 7, dueDaysAgo: 0 })
-  addTask({ title: 'Meditar 10 minutos', listId: L.personal, completedDaysAgo: 0, completedH: 7, dueDaysAgo: 0, pomodoroMinutes: 10 })
-  addTask({ title: 'Revisar el tablero del proyecto', listId: L.work, priority: 'medium', completedDaysAgo: 0, completedH: 9, dueDaysAgo: 0, comment: 'Todo en verde 🎉' })
+  addTask({ title: t('Make the bed', 'Hacer la cama'), listId: L.home, completedDaysAgo: 0, completedH: 7, dueDaysAgo: 0 })
+  addTask({ title: t('Meditate for 10 minutes', 'Meditar 10 minutos'), listId: L.personal, completedDaysAgo: 0, completedH: 7, dueDaysAgo: 0, pomodoroMinutes: 10 })
+  addTask({ title: t('Review the project board', 'Revisar el tablero del proyecto'), listId: L.work, priority: 'medium', completedDaysAgo: 0, completedH: 9, dueDaysAgo: 0, comment: t('All green 🎉', 'Todo en verde 🎉') })
 
   // Completadas en días anteriores (para Stats y el historial). ~ a diario.
   const doneHistory: [string, string, number, Task['priority']][] = [
-    ['Salir a correr 5 km', L.health, 1, 'medium'],
-    ['Leer 20 páginas', L.study, 1, 'low'],
-    ['Cocinar para la semana', L.home, 1, 'low'],
-    ['Terminar el informe mensual', L.work, 2, 'high'],
-    ['Sesión de gimnasio', L.health, 2, 'medium'],
-    ['Estudiar vocabulario de inglés', L.study, 2, 'low'],
-    ['Pagar facturas', L.finance, 3, 'medium'],
-    ['Videollamada con el cliente', L.work, 3, 'high'],
-    ['Limpiar la cocina', L.home, 3, 'low'],
-    ['Yoga por la mañana', L.health, 4, 'low'],
-    ['Escribir el artículo del blog', L.personal, 4, 'medium'],
-    ['Repasar apuntes de matemáticas', L.study, 5, 'medium'],
-    ['Actualizar la hoja de gastos', L.finance, 5, 'low'],
-    ['Reunión con el equipo de diseño', L.work, 6, 'medium'],
-    ['Paseo largo', L.health, 6, 'low'],
-    ['Ordenar el escritorio', L.home, 7, 'low'],
-    ['Terminar el curso online', L.study, 8, 'high'],
-    ['Preparar la propuesta', L.work, 9, 'high'],
-    ['Comprar regalo de cumpleaños', L.personal, 10, 'low'],
-    ['Entrenamiento de fuerza', L.health, 11, 'medium'],
+    [t('Go for a 5 km run', 'Salir a correr 5 km'), L.health, 1, 'medium'],
+    [t('Read 20 pages', 'Leer 20 páginas'), L.study, 1, 'low'],
+    [t('Meal prep for the week', 'Cocinar para la semana'), L.home, 1, 'low'],
+    [t('Finish the monthly report', 'Terminar el informe mensual'), L.work, 2, 'high'],
+    [t('Gym session', 'Sesión de gimnasio'), L.health, 2, 'medium'],
+    [t('Study Spanish vocabulary', 'Estudiar vocabulario de inglés'), L.study, 2, 'low'],
+    [t('Pay bills', 'Pagar facturas'), L.finance, 3, 'medium'],
+    [t('Video call with the client', 'Videollamada con el cliente'), L.work, 3, 'high'],
+    [t('Clean the kitchen', 'Limpiar la cocina'), L.home, 3, 'low'],
+    [t('Morning yoga', 'Yoga por la mañana'), L.health, 4, 'low'],
+    [t('Write the blog post', 'Escribir el artículo del blog'), L.personal, 4, 'medium'],
+    [t('Review math notes', 'Repasar apuntes de matemáticas'), L.study, 5, 'medium'],
+    [t('Update the expense sheet', 'Actualizar la hoja de gastos'), L.finance, 5, 'low'],
+    [t('Meeting with the design team', 'Reunión con el equipo de diseño'), L.work, 6, 'medium'],
+    [t('Long walk', 'Paseo largo'), L.health, 6, 'low'],
+    [t('Tidy up the desk', 'Ordenar el escritorio'), L.home, 7, 'low'],
+    [t('Finish the online course', 'Terminar el curso online'), L.study, 8, 'high'],
+    [t('Prepare the proposal', 'Preparar la propuesta'), L.work, 9, 'high'],
+    [t('Buy a birthday gift', 'Comprar regalo de cumpleaños'), L.personal, 10, 'low'],
+    [t('Strength training', 'Entrenamiento de fuerza'), L.health, 11, 'medium'],
   ]
   for (const [title, listId, d, prio] of doneHistory) {
     addTask({ title, listId, priority: prio, completedDaysAgo: d, completedH: 10 + (d % 8), dueDaysAgo: d })
@@ -318,19 +322,22 @@ export async function seedDemo(): Promise<void> {
     }
     return id
   }
-  habit('Beber 2 L de agua', [0, 1, 2, 3, 4, 5, 6], L.health, { section: S.manana, skip: [9, 23] })
-  habit('Leer 20 min', [0, 1, 2, 3, 4, 5, 6], L.study, { reminderTime: '21:00', pomodoroMinutes: 20, section: S.noche, skip: [4, 12, 27] })
-  habit('Ejercicio', [1, 3, 5], L.health, { pomodoroMinutes: 30, skip: [15] })
-  habit('Meditar', [0, 1, 2, 3, 4, 5, 6], L.personal, { reminderTime: '07:00', pomodoroMinutes: 10, section: S.manana, skip: [6, 7, 20] })
-  habit('Escribir el diario', [0, 1, 2, 3, 4, 5, 6], L.personal, { reminderTime: '22:00', section: S.noche, skip: [3, 11, 19, 28] })
-  habit('Repaso de inglés', [2, 4, 6], L.study, { pomodoroMinutes: 25, skip: [8] })
+  const H_EXERCISE = t('Exercise', 'Ejercicio')
+  const H_LANGUAGE = t('Spanish practice', 'Repaso de inglés')
+  const H_JOURNAL = t('Journaling', 'Escribir el diario')
+  habit(t('Drink 2 L of water', 'Beber 2 L de agua'), [0, 1, 2, 3, 4, 5, 6], L.health, { section: S.manana, skip: [9, 23] })
+  habit(t('Read 20 min', 'Leer 20 min'), [0, 1, 2, 3, 4, 5, 6], L.study, { reminderTime: '21:00', pomodoroMinutes: 20, section: S.noche, skip: [4, 12, 27] })
+  habit(H_EXERCISE, [1, 3, 5], L.health, { pomodoroMinutes: 30, skip: [15] })
+  habit(t('Meditate', 'Meditar'), [0, 1, 2, 3, 4, 5, 6], L.personal, { reminderTime: '07:00', pomodoroMinutes: 10, section: S.manana, skip: [6, 7, 20] })
+  habit(H_JOURNAL, [0, 1, 2, 3, 4, 5, 6], L.personal, { reminderTime: '22:00', section: S.noche, skip: [3, 11, 19, 28] })
+  habit(H_LANGUAGE, [2, 4, 6], L.study, { pomodoroMinutes: 25, skip: [8] })
 
   // Que HOY queden algunos hábitos ya cumplidos y otros pendientes: quita el
   // log de hoy de un par (si tocaba) para que se vean pendientes en "Hoy".
   const todayDow = new Date().getDay()
   await db.habits.bulkAdd(habits)
   // "Ejercicio" y "Repaso de inglés" se dejan pendientes hoy (sin log de hoy).
-  const pendingTodayTitles = new Set(['Ejercicio', 'Repaso de inglés', 'Escribir el diario'])
+  const pendingTodayTitles = new Set([H_EXERCISE, H_LANGUAGE, H_JOURNAL])
   const pendingIds = new Set(habits.filter((h) => pendingTodayTitles.has(h.title)).map((h) => h.id))
   const filteredLogs = logs.filter((l) => !(l.dateKey === keyOf(0) && pendingIds.has(l.habitId)))
   void todayDow
@@ -338,7 +345,7 @@ export async function seedDemo(): Promise<void> {
 
   // --- Sesiones de foco (Pomodoro) ---
   const sessions: StudySession[] = []
-  const taskByTitle = new Map(tasks.map((t) => [t.title, t]))
+  const taskByTitle = new Map(tasks.map((task) => [task.title, task]))
   const focusPlan: [number, number, string | null][] = [
     // [díasAtrás, minutos, listId]
     [0, 50, L.work], [0, 25, L.study],
@@ -360,7 +367,7 @@ export async function seedDemo(): Promise<void> {
     })
   }
   // Un par de sesiones vinculadas a la tarea de estudio de hoy, para llenar su barra.
-  const studyTask = taskByTitle.get('Estudiar capítulo 4 de álgebra')
+  const studyTask = taskByTitle.get(STUDY_TASK)
   if (studyTask) {
     sessions.push({
       id: uid(), taskId: studyTask.id, habitId: null, listId: L.study,
@@ -373,7 +380,7 @@ export async function seedDemo(): Promise<void> {
 
   // --- Mapa de ideas ---
   const map: IdeaMap = {
-    id: uid(), title: 'Proyecto: lanzar mi portafolio', view: 'tree', order: 1,
+    id: uid(), title: t('Project: launch my portfolio', 'Proyecto: lanzar mi portafolio'), view: 'tree', order: 1,
     createdAt: midnight(20), updatedAt: at(2, 19), syncStatus: SYNC,
   }
   await db.ideaMaps.add(map)
@@ -386,20 +393,20 @@ export async function seedDemo(): Promise<void> {
     })
     return id
   }
-  const root = node('Portafolio', null, 0)
-  const nDesign = node('Diseño', root, 0)
-  node('Elegir paleta de colores', nDesign, 0)
-  node('Wireframes de las secciones', nDesign, 1)
-  node('Logo y tipografía', nDesign, 2)
-  const nContent = node('Contenido', root, 1)
-  node('Escribir el "sobre mí"', nContent, 0)
-  node('Seleccionar 4 proyectos', nContent, 1)
-  node('Redactar casos de estudio', nContent, 2)
-  const nDev = node('Desarrollo', root, 2)
-  node('Montar el proyecto', nDev, 0)
-  node('Página de inicio', nDev, 1)
-  node('Formulario de contacto', nDev, 2)
-  node('Desplegar', nDev, 3)
+  const root = node(t('Portfolio', 'Portafolio'), null, 0)
+  const nDesign = node(t('Design', 'Diseño'), root, 0)
+  node(t('Pick a color palette', 'Elegir paleta de colores'), nDesign, 0)
+  node(t('Section wireframes', 'Wireframes de las secciones'), nDesign, 1)
+  node(t('Logo and typography', 'Logo y tipografía'), nDesign, 2)
+  const nContent = node(t('Content', 'Contenido'), root, 1)
+  node(t('Write the "about me"', 'Escribir el "sobre mí"'), nContent, 0)
+  node(t('Pick 4 projects', 'Seleccionar 4 proyectos'), nContent, 1)
+  node(t('Write case studies', 'Redactar casos de estudio'), nContent, 2)
+  const nDev = node(t('Development', 'Desarrollo'), root, 2)
+  node(t('Set up the project', 'Montar el proyecto'), nDev, 0)
+  node(t('Home page', 'Página de inicio'), nDev, 1)
+  node(t('Contact form', 'Formulario de contacto'), nDev, 2)
+  node(t('Deploy', 'Desplegar'), nDev, 3)
   await db.ideaNodes.bulkAdd(nodes)
 
   // --- Perfil del jugador (nivel alto + racha) ---

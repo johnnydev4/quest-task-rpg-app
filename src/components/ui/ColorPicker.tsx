@@ -1,4 +1,5 @@
 import { PALETTE } from '../../lib/colors'
+import { t } from '../../lib/i18n'
 
 interface ColorPickerProps {
   value: string | null
@@ -17,7 +18,7 @@ export function ColorPicker({ value, onChange, allowNone = false, allowCustom = 
         <button
           type="button"
           onClick={() => onChange(null)}
-          aria-label="Sin color"
+          aria-label={t('No color', 'Sin color')}
           aria-pressed={value === null}
           className={`flex size-8 items-center justify-center rounded-full border-2 text-ink-faint transition-all ${
             value === null ? 'border-ink' : 'border-line/15 hover:border-line/40'
@@ -43,7 +44,7 @@ export function ColorPicker({ value, onChange, allowNone = false, allowCustom = 
         />
       ))}
       {allowCustom && (
-        <label className="relative cursor-pointer" title="Cualquier color">
+        <label className="relative cursor-pointer" title={t('Any color', 'Cualquier color')}>
           <span
             aria-hidden="true"
             className={`block size-8 rounded-full border-2 transition-all ${
@@ -62,7 +63,7 @@ export function ColorPicker({ value, onChange, allowNone = false, allowCustom = 
             type="color"
             value={isCustom ? value! : '#8b5cf6'}
             onChange={(e) => onChange(e.target.value)}
-            aria-label="Color personalizado"
+            aria-label={t('Custom color', 'Color personalizado')}
             className="absolute inset-0 size-full cursor-pointer opacity-0"
           />
         </label>

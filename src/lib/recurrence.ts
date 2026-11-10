@@ -1,16 +1,21 @@
 import type { RecurrenceRule, RecurrenceUnit } from '../db/types'
+import { LOCALE, t } from './i18n'
 
 export const RECURRENCE_UNITS: { id: RecurrenceUnit; label: string; plural: string }[] = [
-  { id: 'day', label: 'día', plural: 'días' },
-  { id: 'week', label: 'semana', plural: 'semanas' },
-  { id: 'month', label: 'mes', plural: 'meses' },
-  { id: 'year', label: 'año', plural: 'años' },
+  { id: 'day', label: t('day', 'día'), plural: t('days', 'días') },
+  { id: 'week', label: t('week', 'semana'), plural: t('weeks', 'semanas') },
+  { id: 'month', label: t('month', 'mes'), plural: t('months', 'meses') },
+  { id: 'year', label: t('year', 'año'), plural: t('years', 'años') },
 ]
 
 /** Lunes a viernes (0=domingo … 6=sábado). */
 export const WORKDAYS = [1, 2, 3, 4, 5]
 
-const DAY_SHORT: Record<number, string> = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mié', 4: 'jue', 5: 'vie', 6: 'sáb' }
+const DAY_SHORT: Record<number, string> = Object.fromEntries(
+  t('Sun Mon Tue Wed Thu Fri Sat', 'dom lun mar mié jue vie sáb')
+    .split(' ')
+    .map((d, i) => [i, d]),
+)
 
 export function isWorkdaysRule(rule: RecurrenceRule): boolean {
   const days = rule.daysOfWeek ?? []
@@ -87,19 +92,24 @@ export function describeRule(rule: RecurrenceRule): string {
   let base: string
   if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
     base = isWorkdaysRule(rule)
-      ? 'Días laborales'
-      : `Cada ${[...rule.daysOfWeek]
+      ? t('Weekdays', 'Días laborales')
+      : `${t('Every', 'Cada')} ${[...rule.daysOfWeek]
           .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)) // lunes primero
           .map((d) => DAY_SHORT[d])
           .join(', ')}`
   } else {
     const unit = RECURRENCE_UNITS.find((u) => u.id === rule.unit)!
-    base = rule.every === 1 ? `Cada ${unit.label}` : `Cada ${rule.every} ${unit.plural}`
+    base =
+      rule.every === 1
+        ? `${t('Every', 'Cada')} ${unit.label}`
+        : `${t('Every', 'Cada')} ${rule.every} ${unit.plural}`
   }
-  if (rule.end.type === 'count') return `${base} · ${rule.end.remaining} veces más`
+  if (rule.end.type === 'count') {
+    return `${base} · ${rule.end.remaining} ${t(rule.end.remaining === 1 ? 'more time' : 'more times', 'veces más')}`
+  }
   if (rule.end.type === 'until') {
-    const f = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(rule.end.date)
-    return `${base} · hasta ${f}`
+    const f = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short' }).format(rule.end.date)
+    return `${base} · ${t('until', 'hasta')} ${f}`
   }
   return base
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useIsDesktop } from '../../lib/useMediaQuery'
 import { useSwipeToClose } from '../../lib/useSwipeToClose'
+import { t } from '../../lib/i18n'
 
 interface SheetProps {
   title: string
@@ -58,7 +59,7 @@ export function Sheet({ title, onClose, children }: SheetProps) {
             <span aria-hidden="true" />
             <h3 className="text-center text-base font-semibold text-ink">{title}</h3>
             <button onClick={onClose} className="justify-self-end text-[0.9375rem] font-semibold text-accent-400">
-              Listo
+              {t('Done', 'Listo')}
             </button>
           </div>
         </div>

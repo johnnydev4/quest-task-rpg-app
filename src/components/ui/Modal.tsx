@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useSwipeToClose } from '../../lib/useSwipeToClose'
+import { t } from '../../lib/i18n'
 
 interface ModalProps {
   title: string
@@ -49,7 +50,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
           <h2 className="text-lg font-semibold text-ink">{title}</h2>
           <button
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={t('Close', 'Cerrar')}
             className="flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-5" aria-hidden="true">

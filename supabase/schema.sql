@@ -85,6 +85,9 @@ create table if not exists public.push_subscriptions (
   created_at timestamptz not null default now()
 );
 
+-- Idioma de la app en el dispositivo, para escribir el aviso en ese idioma.
+alter table public.push_subscriptions add column if not exists lang text not null default 'en';
+
 alter table public.push_subscriptions enable row level security;
 
 drop policy if exists "push: ver propias" on public.push_subscriptions;

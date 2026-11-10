@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { SortIcon } from './icons'
+import { t } from '../../lib/i18n'
 
 export interface SortOption<T extends string> {
   id: T
@@ -15,7 +16,7 @@ export function SortMenu<T extends string>({
   value,
   options,
   onChange,
-  label = 'Ordenar',
+  label = t('Sort', 'Ordenar'),
 }: {
   value: T
   options: SortOption<T>[]

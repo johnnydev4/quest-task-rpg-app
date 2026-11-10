@@ -11,7 +11,7 @@ principles in mind. Offline-first and installable as an app on desktop and mobil
 > AI-assisted engineering. Feedback and ideas are welcome.
 
 ## Live demo
-[View it live](https://quest-task-rpg-app.vercel.app/?demo)
+[View it live](https://quest-task-rpg-app.vercel.app/?demo) · [en español](https://quest-task-rpg-app.vercel.app/?demo&lang=es)
 
 ## Features
 
@@ -19,8 +19,11 @@ principles in mind. Offline-first and installable as an app on desktop and mobil
   image/file attachments, and reusable tags. Views: Today, Upcoming, All, by list, by tag.
 - **Calendar** — Continuous-scroll monthly calendar showing scheduled tasks; tap a day
   to view or create tasks with a specific time.
-- **Smart quick-add** — Natural-language capture in Spanish: typing
-  _"Gym on Monday at 8pm every week #health"_ auto-detects the date, time, recurrence, and tag.
+- **English & Spanish** — The whole interface (and the demo data) is available in both
+  languages. English is the default; switch it in Settings → Language, or with `?lang=es`.
+- **Smart quick-add** — Natural-language capture in English and Spanish: typing
+  _"Gym on Monday at 8pm every week #health"_ (or _"Gimnasio el lunes a las 8pm #salud"_)
+  auto-detects the date, time, recurrence, and tag.
 - **RPG progression** — XP weighted by priority, rising level curve, per-list stats,
   non-punitive streaks, level titles, synthesized ASMR sounds, and a level-up animation.
 - **Monthly Missions** — A "main quest" per month themed around a mythical creature

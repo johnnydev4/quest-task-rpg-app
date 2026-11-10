@@ -5,6 +5,7 @@ import { deleteTask } from '../../db/repo/tasks'
 import { emitToast } from '../../lib/events'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
 import { DayPicker } from './DayPicker'
+import { t } from '../../lib/i18n'
 
 interface ConvertToHabitProps {
   task: Task
@@ -32,7 +33,7 @@ export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHab
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
           <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
         </svg>
-        Convertir en hábito…
+        {t('Turn into a habit…', 'Convertir en hábito…')}
       </button>
     )
   }
@@ -41,15 +42,22 @@ export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHab
     if (days.length === 0) return
     await createHabit({ title: task.title, daysOfWeek: days, startDate: startOfToday(), endDate })
     await deleteTask(task.id)
-    emitToast({ title: 'Hábito creado 🔁', body: `${task.title} · empieza tu primer COMBO` })
+    emitToast({
+      title: t('Habit created 🔁', 'Hábito creado 🔁'),
+      body: `${task.title} · ${t('start your first COMBO', 'empieza tu primer COMBO')}`,
+    })
     onClose()
   }
 
   return (
     <div className="space-y-3 rounded-lg border border-line/5 glass-input px-3 py-3">
       <p className="text-xs text-ink-muted">
-        La tarea pasará a <strong className="text-ink-dim">Hábitos</strong> como barra de progreso con
-        COMBOS. Elige los días y hasta cuándo:
+        {t('The task will move to ', 'La tarea pasará a ')}
+        <strong className="text-ink-dim">{t('Habits', 'Hábitos')}</strong>
+        {t(
+          ' as a progress bar with COMBOS. Pick the days and until when:',
+          ' como barra de progreso con COMBOS. Elige los días y hasta cuándo:',
+        )}
       </p>
       <DayPicker value={days} onChange={setDays} />
       <div className="flex flex-wrap items-center gap-2">
@@ -61,7 +69,7 @@ export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHab
             const ms = dateInputToMs(e.target.value)
             if (ms !== null) setEndDate(ms)
           }}
-          aria-label="Fecha límite del hábito"
+          aria-label={t('Habit end date', 'Fecha límite del hábito')}
           className="rounded-lg border border-line/10 glass-input px-3 py-1.5 text-sm text-ink outline-none focus:border-accent-500/60"
         />
         <button
@@ -70,7 +78,7 @@ export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHab
           disabled={days.length === 0}
           className="rounded-lg bg-accent-600 px-3 py-1.5 text-sm font-medium text-on-accent transition-colors hover:bg-accent-500 disabled:opacity-40"
         >
-          Convertir
+          {t('Convert', 'Convertir')}
         </button>
         {!autoOpen && (
           <button
@@ -78,7 +86,7 @@ export function ConvertToHabit({ task, onClose, autoOpen = false }: ConvertToHab
             onClick={() => setOpen(false)}
             className="rounded-lg border border-line/10 px-3 py-1.5 text-sm text-ink-muted transition-colors hover:bg-ink/5"
           >
-            Cancelar
+            {t('Cancel', 'Cancelar')}
           </button>
         )}
       </div>

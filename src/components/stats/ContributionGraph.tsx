@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import type { StudySession, Task } from '../../db/types'
 import { contributionCalendar, type ContributionDay } from '../../lib/statsData'
+import { LOCALE, t } from '../../lib/i18n'
 
 /** Tono del cuadrado por intensidad: mezcla del acento sobre el fondo. */
 const LEVEL_BG = [
@@ -16,16 +17,16 @@ const LEVEL_BG = [
 const CELL = 12
 const GAP = 3
 /** Filas de lunes a domingo; se etiquetan lunes, miércoles y viernes como en GitHub. */
-const WEEKDAYS = ['lun', '', 'mié', '', 'vie', '', '']
+const WEEKDAYS = t('Mon,,Wed,,Fri,,', 'lun,,mié,,vie,,').split(',')
 
-const dayFmt = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' })
+const dayFmt = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' })
 
 function describe(day: ContributionDay): string {
   const parts: string[] = []
-  if (day.tasks > 0) parts.push(`${day.tasks} ${day.tasks === 1 ? 'tarea' : 'tareas'}`)
-  if (day.habits > 0) parts.push(`${day.habits} ${day.habits === 1 ? 'hábito' : 'hábitos'}`)
-  if (day.focusMinutes > 0) parts.push(`${day.focusMinutes} min de foco`)
-  return parts.length > 0 ? parts.join(' · ') : 'Sin actividad'
+  if (day.tasks > 0) parts.push(`${day.tasks} ${day.tasks === 1 ? t('task', 'tarea') : t('tasks', 'tareas')}`)
+  if (day.habits > 0) parts.push(`${day.habits} ${day.habits === 1 ? t('habit', 'hábito') : t('habits', 'hábitos')}`)
+  if (day.focusMinutes > 0) parts.push(`${day.focusMinutes} ${t('min of focus', 'min de foco')}`)
+  return parts.length > 0 ? parts.join(' · ') : t('No activity', 'Sin actividad')
 }
 
 export default function ContributionGraph({
@@ -98,7 +99,10 @@ export default function ContributionGraph({
               className="grid grid-flow-col grid-rows-7"
               style={{ gap: GAP, gridAutoColumns: `${CELL}px` }}
               role="img"
-              aria-label={`Calendario de actividad: ${cal.totalActivity} acciones en ${cal.totalDays} días activos.`}
+              aria-label={t(
+                `Activity calendar: ${cal.totalActivity} actions over ${cal.totalDays} active days.`,
+                `Calendario de actividad: ${cal.totalActivity} acciones en ${cal.totalDays} días activos.`,
+              )}
             >
               {cal.weeks.flatMap((week, col) =>
                 week.map((day, row) =>
@@ -131,17 +135,22 @@ export default function ContributionGraph({
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-faint">
         <span>
-          {cal.totalActivity} {cal.totalActivity === 1 ? 'acción' : 'acciones'} en {cal.totalDays}{' '}
-          {cal.totalDays === 1 ? 'día activo' : 'días activos'}
-          {cal.currentStreak > 0 && ` · racha de ${cal.currentStreak} ${cal.currentStreak === 1 ? 'día' : 'días'}`}
-          {cal.bestStreak > 0 && ` · mejor: ${cal.bestStreak}`}
+          {cal.totalActivity} {cal.totalActivity === 1 ? t('action', 'acción') : t('actions', 'acciones')}{' '}
+          {t('over', 'en')} {cal.totalDays}{' '}
+          {cal.totalDays === 1 ? t('active day', 'día activo') : t('active days', 'días activos')}
+          {cal.currentStreak > 0 &&
+            ` · ${t(
+              `${cal.currentStreak}-day streak`,
+              `racha de ${cal.currentStreak} ${cal.currentStreak === 1 ? 'día' : 'días'}`,
+            )}`}
+          {cal.bestStreak > 0 && ` · ${t('best', 'mejor')}: ${cal.bestStreak}`}
         </span>
         <span className="flex items-center gap-1">
-          Menos
+          {t('Less', 'Menos')}
           {LEVEL_BG.map((bg, i) => (
             <span key={i} className="rounded-[3px]" style={{ width: CELL, height: CELL, backgroundColor: bg }} />
           ))}
-          Más
+          {t('More', 'Más')}
         </span>
       </div>
 

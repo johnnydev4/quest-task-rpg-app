@@ -7,8 +7,9 @@ import { formatDueTime } from '../../lib/dates'
 import { isScheduledToday } from '../../lib/habits'
 import { CheckCircleIcon } from '../ui/icons'
 import { Modal } from '../ui/Modal'
+import { LOCALE, t } from '../../lib/i18n'
 
-const WEEKDAYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
+const WEEKDAYS = t('Mon Tue Wed Thu Fri Sat Sun', 'lun mar mié jue vie sáb dom').split(' ')
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -34,7 +35,7 @@ export interface CalEntry {
 }
 
 function monthLabel(ms: number): string {
-  const label = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(ms)
+  const label = new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' }).format(ms)
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
@@ -224,7 +225,7 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
               <rect x="3" y="5" width="18" height="16" rx="2" />
               <path d="M3 10h18M8 3v4M16 3v4M9 14h.01M15 14h.01M9 18h.01M15 18h.01" />
             </svg>
-            Mes
+            {t('Month', 'Mes')}
           </button>
           <button
             onClick={() => setMode('agenda')}
@@ -237,7 +238,7 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
               <path d="M8 6h13M8 12h13M8 18h13" />
               <path d="M3 6h.01M3 12h.01M3 18h.01" />
             </svg>
-            Lista
+            {t('List', 'Lista')}
           </button>
         </div>
       </div>
@@ -249,7 +250,7 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
           <path d="M18 15l-6-6-6 6" />
         </svg>
-        {mode === 'agenda' ? 'Días anteriores' : 'Meses anteriores'}
+        {mode === 'agenda' ? t('Previous days', 'Días anteriores') : t('Previous months', 'Meses anteriores')}
       </button>
 
       {mode === 'agenda' ? (
@@ -294,7 +295,7 @@ export function CalendarView({ onOpenTask }: CalendarViewProps) {
           <circle cx="12" cy="12" r="9" />
           <circle cx="12" cy="12" r="1.5" fill="currentColor" />
         </svg>
-        Ir a hoy
+        {t('Go to today', 'Ir a hoy')}
       </button>
 
       {selectedDay !== null && (
@@ -385,7 +386,10 @@ function AgendaDayRow({
     <div ref={ref} className="scroll-mt-24">
       <button
         onClick={() => onSelect(dayMs)}
-        aria-label={`${weekday} ${d.getDate()} — ${pending} pendientes. Toca para ver o crear`}
+        aria-label={t(
+          `${weekday} ${d.getDate()} — ${pending} pending. Tap to view or create`,
+          `${weekday} ${d.getDate()} — ${pending} pendientes. Toca para ver o crear`,
+        )}
         className={`flex w-full items-stretch gap-3 rounded-xl border glass-panel p-2 text-left transition-colors hover:border-accent-500/40 ${
           isToday ? 'border-accent-500/50' : 'border-line/10'
         }`}
@@ -401,8 +405,8 @@ function AgendaDayRow({
         <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
           {entries.length === 0 ? (
             <>
-              <span className="text-sm text-ink-dim">No hay nada planeado</span>
-              <span className="text-xs text-ink-faint">Tocar para crear</span>
+              <span className="text-sm text-ink-dim">{t('Nothing planned', 'No hay nada planeado')}</span>
+              <span className="text-xs text-ink-faint">{t('Tap to create', 'Tocar para crear')}</span>
             </>
           ) : (
             entries.map((e) => {
@@ -476,7 +480,10 @@ function MonthGrid({
             <button
               key={key}
               onClick={() => onSelectDay(d.getTime())}
-              aria-label={`${d.getDate()} de ${monthLabel(monthStart)} — ${pendingCount} pendientes. Toca para ver o crear`}
+              aria-label={t(
+                `${monthLabel(monthStart)} ${d.getDate()} — ${pendingCount} pending. Tap to view or create`,
+                `${d.getDate()} de ${monthLabel(monthStart)} — ${pendingCount} pendientes. Toca para ver o crear`,
+              )}
               className={`flex min-h-16 flex-col gap-1 rounded-xl border bg-surface-800/55 p-1.5 text-left transition-colors hover:border-accent-500/40 md:min-h-24 ${
                 isToday ? 'border-accent-500/60' : 'border-line/5'
               }`}
@@ -509,7 +516,7 @@ function MonthGrid({
                   )
                 })}
                 {dayEntries.length > 3 && (
-                  <span className="px-1 text-[0.625rem] text-ink-faint">+{dayEntries.length - 3} más</span>
+                  <span className="px-1 text-[0.625rem] text-ink-faint">+{dayEntries.length - 3} {t('more', 'más')}</span>
                 )}
               </span>
               <span className="flex flex-wrap items-center gap-0.5 md:hidden">
@@ -547,7 +554,7 @@ function DayModal({
   const [title, setTitle] = useState('')
   const [time, setTime] = useState('')
 
-  const label = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' }).format(dayMs)
+  const label = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' }).format(dayMs)
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -574,8 +581,8 @@ function DayModal({
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Nueva tarea para este día…"
-            aria-label="Nueva tarea para este día"
+            placeholder={t('New task for this day…', 'Nueva tarea para este día…')}
+            aria-label={t('New task for this day', 'Nueva tarea para este día')}
             // Solo autoenfocar con ratón: en táctil abre el teclado y tapa la pantalla.
             autoFocus={!window.matchMedia('(pointer: coarse)').matches}
             className="min-w-0 flex-1 rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
@@ -584,20 +591,20 @@ function DayModal({
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            aria-label="Hora (opcional)"
-            title="Hora (opcional)"
+            aria-label={t('Time (optional)', 'Hora (opcional)')}
+            title={t('Time (optional)', 'Hora (opcional)')}
             className="rounded-lg border border-line/10 glass-input px-2 py-2 text-sm text-ink outline-none focus:border-accent-500/60"
           />
           <button
             type="submit"
             className="rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:bg-accent-500"
           >
-            Crear
+            {t('Create', 'Crear')}
           </button>
         </form>
 
         {entries.length === 0 ? (
-          <p className="py-2 text-center text-sm text-ink-faint">Sin tareas ni hábitos este día.</p>
+          <p className="py-2 text-center text-sm text-ink-faint">{t('No tasks or habits this day.', 'Sin tareas ni hábitos este día.')}</p>
         ) : (
           <div className="space-y-1">
             {entries.map((e) => {
@@ -605,7 +612,7 @@ function DayModal({
               // la hora programada (solo las tareas con hora la tienen).
               const meta =
                 e.completed && e.completedAt !== null ? (
-                  <span className="flex shrink-0 items-center gap-1 text-xs text-ink-faint" title="Hora de cumplimiento">
+                  <span className="flex shrink-0 items-center gap-1 text-xs text-ink-faint" title={t('Completion time', 'Hora de cumplimiento')}>
                     <CheckCircleIcon className="size-3" />
                     {formatDueTime(e.completedAt)}
                   </span>

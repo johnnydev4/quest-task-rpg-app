@@ -1,4 +1,5 @@
 import { WEEKDAY_ORDER, WEEKDAY_SHORT } from '../../lib/habits'
+import { t } from '../../lib/i18n'
 
 interface DayPickerProps {
   value: number[]
@@ -14,7 +15,7 @@ export function DayPicker({ value, onChange, color }: DayPickerProps) {
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Días de la semana">
+    <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('Days of the week', 'Días de la semana')}>
       {WEEKDAY_ORDER.map((day) => {
         const active = value.includes(day)
         return (
@@ -23,7 +24,7 @@ export function DayPicker({ value, onChange, color }: DayPickerProps) {
             type="button"
             onClick={() => toggle(day)}
             aria-pressed={active}
-            aria-label={`Día ${WEEKDAY_SHORT[day]}`}
+            aria-label={`${t('Day', 'Día')} ${WEEKDAY_SHORT[day]}`}
             className={`flex size-8 items-center justify-center rounded-full border text-xs font-bold transition-all ${
               active ? 'scale-105 text-white' : 'border-line/15 text-ink-muted hover:bg-ink/5'
             }`}

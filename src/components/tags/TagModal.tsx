@@ -4,6 +4,7 @@ import { deleteTag, updateTag } from '../../db/repo/tags'
 import { Modal } from '../ui/Modal'
 import { ColorPicker } from '../ui/ColorPicker'
 import { ConfirmButton } from '../ui/ConfirmButton'
+import { t } from '../../lib/i18n'
 
 interface TagModalProps {
   tag: Tag
@@ -23,14 +24,14 @@ export function TagModal({ tag, onClose }: TagModalProps) {
   }
 
   return (
-    <Modal title="Editar etiqueta" onClose={onClose}>
+    <Modal title={t('Edit tag', 'Editar etiqueta')} onClose={onClose}>
       <form onSubmit={save} className="space-y-5">
         <div className="space-y-1.5">
-          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">Nombre</span>
+          <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">{t('Name', 'Nombre')}</span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            aria-label="Nombre de la etiqueta"
+            aria-label={t('Tag name', 'Nombre de la etiqueta')}
             className="w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
           />
         </div>
@@ -40,8 +41,8 @@ export function TagModal({ tag, onClose }: TagModalProps) {
         </div>
         <div className="flex items-center justify-between border-t border-line/5 pt-4">
           <ConfirmButton
-            label="Eliminar etiqueta"
-            confirmLabel="¿Seguro? Toca de nuevo"
+            label={t('Delete tag', 'Eliminar etiqueta')}
+            confirmLabel={t('Sure? Tap again', '¿Seguro? Toca de nuevo')}
             onConfirm={async () => {
               await deleteTag(tag.id)
               onClose()
@@ -51,7 +52,7 @@ export function TagModal({ tag, onClose }: TagModalProps) {
             type="submit"
             className="rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:bg-accent-500"
           >
-            Guardar
+            {t('Save', 'Guardar')}
           </button>
         </div>
       </form>

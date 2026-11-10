@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import type { Comment } from '../../../db/types'
 import { createComment, deleteComment } from '../../../db/repo/comments'
 import { formatDateTime } from '../../../lib/dates'
+import { t } from '../../../lib/i18n'
 
 interface CommentSectionProps {
   taskId: string
@@ -27,7 +28,7 @@ export function CommentSection({ taskId, comments }: CommentSectionProps) {
             <span className="text-[0.6875rem] text-ink-faint">{formatDateTime(c.createdAt)}</span>
             <button
               onClick={() => deleteComment(c.id)}
-              aria-label="Eliminar comentario"
+              aria-label={t('Delete comment', 'Eliminar comentario')}
               className="text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger focus:opacity-100"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-3.5" aria-hidden="true">
@@ -42,8 +43,8 @@ export function CommentSection({ taskId, comments }: CommentSectionProps) {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Añadir comentario…"
-          aria-label="Añadir comentario"
+          placeholder={t('Add a comment…', 'Añadir comentario…')}
+          aria-label={t('Add comment', 'Añadir comentario')}
           className="w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
         />
       </form>

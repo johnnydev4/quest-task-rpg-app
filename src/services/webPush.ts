@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { LANG, t } from '../lib/i18n'
 
 /**
  * Web Push (avisos con la app cerrada).
@@ -30,7 +31,7 @@ function urlBase64ToUint8Array(base64Url: string): Uint8Array {
 
 function keyToBase64(sub: PushSubscription, name: 'p256dh' | 'auth'): string {
   const key = sub.getKey(name)
-  if (!key) throw new Error(`La suscripción no expone la clave ${name}`)
+  if (!key) throw new Error(t(`The subscription doesn't expose the ${name} key`, `La suscripción no expone la clave ${name}`))
   return btoa(String.fromCharCode(...new Uint8Array(key)))
 }
 
@@ -65,25 +66,25 @@ export const webPush = {
    * toque) y con sesión iniciada, porque las filas van atadas al user_id.
    */
   async subscribe(): Promise<{ ok: boolean; error?: string }> {
-    if (!this.isSupported()) return { ok: false, error: 'Este navegador no soporta Web Push' }
+    if (!this.isSupported()) return { ok: false, error: t("This browser doesn't support Web Push", 'Este navegador no soporta Web Push') }
     if (!VAPID_PUBLIC_KEY) return { ok: false, error: 'Falta VITE_VAPID_PUBLIC_KEY' }
-    if (!supabase) return { ok: false, error: 'Supabase no está configurado' }
+    if (!supabase) return { ok: false, error: t('Supabase is not configured', 'Supabase no está configurado') }
 
     const {
       data: { session },
     } = await supabase.auth.getSession()
-    if (!session) return { ok: false, error: 'Inicia sesión para recibir avisos con la app cerrada' }
+    if (!session) return { ok: false, error: t('Sign in to get alerts with the app closed', 'Inicia sesión para recibir avisos con la app cerrada') }
 
     if (typeof Notification === 'undefined') {
-      return { ok: false, error: 'Este navegador no soporta notificaciones' }
+      return { ok: false, error: t("This browser doesn't support notifications", 'Este navegador no soporta notificaciones') }
     }
     if (Notification.permission !== 'granted') {
       const result = await Notification.requestPermission()
-      if (result !== 'granted') return { ok: false, error: 'Permiso de notificaciones denegado' }
+      if (result !== 'granted') return { ok: false, error: t('Notification permission denied', 'Permiso de notificaciones denegado') }
     }
 
     const reg = await registration()
-    if (!reg) return { ok: false, error: 'El service worker no está activo (solo en producción)' }
+    if (!reg) return { ok: false, error: t('The service worker is not active (production only)', 'El service worker no está activo (solo en producción)') }
 
     try {
       const sub =
@@ -93,7 +94,7 @@ export const webPush = {
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         }))
 
-      const { error } = await supabase.from('push_subscriptions').upsert({
+      const row = {
         endpoint: sub.endpoint,
         user_id: session.user.id,
         p256dh: keyToBase64(sub, 'p256dh'),
@@ -102,11 +103,19 @@ export const webPush = {
         // "las 08:00" de un hábito y qué día cuenta como hoy.
         time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
         last_seen_at: new Date().toISOString(),
-      })
+      }
+      // El idioma permite que el servidor escriba el aviso en el idioma de la app.
+      // Si la base aún no tiene la columna `lang` (esquema viejo), se reintenta sin ella.
+      let { error } = await supabase.from('push_subscriptions').upsert({ ...row, lang: LANG })
+      if (error && /lang/i.test(error.message)) {
+        ;({ error } = await supabase.from('push_subscriptions').upsert(row))
+      } else if (!error) {
+        rememberPushLang()
+      }
       if (error) return { ok: false, error: error.message }
       return { ok: true }
     } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : 'No se pudo suscribir' }
+      return { ok: false, error: e instanceof Error ? e.message : t("Couldn't subscribe", 'No se pudo suscribir') }
     }
   },
 
@@ -132,7 +141,28 @@ export const webPush = {
       .from('push_subscriptions')
       .update({ last_seen_at: new Date().toISOString() })
       .eq('endpoint', sub.endpoint)
+    // Tras cambiar de idioma, el servidor se entera en el siguiente latido.
+    if (pushLangSynced() !== LANG) {
+      const { error } = await supabase.from('push_subscriptions').update({ lang: LANG }).eq('endpoint', sub.endpoint)
+      if (!error) rememberPushLang()
+    }
   },
+}
+
+const PUSH_LANG_KEY = 'quest-push-lang'
+function pushLangSynced(): string | null {
+  try {
+    return localStorage.getItem(PUSH_LANG_KEY)
+  } catch {
+    return null
+  }
+}
+function rememberPushLang(): void {
+  try {
+    localStorage.setItem(PUSH_LANG_KEY, LANG)
+  } catch {
+    /* ignore */
+  }
 }
 
 const HEARTBEAT_MS = 60_000

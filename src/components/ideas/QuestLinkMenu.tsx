@@ -4,6 +4,7 @@ import { db } from '../../db/db'
 import { explodeQuestIntoNode, linkNodeToQuest } from '../../db/repo/ideas'
 import { monthLabelOf } from '../../lib/questThemes'
 import { SwordIcon } from '../ui/icons'
+import { t } from '../../lib/i18n'
 
 /**
  * Vincula un nodo a una misión existente y, al elegirla, la "explota": crea un
@@ -54,8 +55,8 @@ export function QuestLinkMenu({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={linked ? 'Misión vinculada' : 'Vincular a una misión'}
-        title={linked ? 'Misión vinculada' : 'Vincular a una misión'}
+        aria-label={linked ? t('Linked quest', 'Misión vinculada') : t('Link to a quest', 'Vincular a una misión')}
+        title={linked ? t('Linked quest', 'Misión vinculada') : t('Link to a quest', 'Vincular a una misión')}
         className={`flex size-6 items-center justify-center rounded transition-colors hover:bg-ink/10 ${
           linked ? 'text-accent-400' : 'text-ink-faint hover:text-accent-300'
         }`}
@@ -70,7 +71,7 @@ export function QuestLinkMenu({
           style={{ animation: 'menu-pop 0.14s ease-out both' }}
         >
           <p className="px-3 pt-1.5 pb-1 text-[0.625rem] font-semibold tracking-wide text-ink-faint uppercase">
-            Explotar misión en subtareas
+            {t('Explode quest into subtasks', 'Explotar misión en subtareas')}
           </p>
 
           {linked && (
@@ -81,13 +82,13 @@ export function QuestLinkMenu({
               }}
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-dim transition-colors hover:bg-ink/5 hover:text-danger"
             >
-              <span className="text-danger">✕</span> Desvincular misión
+              <span className="text-danger">✕</span> {t('Unlink quest', 'Desvincular misión')}
             </button>
           )}
 
           {rows.length === 0 ? (
             <p className="px-3 py-2 text-xs text-ink-faint">
-              No hay misiones aún. Créalas en la pestaña Misiones.
+              {t('No quests yet. Create them in the Quests tab.', 'No hay misiones aún. Créalas en la pestaña Misiones.')}
             </p>
           ) : (
             rows.map((q) => (
@@ -104,10 +105,11 @@ export function QuestLinkMenu({
               >
                 <span className="flex items-center gap-1.5 text-sm text-ink">
                   <SwordIcon className="size-3 shrink-0 text-accent-400" />
-                  <span className="min-w-0 flex-1 truncate">{q.title || 'Misión sin título'}</span>
+                  <span className="min-w-0 flex-1 truncate">{q.title || t('Untitled quest', 'Misión sin título')}</span>
                 </span>
                 <span className="pl-4.5 text-[0.6875rem] text-ink-faint">
-                  {monthLabelOf(q.monthKey)} · {q.steps} paso{q.steps === 1 ? '' : 's'}
+                  {monthLabelOf(q.monthKey)} ·{' '}
+                  {t(`${q.steps} step${q.steps === 1 ? '' : 's'}`, `${q.steps} paso${q.steps === 1 ? '' : 's'}`)}
                 </span>
               </button>
             ))

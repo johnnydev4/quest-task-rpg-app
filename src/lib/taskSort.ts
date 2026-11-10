@@ -1,5 +1,6 @@
 import type { Priority, Task } from '../db/types'
 import { PRIORITY_WEIGHT } from './priority'
+import { LOCALE, t } from './i18n'
 
 const NO_DUE = Number.MAX_SAFE_INTEGER
 
@@ -17,17 +18,17 @@ const dayOf = (t: Task) => {
 export type TaskSortMode = 'agenda' | 'name' | 'priority' | 'created' | 'manual'
 
 export const TASK_SORT_OPTIONS: { id: TaskSortMode; label: string }[] = [
-  { id: 'agenda', label: 'Fecha y hora' },
-  { id: 'name', label: 'Nombre (A–Z)' },
-  { id: 'priority', label: 'Prioridad' },
-  { id: 'created', label: 'Añadidas primero' },
-  { id: 'manual', label: 'Manual (arrastrar)' },
+  { id: 'agenda', label: t('Date and time', 'Fecha y hora') },
+  { id: 'name', label: t('Name (A–Z)', 'Nombre (A–Z)') },
+  { id: 'priority', label: t('Priority', 'Prioridad') },
+  { id: 'created', label: t('Recently added first', 'Añadidas primero') },
+  { id: 'manual', label: t('Manual (drag)', 'Manual (arrastrar)') },
 ]
 
 /** Posición manual; las tareas antiguas usan su fecha de creación. */
 const slot = (t: Task) => t.order ?? t.createdAt
 
-const byName = (a: Task, b: Task) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })
+const byName = (a: Task, b: Task) => a.title.localeCompare(b.title, LOCALE, { sensitivity: 'base' })
 
 /** Orden de agenda: día más próximo → con hora antes que solo-fecha → prioridad → antigüedad. */
 function byAgenda(a: Task, b: Task): number {

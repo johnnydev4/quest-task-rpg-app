@@ -3,6 +3,7 @@ import type { Reminder } from '../../../db/types'
 import { createReminder, deleteReminder, updateReminder } from '../../../db/repo/reminders'
 import { dateTimeInputToMs, msToDateTimeInput } from '../../../lib/dates'
 import { notificationService } from '../../../services/notifications'
+import { t } from '../../../lib/i18n'
 
 interface ReminderSectionProps {
   taskId: string
@@ -37,12 +38,12 @@ export function ReminderSection({ taskId, reminders }: ReminderSectionProps) {
                 const ms = dateTimeInputToMs(e.target.value)
                 if (ms !== null) updateReminder(r.id, { remindAt: ms, dismissed: false, firedCount: 0 })
               }}
-              aria-label="Fecha y hora del recordatorio"
+              aria-label={t('Reminder date and time', 'Fecha y hora del recordatorio')}
               className={`${selectClass}`}
             />
             <button
               onClick={() => deleteReminder(r.id)}
-              aria-label="Eliminar recordatorio"
+              aria-label={t('Delete reminder', 'Eliminar recordatorio')}
               className="text-ink-faint transition-colors hover:text-danger"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
@@ -51,26 +52,26 @@ export function ReminderSection({ taskId, reminders }: ReminderSectionProps) {
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
-            <span>Repetir aviso</span>
+            <span>{t('Repeat reminder', 'Repetir aviso')}</span>
             <select
               value={r.repeatCount}
               onChange={(e) => updateReminder(r.id, { repeatCount: Number(e.target.value) })}
-              aria-label="Veces que se repite el aviso"
+              aria-label={t('Times the reminder repeats', 'Veces que se repite el aviso')}
               className={selectClass}
             >
               {[0, 1, 2, 3, 5, 10].map((n) => (
                 <option key={n} value={n}>
-                  {n === 0 ? 'no' : `${n} ${n === 1 ? 'vez' : 'veces'}`}
+                  {n === 0 ? t('no', 'no') : t(`${n} time${n === 1 ? '' : 's'}`, `${n} ${n === 1 ? 'vez' : 'veces'}`)}
                 </option>
               ))}
             </select>
             {r.repeatCount > 0 && (
               <>
-                <span>cada</span>
+                <span>{t('every', 'cada')}</span>
                 <select
                   value={r.repeatEveryMin}
                   onChange={(e) => updateReminder(r.id, { repeatEveryMin: Number(e.target.value) })}
-                  aria-label="Minutos entre avisos"
+                  aria-label={t('Minutes between reminders', 'Minutos entre avisos')}
                   className={selectClass}
                 >
                   {[5, 10, 15, 30, 60].map((n) => (
@@ -81,7 +82,7 @@ export function ReminderSection({ taskId, reminders }: ReminderSectionProps) {
                 </select>
               </>
             )}
-            {r.dismissed && <span className="text-ink-faint">· ya avisado</span>}
+            {r.dismissed && <span className="text-ink-faint">{t('· already notified', '· ya avisado')}</span>}
           </div>
         </div>
       ))}
@@ -95,7 +96,7 @@ export function ReminderSection({ taskId, reminders }: ReminderSectionProps) {
             <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
             <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
           </svg>
-          Añadir recordatorio
+          {t('Add reminder', 'Añadir recordatorio')}
         </button>
         {permission === 'default' && (
           <button
@@ -103,11 +104,16 @@ export function ReminderSection({ taskId, reminders }: ReminderSectionProps) {
             onClick={askPermission}
             className="rounded-lg border border-line/10 px-3 py-1.5 text-xs text-ink-dim transition-colors hover:bg-ink/5"
           >
-            Permitir notificaciones del sistema
+            {t('Allow system notifications', 'Permitir notificaciones del sistema')}
           </button>
         )}
         {permission === 'denied' && (
-          <span className="text-[0.6875rem] text-ink-faint">Notificaciones del sistema bloqueadas; los avisos saldrán dentro de la app.</span>
+          <span className="text-[0.6875rem] text-ink-faint">
+            {t(
+              'System notifications are blocked; alerts will show inside the app.',
+              'Notificaciones del sistema bloqueadas; los avisos saldrán dentro de la app.',
+            )}
+          </span>
         )}
       </div>
     </div>

@@ -2,6 +2,7 @@ import { uid } from '../../lib/uid'
 import { db } from '../db'
 import type { IdeaMap, IdeaNode, IdeaView } from '../types'
 import { recordDeletion } from './tombstones'
+import { t } from '../../lib/i18n'
 
 /**
  * Organizador de ideas jerárquico: un `IdeaMap` es un árbol con un nodo raíz,
@@ -12,7 +13,7 @@ import { recordDeletion } from './tombstones'
  */
 
 /** Texto por defecto de la idea central de un mapa recién creado. */
-const DEFAULT_ROOT_TEXT = 'Idea central'
+const DEFAULT_ROOT_TEXT = t('Central idea', 'Idea central')
 
 // ── Mapas ────────────────────────────────────────────────────────────────
 
@@ -133,7 +134,7 @@ export async function addChild(mapId: string, parentId: string, text = ''): Prom
  */
 export async function addSiblingAfter(nodeId: string, text = ''): Promise<string> {
   const node = await db.ideaNodes.get(nodeId)
-  if (!node) throw new Error('Nodo no encontrado')
+  if (!node) throw new Error(t('Node not found', 'Nodo no encontrado'))
   if (node.parentId === null) return addChild(node.mapId, node.id, text)
 
   const kids = await siblings(node.mapId, node.parentId)

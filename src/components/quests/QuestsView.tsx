@@ -35,6 +35,7 @@ import {
   SwordIcon,
   TrophyIcon,
 } from '../ui/icons'
+import { t } from '../../lib/i18n'
 
 const inputClass =
   'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
@@ -86,9 +87,9 @@ export function QuestsView() {
   const currentWeek = isCurrentMonth ? weekOfMonth(new Date()) : null
   const monthLockReason =
     monthOffset < 0
-      ? 'Este mes ya terminó'
+      ? t('This month is over', 'Este mes ya terminó')
       : monthOffset > 0
-        ? 'Disponible cuando llegue el mes'
+        ? t('Available when the month arrives', 'Disponible cuando llegue el mes')
         : null
   const navBtn =
     'flex size-8 items-center justify-center rounded-lg border border-white/20 text-white/90 transition-colors hover:bg-white/10'
@@ -175,18 +176,18 @@ export function QuestsView() {
           <div className="relative space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-semibold tracking-widest text-ink-faint uppercase">
-                Misión sellada · {monthLabelOf(monthKey)}
+                {t('Sealed quest', 'Misión sellada')} · {monthLabelOf(monthKey)}
               </p>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => setMonthOffset((o) => o - 1)} aria-label="Mes anterior" className={sealedNav}>
+                <button onClick={() => setMonthOffset((o) => o - 1)} aria-label={t('Previous month', 'Mes anterior')} className={sealedNav}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
                     <path d="M15 18l-6-6 6-6" />
                   </svg>
                 </button>
                 <button onClick={() => setMonthOffset(0)} className="rounded-lg border border-line/15 px-2.5 py-1.5 text-xs font-medium text-ink-dim transition-colors hover:bg-ink/5">
-                  Hoy
+                  {t('Today', 'Hoy')}
                 </button>
-                <button disabled aria-label="Mes siguiente" className={sealedNav}>
+                <button disabled aria-label={t('Next month', 'Mes siguiente')} className={sealedNav}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
                     <path d="M9 6l6 6-6 6" />
                   </svg>
@@ -194,16 +195,23 @@ export function QuestsView() {
               </div>
             </div>
             <h2 className="flex items-center gap-2 text-2xl font-black text-ink">
-              <LockIcon className="size-6" /> Aún sellada
+              <LockIcon className="size-6" /> {t('Still sealed', 'Aún sellada')}
             </h2>
             <p className="max-w-md text-sm text-ink-muted">
-              El desafío de <span className="font-semibold text-ink-dim">{monthLabelOf(monthKey)}</span> todavía no se ha
-              revelado. Vuelve cuando se acerque el mes para descubrir el reto que te aguarda.
+              {t("The challenge for ", 'El desafío de ')}
+              <span className="font-semibold text-ink-dim">{monthLabelOf(monthKey)}</span>
+              {t(
+                " hasn't been revealed yet. Come back as the month approaches to discover the challenge that awaits you.",
+                ' todavía no se ha revelado. Vuelve cuando se acerque el mes para descubrir el reto que te aguarda.',
+              )}
             </p>
           </div>
         </section>
         <p className="flex items-center justify-center gap-1.5 text-center text-xs text-ink-faint">
-          Solo puedes explorar hasta un mes por delante. El destino se desvela a su debido tiempo.
+          {t(
+            'You can only explore up to one month ahead. Fate reveals itself in due time.',
+            'Solo puedes explorar hasta un mes por delante. El destino se desvela a su debido tiempo.',
+          )}
           <SwordIcon className="size-3.5" />
         </p>
       </div>
@@ -222,10 +230,10 @@ export function QuestsView() {
           }}
         >
           <p className="text-xs font-semibold tracking-wide uppercase" style={{ color: prevTheme.colorA }}>
-            {monthLabelOf(prevMonthKey)} terminó
+            {t(`${monthLabelOf(prevMonthKey)} is over`, `${monthLabelOf(prevMonthKey)} terminó`)}
           </p>
           <p className="text-sm text-ink-dim">
-            ¿Conquistaste tu gran misión{' '}
+            {t('Did you conquer your great quest', '¿Conquistaste tu gran misión')}{' '}
             <span className="font-bold text-ink">"{prevMonthly.title}"</span>?
           </p>
           <div className="flex flex-wrap gap-2">
@@ -234,13 +242,13 @@ export function QuestsView() {
               className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90"
               style={{ background: `linear-gradient(135deg, ${prevTheme.colorA}, ${prevTheme.colorB})` }}
             >
-              <CrownIcon className="size-4" /> Sí, conquistada · +{MONTHLY_QUEST_XP} XP
+              <CrownIcon className="size-4" /> {t('Yes, conquered', 'Sí, conquistada')} · +{MONTHLY_QUEST_XP} XP
             </button>
             <button
               onClick={() => resolvePrev(false)}
               className="rounded-lg border border-line/15 px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-ink/5"
             >
-              No esta vez
+              {t('Not this time', 'No esta vez')}
             </button>
           </div>
         </section>
@@ -287,20 +295,20 @@ export function QuestsView() {
         <div className="relative flex flex-col items-start gap-2">
           <div className="flex w-full items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[0.6875rem] font-bold tracking-widest text-white uppercase backdrop-blur-sm">
-              <SparkleIcon className="size-3.5" /> Reto del mes
+              <SparkleIcon className="size-3.5" /> {t('Monthly challenge', 'Reto del mes')}
             </span>
             <div className="flex items-center gap-1.5">
-              <button onClick={() => setMonthOffset((o) => o - 1)} aria-label="Mes anterior" className={navBtn}>
+              <button onClick={() => setMonthOffset((o) => o - 1)} aria-label={t('Previous month', 'Mes anterior')} className={navBtn}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
               </button>
               {monthOffset !== 0 && (
                 <button onClick={() => setMonthOffset(0)} className="rounded-lg border border-white/20 px-2.5 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10">
-                  Hoy
+                  {t('Today', 'Hoy')}
                 </button>
               )}
-              <button onClick={() => setMonthOffset((o) => o + 1)} aria-label="Mes siguiente" className={navBtn}>
+              <button onClick={() => setMonthOffset((o) => o + 1)} aria-label={t('Next month', 'Mes siguiente')} className={navBtn}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden="true">
                   <path d="M9 6l6 6-6 6" />
                 </svg>
@@ -315,7 +323,7 @@ export function QuestsView() {
           {totalUnits > 0 && !monthly?.completed && (
             <div className="w-full max-w-md pt-1">
               <p className="mb-1 text-[0.6875rem] font-medium text-white/80">
-                {doneUnits} / {totalUnits} gestas completadas
+                {doneUnits} / {totalUnits} {t('feats completed', 'gestas completadas')}
               </p>
               <div className="h-2 overflow-hidden rounded-full bg-black/25">
                 <div
@@ -327,7 +335,8 @@ export function QuestsView() {
           )}
           {monthly?.completed && (
             <p className="flex items-center gap-1.5 pt-1 text-sm font-bold text-white">
-              <TrophyIcon className="size-4" /> ¡Misión del mes conquistada! +{MONTHLY_QUEST_XP} XP
+              <TrophyIcon className="size-4" /> {t('Monthly quest conquered!', '¡Misión del mes conquistada!')} +
+              {MONTHLY_QUEST_XP} XP
             </p>
           )}
           {isCurrentMonth && !monthly && (
@@ -336,7 +345,7 @@ export function QuestsView() {
               className="mt-2 flex items-center gap-2 self-end rounded-full bg-white/95 px-6 py-2.5 text-sm font-bold shadow-lg transition-all hover:bg-white active:scale-95"
               style={{ color: theme.colorB }}
             >
-              <SwordIcon className="size-4" /> Aceptar reto
+              <SwordIcon className="size-4" /> {t('Accept challenge', 'Aceptar reto')}
             </button>
           )}
         </div>
@@ -348,7 +357,7 @@ export function QuestsView() {
         {/* Tareas del reto: la gran misión del mes + las misiones semanales */}
         <section className="rounded-2xl border border-line/10 glass-panel p-4 sm:p-5">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-base font-bold text-ink">Tareas del reto</h3>
+            <h3 className="text-base font-bold text-ink">{t('Challenge tasks', 'Tareas del reto')}</h3>
             {totalUnits > 0 && (
               <span className="rounded-full border border-line/10 bg-ink/5 px-2.5 py-1 text-xs font-semibold text-ink-dim">
                 {doneUnits} / {totalUnits}
@@ -369,13 +378,15 @@ export function QuestsView() {
               <div className="flex items-center gap-2 rounded-xl border border-dashed border-line/15 px-3 py-2.5 text-xs text-ink-faint">
                 <LockIcon className="size-4" />
                 <CrownIcon className="size-4" />
-                <span>Gran misión del mes — {monthLockReason}</span>
+                <span>
+                  {t('Great quest of the month', 'Gran misión del mes')} — {monthLockReason}
+                </span>
               </div>
             ) : (
               <ForgeRow
-                caption="Gran misión del mes"
-                placeholder="¿Cuál es tu gran gesta?"
-                ariaLabel="Gran misión del mes"
+                caption={t('Great quest of the month', 'Gran misión del mes')}
+                placeholder={t("What's your great feat?", '¿Cuál es tu gran gesta?')}
+                ariaLabel={t('Great quest of the month', 'Gran misión del mes')}
                 theme={theme}
                 onCreate={(title) => void createQuest(monthKey, 0, title)}
               />
@@ -391,7 +402,7 @@ export function QuestsView() {
               const lockedReason = !isCurrentMonth
                 ? monthLockReason
                 : weekPassed
-                  ? 'Semana finalizada'
+                  ? t('Week finished', 'Semana finalizada')
                   : null
               return (
                 <WeeklyQuestRow
@@ -422,12 +433,14 @@ export function QuestsView() {
           >
             {monthly?.completed ? (
               <span className="flex items-center gap-1.5">
-                <TrophyIcon className="size-4" /> ¡Reto del mes conquistado! Recompensa ganada: +{MONTHLY_QUEST_XP} XP
+                <TrophyIcon className="size-4" />{' '}
+                {t('Monthly challenge conquered! Reward earned:', '¡Reto del mes conquistado! Recompensa ganada:')} +
+                {MONTHLY_QUEST_XP} XP
               </span>
             ) : (
               <>
                 <LockIcon />
-                <span>Conquista tus gestas para ganar la recompensa del mes</span>
+                <span>{t('Conquer your feats to earn the monthly reward', 'Conquista tus gestas para ganar la recompensa del mes')}</span>
               </>
             )}
           </div>
@@ -436,7 +449,7 @@ export function QuestsView() {
         {/* Recompensa y estado del reto */}
         <aside className="rounded-2xl border border-line/10 glass-panel p-4 sm:p-5">
           <h3 className="flex items-center gap-1.5 text-base font-bold text-ink">
-            <GemIcon className="size-4" /> Recompensa
+            <GemIcon className="size-4" /> {t('Reward', 'Recompensa')}
           </h3>
           <div className="mt-3 flex items-center gap-3">
             <img
@@ -451,18 +464,21 @@ export function QuestsView() {
             />
             <div>
               <p className="text-2xl font-black text-ink">+{MONTHLY_QUEST_XP} XP</p>
-              <p className="text-xs text-ink-muted">Experiencia al conquistar la gesta del mes</p>
+              <p className="text-xs text-ink-muted">{t("Experience for conquering the month's feat", 'Experiencia al conquistar la gesta del mes')}</p>
             </div>
           </div>
           <p className="mt-2 text-[0.6875rem] text-ink-faint">
-            Además: +{WEEKLY_QUEST_XP} XP por semana conquistada y +{QUEST_STEP_XP} XP por cada paso.
+            {t(
+              `Plus: +${WEEKLY_QUEST_XP} XP per conquered week and +${QUEST_STEP_XP} XP per step.`,
+              `Además: +${WEEKLY_QUEST_XP} XP por semana conquistada y +${QUEST_STEP_XP} XP por cada paso.`,
+            )}
           </p>
 
           <div className="mt-4 space-y-2.5 rounded-xl border border-line/10 glass-input p-3.5">
-            <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Estado del reto</p>
+            <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">{t('Challenge status', 'Estado del reto')}</p>
             <div className="flex items-center justify-between text-sm">
               <span className="flex items-center gap-1.5 font-semibold text-ink">
-                <ChartIcon className="size-4 text-ink-muted" /> {doneUnits} / {totalUnits} gestas
+                <ChartIcon className="size-4 text-ink-muted" /> {doneUnits} / {totalUnits} {t('feats', 'gestas')}
               </span>
               <span className="text-xs font-bold" style={{ color: theme.colorA }}>
                 {progressPct}%
@@ -480,10 +496,10 @@ export function QuestsView() {
             <p className="flex items-center gap-1.5 text-xs text-ink-muted">
               <CalendarIcon className="size-3.5" />
               {daysLeft !== null
-                ? `Quedan ${daysLeft} día${daysLeft === 1 ? '' : 's'}`
+                ? t(`${daysLeft} day${daysLeft === 1 ? '' : 's'} left`, `Quedan ${daysLeft} día${daysLeft === 1 ? '' : 's'}`)
                 : monthOffset < 0
-                  ? 'Mes terminado'
-                  : 'Aún no empieza'}
+                  ? t('Month over', 'Mes terminado')
+                  : t('Not started yet', 'Aún no empieza')}
             </p>
           </div>
         </aside>
@@ -493,28 +509,28 @@ export function QuestsView() {
       {pastMonthlies.length > 0 && (
         <section className="space-y-2.5">
           <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-ink-faint uppercase">
-            <HistoryIcon className="size-3.5" /> Retos anteriores
+            <HistoryIcon className="size-3.5" /> {t('Past challenges', 'Retos anteriores')}
           </h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {pastMonthlies.map((q) => {
-              const t = themeForMonthKey(q.monthKey)
+              const mt = themeForMonthKey(q.monthKey)
               return (
                 <div key={q.id} className="flex items-center gap-3 rounded-2xl border border-line/10 glass-panel p-3.5">
                   <span
                     className="flex size-10 shrink-0 items-center justify-center rounded-full"
-                    style={{ background: `${t.colorA}22`, color: t.colorA }}
+                    style={{ background: `${mt.colorA}22`, color: mt.colorA }}
                     aria-hidden="true"
                   >
                     {q.completed ? <TrophyIcon className="size-5" /> : <SwordIcon className="size-5" />}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[0.625rem] text-ink-faint">{monthLabelOf(q.monthKey)}</p>
-                    <p className="truncate text-sm font-bold text-ink">{t.epicTitle}</p>
+                    <p className="truncate text-sm font-bold text-ink">{mt.epicTitle}</p>
                     <p className={`text-[0.6875rem] font-medium ${q.completed ? 'text-ok' : 'text-ink-faint'}`}>
-                      {q.completed ? '✓ Completado' : 'No conquistado'}
+                      {q.completed ? t('✓ Completed', '✓ Completado') : t('Not conquered', 'No conquistado')}
                     </p>
                   </div>
-                  {q.completed && <XpChip xp={q.xpValue} theme={t} />}
+                  {q.completed && <XpChip xp={q.xpValue} theme={mt} />}
                 </div>
               )
             })}
@@ -582,7 +598,7 @@ function ForgeRow({
             className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
             style={{ background: `linear-gradient(135deg, ${theme.colorA}, ${theme.colorB})` }}
           >
-            Forjar
+            {t('Forge', 'Forjar')}
           </button>
         )}
       </div>
@@ -596,7 +612,7 @@ function StepRow({ step, theme }: { step: QuestStep; theme: MonthTheme }) {
     <div className="group flex items-center gap-2.5 rounded-lg px-1 py-0.5">
       <button
         onClick={() => void setQuestStepCompleted(step.id, !step.completed)}
-        aria-label={step.completed ? 'Marcar paso pendiente' : 'Completar paso'}
+        aria-label={step.completed ? t('Mark step as pending', 'Marcar paso pendiente') : t('Complete step', 'Completar paso')}
         className={`flex size-4.5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
           step.completed ? 'border-transparent' : 'border-ink-muted hover:scale-110'
         }`}
@@ -612,7 +628,7 @@ function StepRow({ step, theme }: { step: QuestStep; theme: MonthTheme }) {
       {!step.completed && <XpChip xp={QUEST_STEP_XP} theme={theme} />}
       <button
         onClick={() => void deleteQuestStep(step.id)}
-        aria-label="Eliminar paso"
+        aria-label={t('Delete step', 'Eliminar paso')}
         className="flex size-6 shrink-0 items-center justify-center rounded text-ink-faint transition-colors hover:text-danger"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-3.5" aria-hidden="true">
@@ -656,12 +672,12 @@ function MonthlyQuestBlock({
     >
       <div className="flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase" style={{ color: theme.colorA }}>
-          <CrownIcon className="size-4" /> Gran misión del mes
+          <CrownIcon className="size-4" /> {t('Great quest of the month', 'Gran misión del mes')}
         </p>
         <div className="flex items-center gap-2">
           <XpChip xp={quest.xpValue} theme={theme} />
           {!quest.completed && (
-            <ConfirmButton label="Eliminar" confirmLabel="¿Seguro?" onConfirm={() => void deleteQuest(quest.id)} />
+            <ConfirmButton label={t('Delete', 'Eliminar')} confirmLabel={t('Sure?', '¿Seguro?')} onConfirm={() => void deleteQuest(quest.id)} />
           )}
         </div>
       </div>
@@ -680,8 +696,8 @@ function MonthlyQuestBlock({
           <input
             value={newStep}
             onChange={(e) => setNewStep(e.target.value)}
-            placeholder="+ Añadir tarea personalizada al reto…"
-            aria-label={`Añadir paso a ${quest.title}`}
+            placeholder={t('+ Add a custom task to the challenge…', t('+ Add a custom task to the challenge…', '+ Añadir tarea personalizada al reto…'))}
+            aria-label={`${t('Add step to', 'Añadir paso a')} ${quest.title}`}
             className={`${inputClass} text-xs`}
           />
         </form>
@@ -691,7 +707,7 @@ function MonthlyQuestBlock({
         {!quest.completed && completeLocked ? (
           <span className="flex items-center gap-1.5 text-[0.6875rem] text-ink-faint">
             <LockIcon />
-            Se conquista cuando termine el mes
+            {t('Conquered when the month ends', 'Se conquista cuando termine el mes')}
           </span>
         ) : (
           <button
@@ -706,10 +722,10 @@ function MonthlyQuestBlock({
             }
           >
             {quest.completed ? (
-              '✓ Conquistada · desmarcar'
+              t('✓ Conquered · unmark', '✓ Conquistada · desmarcar')
             ) : (
               <>
-                <CrownIcon className="size-4" /> Completar +{quest.xpValue} XP
+                <CrownIcon className="size-4" /> {t('Complete', 'Completar')} +{quest.xpValue} XP
               </>
             )}
           </button>
@@ -756,16 +772,16 @@ function WeeklyQuestRow({
         <div className="flex items-center gap-2.5 rounded-xl border border-dashed border-line/10 px-3 py-2.5 text-xs text-ink-faint opacity-75">
           <LockIcon className="size-4" />
           <span>
-            Semana {week} · {rangeLabel} — {lockedReason ?? 'No disponible'}
+            {t('Week', 'Semana')} {week} · {rangeLabel} — {lockedReason ?? t('Not available', 'No disponible')}
           </span>
         </div>
       )
     }
     return (
       <ForgeRow
-        caption={`Semana ${week} · ${rangeLabel}`}
-        placeholder="Nombra tu misión…"
-        ariaLabel={`Misión de la semana ${week}`}
+        caption={`${t('Week', 'Semana')} ${week} · ${rangeLabel}`}
+        placeholder={t('Name your quest…', 'Nombra tu misión…')}
+        ariaLabel={t(`Week ${week} quest`, `Misión de la semana ${week}`)}
         theme={theme}
         onCreate={onCreate}
       />
@@ -795,8 +811,12 @@ function WeeklyQuestRow({
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <button
           onClick={() => void setQuestCompleted(quest.id, !quest.completed)}
-          aria-label={quest.completed ? 'Desmarcar misión' : `Conquistar misión (+${quest.xpValue} XP)`}
-          title={quest.completed ? 'Desmarcar' : `Conquistar · +${quest.xpValue} XP`}
+          aria-label={
+            quest.completed
+              ? t('Unmark quest', 'Desmarcar misión')
+              : `${t('Conquer quest', 'Conquistar misión')} (+${quest.xpValue} XP)`
+          }
+          title={quest.completed ? t('Unmark', 'Desmarcar') : `${t('Conquer', 'Conquistar')} · +${quest.xpValue} XP`}
           className={`flex size-5.5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
             quest.completed ? 'border-transparent' : 'border-ink-muted hover:scale-110'
           }`}
@@ -811,14 +831,14 @@ function WeeklyQuestRow({
         <div className="min-w-0 flex-1">
           <EditableTitle quest={quest} />
           <p className="flex items-center gap-1 text-[0.625rem] text-ink-faint">
-            <SwordIcon className="size-3" /> Semana {week} · {rangeLabel}
+            <SwordIcon className="size-3" /> {t('Week', 'Semana')} {week} · {rangeLabel}
             {highlight && (
               <span className="font-semibold" style={{ color: theme.colorA }}>
                 {' '}
-                · esta semana
+                · {t('this week', 'esta semana')}
               </span>
             )}
-            {steps.length > 0 && ` · ${doneSteps}/${steps.length} pasos`}
+            {steps.length > 0 && ` · ${doneSteps}/${steps.length} ${t('steps', 'pasos')}`}
           </p>
         </div>
         {quest.completed ? (
@@ -831,7 +851,7 @@ function WeeklyQuestRow({
         <button
           onClick={onToggleExpand}
           aria-expanded={expanded}
-          aria-label={expanded ? 'Ocultar pasos' : 'Ver pasos'}
+          aria-label={expanded ? t('Hide steps', 'Ocultar pasos') : t('Show steps', 'Ver pasos')}
           className="flex size-7 shrink-0 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-ink/5 hover:text-ink"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`size-4 transition-transform ${expanded ? 'rotate-90' : ''}`} aria-hidden="true">
@@ -850,15 +870,15 @@ function WeeklyQuestRow({
               <input
                 value={newStep}
                 onChange={(e) => setNewStep(e.target.value)}
-                placeholder="+ Añadir paso…"
-                aria-label={`Añadir paso a ${quest.title}`}
+                placeholder={t('+ Add step…', '+ Añadir paso…')}
+                aria-label={`${t('Add step to', 'Añadir paso a')} ${quest.title}`}
                 className={`${inputClass} text-xs`}
               />
             </form>
           )}
           {!quest.completed && (
             <div className="flex justify-end pt-0.5">
-              <ConfirmButton label="Eliminar misión" confirmLabel="¿Seguro?" onConfirm={() => void deleteQuest(quest.id)} />
+              <ConfirmButton label={t('Delete quest', 'Eliminar misión')} confirmLabel={t('Sure?', '¿Seguro?')} onConfirm={() => void deleteQuest(quest.id)} />
             </div>
           )}
         </div>
@@ -883,7 +903,7 @@ function EditableStep({ step }: { step: QuestStep }) {
       onChange={(e) => setTitle(e.target.value)}
       onBlur={save}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-      aria-label="Título del paso"
+      aria-label={t('Step title', 'Título del paso')}
       className={`min-w-0 flex-1 border-none bg-transparent text-sm outline-none focus:shadow-none ${
         step.completed ? 'text-ink-faint line-through' : 'text-ink-dim'
       }`}
@@ -922,7 +942,7 @@ function EditableTitle({ quest, big = false }: { quest: Quest; big?: boolean }) 
           ;(e.target as HTMLTextAreaElement).blur()
         }
       }}
-      aria-label="Título de la misión"
+      aria-label={t('Quest title', 'Título de la misión')}
       className={`w-full resize-none overflow-hidden border-none bg-transparent font-bold outline-none focus:shadow-none ${
         big ? 'text-xl' : 'text-[0.9375rem]'
       } ${quest.completed ? 'text-ink-faint line-through' : 'text-ink'}`}

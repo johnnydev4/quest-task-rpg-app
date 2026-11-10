@@ -13,6 +13,7 @@ import { ContextMenu, type MenuEntry } from '../ui/ContextMenu'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { ArrowDownIcon, ArrowUpIcon, ClockIcon, MoreIcon, PencilIcon, PlusIcon, TrashIcon } from '../ui/icons'
 import { TaskItem } from './TaskItem'
+import { t } from '../../lib/i18n'
 
 /**
  * Momentos del día de la pestaña Hoy ("Mediodía", "9pm", "Más tarde"…).
@@ -67,7 +68,7 @@ export function DayMoments({
       ))}
       {adding ? (
         <NameForm
-          placeholder="Mediodía, 9pm, Más tarde…"
+          placeholder={t('Midday, 9pm, Later…', 'Mediodía, 9pm, Más tarde…')}
           onSubmit={(name) => {
             void createDaySection(name)
             setAdding(false)
@@ -80,7 +81,7 @@ export function DayMoments({
           className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line/15 px-3 py-2 text-xs font-medium text-ink-faint transition-colors hover:border-accent-400/40 hover:text-accent-300"
         >
           <PlusIcon className="size-3.5" />
-          Nuevo momento del día
+          {t('New time of day', 'Nuevo momento del día')}
         </button>
       )}
     </>
@@ -134,7 +135,7 @@ function NameForm({
         type="submit"
         className="shrink-0 rounded-xl border border-accent-500/40 bg-accent-500/10 px-3 py-2 text-xs font-semibold text-accent-300 transition-colors hover:bg-accent-500/20"
       >
-        Guardar
+        {t('Save', 'Guardar')}
       </button>
     </form>
   )
@@ -174,15 +175,15 @@ function DayMomentSection({
   const count = tasks.length + habits.length
 
   const entries: MenuEntry[] = [
-    { label: 'Renombrar', icon: <PencilIcon className="size-4" />, onClick: () => setRenaming(true) },
+    { label: t('Rename', 'Renombrar'), icon: <PencilIcon className="size-4" />, onClick: () => setRenaming(true) },
     ...(isFirst
       ? []
-      : [{ label: 'Subir', icon: <ArrowUpIcon className="size-4" />, onClick: () => void moveDaySection(section.id, -1) }]),
+      : [{ label: t('Move up', 'Subir'), icon: <ArrowUpIcon className="size-4" />, onClick: () => void moveDaySection(section.id, -1) }]),
     ...(isLast
       ? []
-      : [{ label: 'Bajar', icon: <ArrowDownIcon className="size-4" />, onClick: () => void moveDaySection(section.id, 1) }]),
+      : [{ label: t('Move down', 'Bajar'), icon: <ArrowDownIcon className="size-4" />, onClick: () => void moveDaySection(section.id, 1) }]),
     {
-      label: 'Eliminar momento',
+      label: t('Delete time of day', 'Eliminar momento'),
       icon: <TrashIcon className="size-4" />,
       danger: true,
       // Lo de dentro no se pierde: vuelve al bloque "Hoy".
@@ -235,7 +236,7 @@ function DayMomentSection({
           </button>
           <button
             onClick={(e) => setMenu({ x: e.clientX, y: e.clientY })}
-            aria-label={`Opciones de ${section.name}`}
+            aria-label={`${t('Options for', 'Opciones de')} ${section.name}`}
             className="flex size-7 shrink-0 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
           >
             <MoreIcon className="size-4" />
@@ -268,7 +269,7 @@ function DayMomentSection({
           </SortableList>
           {count === 0 && (
             <p className="rounded-xl border border-dashed border-line/15 px-3 py-3 text-center text-xs text-ink-faint">
-              Arrastra aquí tus tareas y hábitos
+              {t('Drag your tasks and habits here', 'Arrastra aquí tus tareas y hábitos')}
             </p>
           )}
         </div>

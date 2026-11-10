@@ -1,16 +1,17 @@
+import { t } from './i18n'
 /** Títulos RPG por nivel: cuanto más alto el nivel, más elevado el rango. */
 export const LEVEL_TITLES: { level: number; title: string }[] = [
-  { level: 1, title: 'Novato' },
-  { level: 3, title: 'Aprendiz' },
-  { level: 5, title: 'Aventurero' },
-  { level: 8, title: 'Explorador' },
-  { level: 12, title: 'Veterano' },
-  { level: 16, title: 'Héroe' },
-  { level: 20, title: 'Campeón' },
-  { level: 25, title: 'Maestro' },
-  { level: 30, title: 'Gran Maestro' },
-  { level: 40, title: 'Leyenda' },
-  { level: 50, title: 'Mítico' },
+  { level: 1, title: t('Novice', 'Novato') },
+  { level: 3, title: t('Apprentice', 'Aprendiz') },
+  { level: 5, title: t('Adventurer', 'Aventurero') },
+  { level: 8, title: t('Explorer', 'Explorador') },
+  { level: 12, title: t('Veteran', 'Veterano') },
+  { level: 16, title: t('Hero', 'Héroe') },
+  { level: 20, title: t('Champion', 'Campeón') },
+  { level: 25, title: t('Master', 'Maestro') },
+  { level: 30, title: t('Grandmaster', 'Gran Maestro') },
+  { level: 40, title: t('Legend', 'Leyenda') },
+  { level: 50, title: t('Mythic', 'Mítico') },
 ]
 
 export function titleForLevel(level: number): string {

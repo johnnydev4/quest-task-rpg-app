@@ -7,6 +7,7 @@ import { allowsNext, firstDayOfWeekOnOrAfter, nextOccurrence, ruleForNext } from
 import { startOfToday } from '../../lib/dates'
 import { applyXp } from './progress'
 import { recordDeletion } from './tombstones'
+import { t } from '../../lib/i18n'
 
 export interface NewTaskInput {
   title: string
@@ -232,7 +233,7 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
   const overdueRecurring =
     task.recurrenceRule !== null && task.dueAt !== null && task.dueAt < startOfToday()
   if (overdueRecurring) {
-    if (completed) emitToast({ title: 'Completada sin XP', body: 'Repetición atrasada de días anteriores.' })
+    if (completed) emitToast({ title: t('Completed without XP', 'Completada sin XP'), body: t('Late repeat from previous days.', 'Repetición atrasada de días anteriores.') })
     return
   }
 

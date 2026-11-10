@@ -1,6 +1,7 @@
 import { db } from '../db/db'
 import { supabase } from './supabase'
 import { DEMO_MODE } from '../lib/demoMode'
+import { t } from '../lib/i18n'
 
 /**
  * Sincronización local-first (spec §4): Dexie es la fuente de verdad inmediata;
@@ -305,8 +306,8 @@ let pendingRetry = false
  */
 export async function syncNow(full = false): Promise<{ ok: boolean; error?: string }> {
   // La demo nunca sincroniza: sus datos viven solo en la base local aislada.
-  if (DEMO_MODE) return { ok: false, error: 'Demo: sincronización desactivada' }
-  if (!supabase) return { ok: false, error: 'Supabase no está configurado' }
+  if (DEMO_MODE) return { ok: false, error: t('Demo: sync disabled', 'Demo: sincronización desactivada') }
+  if (!supabase) return { ok: false, error: t('Supabase is not configured', 'Supabase no está configurado') }
   if (syncing) {
     // Ya hay una sync en curso: reintenta al terminar para no perder este disparo.
     pendingRetry = true
@@ -315,7 +316,7 @@ export async function syncNow(full = false): Promise<{ ok: boolean; error?: stri
   const {
     data: { session },
   } = await supabase.auth.getSession()
-  if (!session) return { ok: false, error: 'Inicia sesión para sincronizar' }
+  if (!session) return { ok: false, error: t('Sign in to sync', 'Inicia sesión para sincronizar') }
 
   syncing = true
   emitSync('syncing')
@@ -327,7 +328,7 @@ export async function syncNow(full = false): Promise<{ ok: boolean; error?: stri
     return { ok: true }
   } catch (e) {
     emitSync('error')
-    return { ok: false, error: e instanceof Error ? e.message : 'Error de sincronización' }
+    return { ok: false, error: e instanceof Error ? e.message : t('Sync error', 'Error de sincronización') }
   } finally {
     syncing = false
     if (pendingRetry) {

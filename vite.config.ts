@@ -22,11 +22,11 @@ export default defineConfig({
       },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Quest — Tareas RPG',
+        name: 'Quest — RPG Tasks',
         short_name: 'Quest',
         description:
-          'Gestor de tareas con progresión tipo RPG: XP, niveles y rachas. Offline-first.',
-        lang: 'es',
+          'Task manager with RPG-style progression: XP, levels and streaks. Offline-first.',
+        lang: 'en',
         start_url: '/',
         scope: '/',
         display: 'standalone',

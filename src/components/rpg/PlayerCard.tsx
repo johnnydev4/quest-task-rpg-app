@@ -3,6 +3,7 @@ import { onCompletion } from '../../lib/events'
 import { useProfile } from '../../lib/useProfile'
 import { titleForLevel } from '../../lib/titles'
 import { FlameIcon, SparkleIcon } from '../ui/icons'
+import { t } from '../../lib/i18n'
 
 /** XP recién ganado (se limpia solo tras ~1.4 s); para el destello de las barras. */
 export function useXpGain(): { xp: number; key: number } | null {
@@ -42,7 +43,9 @@ export function PlayerCard() {
             {level}
           </span>
           <span className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold text-ink">Nivel {level}</span>
+            <span className="text-sm font-semibold text-ink">
+              {t('Level', 'Nivel')} {level}
+            </span>
             <span className="text-[0.6875rem] font-medium text-accent-300">{titleForLevel(level)}</span>
           </span>
         </span>
@@ -61,7 +64,7 @@ export function PlayerCard() {
         role="progressbar"
         aria-valuenow={intoLevel}
         aria-valuemax={needed}
-        aria-label={`Progreso al nivel ${level + 1}`}
+        aria-label={t(`Progress to level ${level + 1}`, `Progreso al nivel ${level + 1}`)}
       >
         <div
           className="h-full rounded-full bg-gradient-to-r from-accent-400 to-accent-600 transition-all duration-500"
@@ -88,11 +91,12 @@ export function PlayerCard() {
         <span className={`flex items-center gap-1 ${streak > 0 ? 'font-medium text-warn' : ''}`}>
           {streak > 0 ? (
             <>
-              <FlameIcon className="size-3" /> {streak} día{streak === 1 ? '' : 's'}
+              <FlameIcon className="size-3" />{' '}
+              {t(`${streak} day${streak === 1 ? '' : 's'}`, `${streak} día${streak === 1 ? '' : 's'}`)}
             </>
           ) : (
             <>
-              <SparkleIcon className="size-3" /> Empieza tu racha hoy
+              <SparkleIcon className="size-3" /> {t('Start your streak today', 'Empieza tu racha hoy')}
             </>
           )}
         </span>

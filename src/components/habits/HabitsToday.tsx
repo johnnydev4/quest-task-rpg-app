@@ -10,6 +10,7 @@ import { useBulkMove } from '../../lib/bulkMove'
 import { useSelection } from '../../lib/selection'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { HabitCard } from './HabitCard'
+import { t } from '../../lib/i18n'
 
 /**
  * Hábitos que tocan hoy, partidos en pendientes y completados. Al completar,
@@ -125,7 +126,7 @@ export function HabitsDoneToday() {
         >
           <path d="M9 6l6 6-6 6" />
         </svg>
-        Hábitos completados <span className="text-xs font-normal text-ink-faint">{completedHabits.length}</span>
+        {t('Completed habits', 'Hábitos completados')} <span className="text-xs font-normal text-ink-faint">{completedHabits.length}</span>
       </button>
       {open && (
         <div className="space-y-1.5 opacity-75">

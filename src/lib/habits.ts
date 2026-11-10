@@ -1,17 +1,14 @@
 import type { Habit } from '../db/types'
+import { t } from './i18n'
 
 /** Orden de la semana para la UI (lunes primero); los valores son getDay(). */
 export const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
 
-export const WEEKDAY_SHORT: Record<number, string> = {
-  1: 'L',
-  2: 'M',
-  3: 'X',
-  4: 'J',
-  5: 'V',
-  6: 'S',
-  0: 'D',
-}
+export const WEEKDAY_SHORT: Record<number, string> = Object.fromEntries(
+  t('S M T W T F S', 'D L M X J V S')
+    .split(' ')
+    .map((d, i) => [i, d]),
+)
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -27,13 +24,13 @@ export const HABIT_BASE_XP = 20
  * y el multiplicador de XP sube medio punto por eslabón, hasta ×4.
  */
 export const COMBO_TIERS: { combo: number; mult: number; color: string; name: string }[] = [
-  { combo: 1, mult: 1, color: '#ef4444', name: 'rojo' },
-  { combo: 2, mult: 1.5, color: '#f97316', name: 'naranja' },
-  { combo: 3, mult: 2, color: '#eab308', name: 'amarillo' },
-  { combo: 4, mult: 2.5, color: '#22c55e', name: 'verde' },
-  { combo: 5, mult: 3, color: '#3b82f6', name: 'azul' },
-  { combo: 6, mult: 3.5, color: '#a855f7', name: 'morado' },
-  { combo: 7, mult: 4, color: '#ef4444', name: 'arcoíris' },
+  { combo: 1, mult: 1, color: '#ef4444', name: t('red', 'rojo') },
+  { combo: 2, mult: 1.5, color: '#f97316', name: t('orange', 'naranja') },
+  { combo: 3, mult: 2, color: '#eab308', name: t('yellow', 'amarillo') },
+  { combo: 4, mult: 2.5, color: '#22c55e', name: t('green', 'verde') },
+  { combo: 5, mult: 3, color: '#3b82f6', name: t('blue', 'azul') },
+  { combo: 6, mult: 3.5, color: '#a855f7', name: t('purple', 'morado') },
+  { combo: 7, mult: 4, color: '#ef4444', name: t('rainbow', 'arcoíris') },
 ]
 
 export const RAINBOW_GRADIENT =

@@ -24,6 +24,7 @@ import {
   xpForCombo,
 } from '../../lib/habits'
 import { ConfirmButton } from '../ui/ConfirmButton'
+import { LOCALE, t } from '../../lib/i18n'
 
 interface HabitCardProps {
   habit: Habit
@@ -56,14 +57,14 @@ function HabitContextMenu({
     ...(canToggleToday
       ? [
           {
-            label: todayDone ? 'Desmarcar hoy' : 'Completar hoy',
+            label: todayDone ? t('Unmark today', 'Desmarcar hoy') : t('Complete today', 'Completar hoy'),
             icon: <CheckCircleIcon className="size-4" />,
             onClick: () => void toggleHabitToday(habit.id),
           },
         ]
       : []),
     {
-      label: 'Mover a lista…',
+      label: t('Move to list…', 'Mover a lista…'),
       icon: <FolderIcon className="size-4" />,
       submenu: [
         ...lists.map((l) => ({
@@ -72,7 +73,7 @@ function HabitContextMenu({
           onClick: () => void updateHabit(habit.id, { listId: l.id }),
         })),
         {
-          label: 'Sin lista',
+          label: t('No list', 'Sin lista'),
           selected: habit.listId == null,
           onClick: () => void updateHabit(habit.id, { listId: null }),
         },
@@ -81,7 +82,7 @@ function HabitContextMenu({
     ...(daySections.length > 0
       ? [
           {
-            label: 'Momento del día…',
+            label: t('Time of day…', 'Momento del día…'),
             icon: <ClockIcon className="size-4" />,
             submenu: [
               ...daySections.map((s) => ({
@@ -90,7 +91,7 @@ function HabitContextMenu({
                 onClick: () => void updateHabit(habit.id, { daySectionId: s.id }),
               })),
               {
-                label: 'Sin momento',
+                label: t('No time of day', 'Sin momento'),
                 selected: !habit.daySectionId,
                 onClick: () => void updateHabit(habit.id, { daySectionId: null }),
               },
@@ -99,7 +100,7 @@ function HabitContextMenu({
         ]
       : []),
     {
-      label: 'Eliminar hábito',
+      label: t('Delete habit', 'Eliminar hábito'),
       icon: <TrashIcon className="size-4" />,
       danger: true,
       onClick: () => void deleteHabit(habit.id),
@@ -146,7 +147,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
   const endLabel =
     habit.endDate === null
       ? null
-      : new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(habit.endDate)
+      : new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short' }).format(habit.endDate)
 
   // La insignia "Combo ×n" aparece solo al completar, unos segundos, y se va.
   // prevDone parte en null: el primer valor CARGADO fija la línea base, así un
@@ -190,7 +191,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             onClick={() => selection.toggle(habit.id, 'habit')}
             role="checkbox"
             aria-checked={picked}
-            aria-label={picked ? 'Quitar de la selección' : 'Añadir a la selección'}
+            aria-label={picked ? t('Remove from selection', 'Quitar de la selección') : t('Add to selection', 'Añadir a la selección')}
             className={`flex shrink-0 items-center justify-center rounded-md border-2 transition-all ${
               compact ? 'size-5' : 'size-6'
             } ${picked ? 'border-accent-500 bg-accent-500' : 'border-ink-muted hover:border-accent-400'}`}
@@ -204,8 +205,8 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
         ) : scheduledToday && !ended ? (
           <button
             onClick={() => void toggleHabitToday(habit.id)}
-            aria-label={todayDone ? 'Desmarcar hoy' : `Cumplir hoy (+${nextXp} XP)`}
-            title={todayDone ? 'Desmarcar hoy' : `Cumplir hoy · +${nextXp} XP`}
+            aria-label={todayDone ? t('Unmark today', 'Desmarcar hoy') : `${t('Complete today', 'Cumplir hoy')} (+${nextXp} XP)`}
+            title={todayDone ? t('Unmark today', 'Desmarcar hoy') : `${t('Complete today', 'Cumplir hoy')} · +${nextXp} XP`}
             className={`flex shrink-0 items-center justify-center rounded-full border-2 transition-all ${
               compact ? 'size-5' : 'size-6'
             } ${todayDone ? 'border-transparent' : 'border-ink-muted hover:scale-110'}`}
@@ -222,7 +223,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
             className={`flex shrink-0 items-center justify-center rounded-full border-2 border-dashed border-line/15 text-[0.625rem] text-ink-faint ${
               compact ? 'size-5' : 'size-6'
             }`}
-            title={ended ? 'Hábito finalizado' : 'Hoy no toca'}
+            title={ended ? t('Habit finished', 'Hábito finalizado') : t('Not today', 'Hoy no toca')}
           >
             {ended ? <FlagIcon className="size-3.5" /> : '—'}
           </span>
@@ -258,21 +259,21 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
           <div className={`flex items-center justify-between text-[0.625rem] text-ink-faint ${compact ? 'mt-0.5' : 'mt-1'}`}>
             <span>
               {total === null
-                ? `${done} cumplido${done === 1 ? '' : 's'} · sin fecha límite`
-                : `${done}/${total} · hasta el ${endLabel}`}
+                ? t(`${done} done · no end date`, `${done} cumplido${done === 1 ? '' : 's'} · sin fecha límite`)
+                : t(`${done}/${total} · until ${endLabel}`, `${done}/${total} · hasta el ${endLabel}`)}
             </span>
             {todayDone && todayLog?.completedAt ? (
-              <span className="flex items-center gap-1" title="Hora de cumplimiento">
+              <span className="flex items-center gap-1" title={t('Completion time', 'Hora de cumplimiento')}>
                 <CheckCircleIcon className="size-3" /> {formatDueTime(todayLog.completedAt)}
               </span>
             ) : (
               <>
                 {!compact && !ended && !scheduledToday && (
                   <span className="flex items-center gap-1">
-                    <MoonIcon className="size-3" /> Hoy no toca
+                    <MoonIcon className="size-3" /> {t('Not today', 'Hoy no toca')}
                   </span>
                 )}
-                {ended && <span>Finalizado</span>}
+                {ended && <span>{t('Finished', 'Finalizado')}</span>}
               </>
             )}
           </div>
@@ -282,8 +283,8 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
                 <span className="flex items-center gap-1">
                   <TimerIcon className="size-3" />
                   {pomo.completed
-                    ? '¡Pomodoro completado!'
-                    : `${pomo.doneMin}/${pomo.goalMin} min de foco`}
+                    ? t('Pomodoro complete!', '¡Pomodoro completado!')
+                    : t(`${pomo.doneMin}/${pomo.goalMin} min of focus`, `${pomo.doneMin}/${pomo.goalMin} min de foco`)}
                 </span>
               </div>
               <div className={`mt-0.5 overflow-hidden rounded-full bg-ink/10 ${compact ? 'h-1' : 'h-1.5'}`}>
@@ -303,9 +304,15 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
               // Abre la vista Estudio en pantalla completa (no minimizado).
               void pomodoro.start({ habitId: habit.id })
               emitOpenStudy()
-              emitToast({ title: '🍅 Pomodoro iniciado', body: `${habit.title} · objetivo ${habit.pomodoroMinutes} min` })
+              emitToast({
+                title: t('🍅 Pomodoro started', '🍅 Pomodoro iniciado'),
+                body: `${habit.title} · ${t('goal', 'objetivo')} ${habit.pomodoroMinutes} min`,
+              })
             }}
-            aria-label={`Empezar pomodoro de ${habit.pomodoroMinutes} minutos`}
+            aria-label={t(
+              `Start a ${habit.pomodoroMinutes}-minute pomodoro`,
+              `Empezar pomodoro de ${habit.pomodoroMinutes} minutos`,
+            )}
             title={`Pomodoro · ${habit.pomodoroMinutes} min`}
             className="flex shrink-0 items-center gap-1 rounded-lg border border-line/10 px-2 py-1 text-[0.625rem] font-semibold text-ink-dim transition-colors hover:bg-ink/5"
           >
@@ -321,7 +328,7 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
       {!compact && (
         <>
           <div className="mt-2 flex items-center justify-between gap-2 border-t border-line/5 pt-2">
-            <div className="flex gap-1" aria-label="Días programados">
+            <div className="flex gap-1" aria-label={t('Scheduled days', 'Días programados')}>
               {WEEKDAY_ORDER.map((day) => {
                 const active = habit.daysOfWeek.includes(day)
                 return (
@@ -338,8 +345,8 @@ export function HabitCard({ habit, compact = false, onManage }: HabitCardProps) 
               })}
             </div>
             <ConfirmButton
-              label="Eliminar"
-              confirmLabel="¿Seguro?"
+              label={t('Delete', 'Eliminar')}
+              confirmLabel={t('Sure?', '¿Seguro?')}
               onConfirm={() => void deleteHabit(habit.id)}
             />
           </div>

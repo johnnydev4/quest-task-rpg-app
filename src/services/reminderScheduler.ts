@@ -2,6 +2,7 @@ import { db } from '../db/db'
 import { localDateKey } from '../lib/dates'
 import { habitEnded, isScheduledToday } from '../lib/habits'
 import { notificationService } from './notifications'
+import { t } from '../lib/i18n'
 
 const CHECK_EVERY_MS = 15_000
 
@@ -44,7 +45,7 @@ async function checkHabits(): Promise<void> {
     if (!habit.reminderTime || fired.includes(habit.id)) continue
     if (!isScheduledToday(habit) || habitEnded(habit) || doneIds.has(habit.id)) continue
     if (nowHM < habit.reminderTime) continue
-    await notificationService.notify('🔁 Hábito pendiente', habit.title)
+    await notificationService.notify(t('🔁 Habit pending', '🔁 Hábito pendiente'), habit.title)
     fired.push(habit.id)
   }
 
@@ -67,7 +68,7 @@ async function check(): Promise<void> {
       await db.reminders.update(reminder.id, { dismissed: true })
       continue
     }
-    await notificationService.notify('Recordatorio', task.title)
+    await notificationService.notify(t('Reminder', 'Recordatorio'), task.title)
     const fired = reminder.firedCount + 1
     if (fired <= reminder.repeatCount) {
       await db.reminders.update(reminder.id, {

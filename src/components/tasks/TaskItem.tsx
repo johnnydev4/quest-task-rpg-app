@@ -22,6 +22,7 @@ import {
   TimerIcon,
   TrashIcon,
 } from '../ui/icons'
+import { t } from '../../lib/i18n'
 
 interface TaskItemProps {
   task: Task
@@ -58,7 +59,7 @@ function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: nu
     ...(overdueRecurring
       ? [
           {
-            label: 'Saltar a hoy',
+            label: t('Skip to today', 'Saltar a hoy'),
             icon: <ForwardIcon className="size-4" />,
             onClick: () => void skipOverdueToNearest(task.id),
           },
@@ -66,22 +67,22 @@ function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: nu
       : []),
     inToday
       ? {
-          label: 'Quitar de Hoy',
+          label: t('Remove from Today', 'Quitar de Hoy'),
           icon: <SunIcon className="size-4" />,
           onClick: () => void updateTask(task.id, { dueAt: null }),
         }
       : {
-          label: 'Agregar a Hoy',
+          label: t('Add to Today', 'Agregar a Hoy'),
           icon: <SunIcon className="size-4" />,
           onClick: () => void updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false }),
         },
     {
-      label: task.completed ? 'Marcar como pendiente' : 'Marcar como completada',
+      label: task.completed ? t('Mark as pending', 'Marcar como pendiente') : t('Mark as completed', 'Marcar como completada'),
       icon: <CheckCircleIcon className="size-4" />,
       onClick: () => void setTaskCompleted(task.id, !task.completed),
     },
     {
-      label: 'Definir prioridad',
+      label: t('Set priority', 'Definir prioridad'),
       icon: <FlagIcon className="size-4" />,
       submenu: [
         ...(['low', 'medium', 'high'] as const).map((p) => ({
@@ -90,27 +91,27 @@ function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: nu
           onClick: () => void updateTask(task.id, { priority: p }),
         })),
         {
-          label: 'Sin prioridad',
+          label: t('No priority', 'Sin prioridad'),
           selected: task.priority === null,
           onClick: () => void updateTask(task.id, { priority: null }),
         },
       ],
     },
     {
-      label: 'Fecha de vencimiento',
+      label: t('Due date', 'Fecha de vencimiento'),
       icon: <CalendarIcon className="size-4" />,
       submenu: [
-        { label: 'Hoy', onClick: () => void updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false }) },
-        { label: 'Mañana', onClick: () => void updateTask(task.id, { dueAt: startOfDayOffset(1), dueHasTime: false }) },
+        { label: t('Today', 'Hoy'), onClick: () => void updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false }) },
+        { label: t('Tomorrow', 'Mañana'), onClick: () => void updateTask(task.id, { dueAt: startOfDayOffset(1), dueHasTime: false }) },
         {
-          label: 'En una semana',
+          label: t('In a week', 'En una semana'),
           onClick: () => void updateTask(task.id, { dueAt: startOfDayOffset(7), dueHasTime: false }),
         },
-        { label: 'Sin fecha', selected: task.dueAt === null, onClick: () => void updateTask(task.id, { dueAt: null }) },
+        { label: t('No date', 'Sin fecha'), selected: task.dueAt === null, onClick: () => void updateTask(task.id, { dueAt: null }) },
       ],
     },
     {
-      label: 'Mover a lista…',
+      label: t('Move to list…', 'Mover a lista…'),
       icon: <FolderIcon className="size-4" />,
       submenu: [
         ...lists.map((l) => ({
@@ -118,13 +119,13 @@ function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: nu
           selected: task.listId === l.id,
           onClick: () => void updateTask(task.id, { listId: l.id }),
         })),
-        { label: 'Sin lista', selected: task.listId === null, onClick: () => void updateTask(task.id, { listId: null }) },
+        { label: t('No list', 'Sin lista'), selected: task.listId === null, onClick: () => void updateTask(task.id, { listId: null }) },
       ],
     },
     ...(daySections.length > 0
       ? [
           {
-            label: 'Momento del día…',
+            label: t('Time of day…', 'Momento del día…'),
             icon: <ClockIcon className="size-4" />,
             submenu: [
               ...daySections.map((s) => ({
@@ -133,7 +134,7 @@ function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: nu
                 onClick: () => void updateTask(task.id, { daySectionId: s.id }),
               })),
               {
-                label: 'Sin momento',
+                label: t('No time of day', 'Sin momento'),
                 selected: !task.daySectionId,
                 onClick: () => void updateTask(task.id, { daySectionId: null }),
               },
@@ -142,7 +143,7 @@ function TaskContextMenu({ task, x, y, onClose }: { task: Task; x: number; y: nu
         ]
       : []),
     {
-      label: 'Eliminar tarea',
+      label: t('Delete task', 'Eliminar tarea'),
       icon: <TrashIcon className="size-4" />,
       danger: true,
       onClick: () => void deleteTask(task.id),
@@ -202,7 +203,7 @@ export function TaskItem({
           onClick={() => selection.toggle(task.id, 'task')}
           role="checkbox"
           aria-checked={picked}
-          aria-label={picked ? 'Quitar de la selección' : 'Añadir a la selección'}
+          aria-label={picked ? t('Remove from selection', 'Quitar de la selección') : t('Add to selection', 'Añadir a la selección')}
           className={`flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200 ${
             picked ? 'border-accent-500 bg-accent-500' : 'border-ink-muted hover:border-accent-400'
           }`}
@@ -216,7 +217,7 @@ export function TaskItem({
       ) : (
         <button
           onClick={() => setTaskCompleted(task.id, !task.completed)}
-          aria-label={task.completed ? 'Marcar como pendiente' : 'Completar tarea'}
+          aria-label={task.completed ? t('Mark as pending', 'Marcar como pendiente') : t('Complete task', 'Completar tarea')}
           className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200 ${
             task.completed
               ? 'check-pop border-accent-500 bg-accent-500'
@@ -244,7 +245,7 @@ export function TaskItem({
         {!task.completed && (
           <span className="mt-0.5 flex flex-wrap items-center gap-1">
             {task.dueAt !== null &&
-              (hideTodayChip && formatDue(task.dueAt) === 'Hoy' ? (
+              (hideTodayChip && formatDue(task.dueAt) === t('Today', 'Hoy') ? (
                 // En la pestaña Hoy: sin etiqueta redundante; solo la hora si la tiene.
                 task.dueHasTime && (
                   <span className={`${chipBase} border-line/10 text-ink-muted`}>{formatDueTime(task.dueAt)}</span>
@@ -256,7 +257,7 @@ export function TaskItem({
                 </span>
               ))}
             {task.recurrenceRule && (
-              <span className={`${chipBase} border-line/10 text-ink-muted`} aria-label="Se repite">
+              <span className={`${chipBase} border-line/10 text-ink-muted`} aria-label={t('Repeats', 'Se repite')}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
                   <path d="m17 2 4 4-4 4" />
                   <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
@@ -307,14 +308,16 @@ export function TaskItem({
         {task.completed && task.completedAt !== null && (
           <span className="mt-0.5 flex items-center gap-1 text-[0.625rem] text-ink-faint">
             <CheckCircleIcon className="size-2.5" />
-            Completada · {formatDateTime(task.completedAt)}
+            {t('Completed', 'Completada')} · {formatDateTime(task.completedAt)}
           </span>
         )}
         {!task.completed && pomo && (
           <span className="mt-1.5 block max-w-56">
             <span className="flex items-center gap-1 text-[0.625rem] text-ink-faint">
               <TimerIcon className="size-3" />
-              {pomo.completed ? '¡Pomodoro completado!' : `${pomo.doneMin}/${pomo.goalMin} min de foco`}
+              {pomo.completed
+                ? t('Pomodoro complete!', '¡Pomodoro completado!')
+                : t(`${pomo.doneMin}/${pomo.goalMin} min of focus`, `${pomo.doneMin}/${pomo.goalMin} min de foco`)}
             </span>
             <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-ink/10">
               <span
@@ -329,16 +332,16 @@ export function TaskItem({
         <span className="flex shrink-0 items-center gap-1">
           <button
             onClick={() => void skipOverdueToNearest(task.id)}
-            aria-label="Saltar a hoy"
-            title="Saltar a hoy"
+            aria-label={t('Skip to today', 'Saltar a hoy')}
+            title={t('Skip to today', 'Saltar a hoy')}
             className="flex size-8 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
           >
             <ForwardIcon className="size-4" />
           </button>
           <button
             onClick={() => void deleteTask(task.id)}
-            aria-label="Eliminar tarea"
-            title="Eliminar"
+            aria-label={t('Delete task', 'Eliminar tarea')}
+            title={t('Delete', 'Eliminar')}
             className="flex size-8 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-danger/10 hover:text-danger"
           >
             <TrashIcon className="size-4" />
@@ -350,7 +353,7 @@ export function TaskItem({
           onClick={() => updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false })}
           className="shrink-0 rounded-lg border border-line/10 px-2.5 py-1 text-xs font-medium text-ink-dim opacity-90 transition-colors hover:bg-ink/5 hover:text-ink"
         >
-          Hoy
+          {t('Today', 'Hoy')}
         </button>
       )}
       {menu && <TaskContextMenu task={task} x={menu.x} y={menu.y} onClose={() => setMenu(null)} />}

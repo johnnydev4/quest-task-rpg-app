@@ -8,6 +8,7 @@ import { ConfirmButton } from '../ui/ConfirmButton'
 import { HierarchyIcon, PaletteIcon, PlusIcon } from '../ui/icons'
 import { OutlineView } from './OutlineView'
 import { findRoot } from './tree'
+import { t } from '../../lib/i18n'
 
 // React Flow + d3-hierarchy son pesados: se cargan solo al abrir una vista
 // gráfica (mismo criterio que StatsView con Recharts), así la lista arranca ligera.
@@ -15,8 +16,8 @@ const GraphView = lazy(() => import('./GraphView').then((m) => ({ default: m.Gra
 
 /** Opciones del conmutador de vistas (misma estructura, distinta forma). */
 const VIEW_OPTIONS: { id: IdeaView; label: string; soon?: boolean }[] = [
-  { id: 'outline', label: 'Lista' },
-  { id: 'tree', label: 'Árbol' },
+  { id: 'outline', label: t('List', 'Lista') },
+  { id: 'tree', label: t('Tree', 'Árbol') },
   { id: 'radial', label: 'Radial' },
 ]
 
@@ -88,15 +89,15 @@ function Gallery({ maps, onOpen }: { maps: IdeaMap[]; onOpen: (id: string) => vo
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Nueva idea a descomponer… (p. ej. «Organizar la mudanza»)"
-          aria-label="Idea central del nuevo mapa"
+          placeholder={t('New idea to break down… (e.g. “Plan the move”)', t('New idea to break down… (e.g. “Plan the move”)', 'Nueva idea a descomponer… (p. ej. «Organizar la mudanza»)'))}
+          aria-label={t('Central idea of the new map', 'Idea central del nuevo mapa')}
           className="min-w-0 flex-1 border-none bg-transparent text-sm text-ink placeholder-ink-faint outline-none focus:shadow-none"
         />
         <button
           type="submit"
           className="flex shrink-0 items-center gap-1.5 rounded-lg bg-accent-500/15 px-3.5 py-2 text-sm font-semibold text-accent-300 transition-colors hover:bg-accent-500/25"
         >
-          <PlusIcon className="size-4" /> Crear mapa
+          <PlusIcon className="size-4" /> {t('Create map', 'Crear mapa')}
         </button>
       </form>
 
@@ -105,10 +106,12 @@ function Gallery({ maps, onOpen }: { maps: IdeaMap[]; onOpen: (id: string) => vo
           <div className="flex size-14 items-center justify-center rounded-2xl glass-panel text-accent-300">
             <HierarchyIcon className="size-7" />
           </div>
-          <p className="font-medium text-ink-dim">Aún no tienes mapas de ideas</p>
+          <p className="font-medium text-ink-dim">{t("You don't have any idea maps yet", 'Aún no tienes mapas de ideas')}</p>
           <p className="max-w-sm text-sm text-ink-faint">
-            Cuando una idea o una tarea se sienta demasiado grande, créale un mapa y ve partiéndola en ramas hasta que
-            cada pieza sea fácil de empezar.
+            {t(
+              'When an idea or a task feels too big, give it a map and keep splitting it into branches until every piece is easy to start.',
+              'Cuando una idea o una tarea se sienta demasiado grande, créale un mapa y ve partiéndola en ramas hasta que cada pieza sea fácil de empezar.',
+            )}
           </p>
         </div>
       ) : (
@@ -134,7 +137,9 @@ function Gallery({ maps, onOpen }: { maps: IdeaMap[]; onOpen: (id: string) => vo
                 </span>
                 <p className="line-clamp-2 font-semibold text-ink group-hover:text-accent-300">{m.title}</p>
                 <p className="text-xs text-ink-faint">
-                  {branches === 0 ? 'Sin ramas todavía' : `${branches} rama${branches === 1 ? '' : 's'}`}
+                  {branches === 0
+                    ? t('No branches yet', 'Sin ramas todavía')
+                    : t(`${branches} branch${branches === 1 ? '' : 'es'}`, `${branches} rama${branches === 1 ? '' : 's'}`)}
                 </p>
               </button>
             )
@@ -158,7 +163,7 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
   if (map === undefined || root === undefined) {
     return (
       <div className="flex justify-center py-16">
-        <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label="Cargando mapa" />
+        <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label={t('Loading map', 'Cargando mapa')} />
       </div>
     )
   }
@@ -172,7 +177,7 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
       <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={onBack}
-          aria-label="Volver a los mapas"
+          aria-label={t('Back to maps', 'Volver a los mapas')}
           className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-line/10 glass-input text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5" aria-hidden="true">
@@ -184,8 +189,8 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
           <MapColorMenu map={map} />
           <ViewSwitcher value={mode} onChange={(v) => void setMapView(map.id, v)} />
           <ConfirmButton
-            label="Eliminar"
-            confirmLabel="¿Seguro?"
+            label={t('Delete', 'Eliminar')}
+            confirmLabel={t('Sure?', '¿Seguro?')}
             onConfirm={() => {
               void deleteMap(map.id)
               onBack()
@@ -195,14 +200,14 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
       </div>
 
       {!root ? (
-        <p className="py-10 text-center text-sm text-ink-faint">No se encontró la raíz de este mapa.</p>
+        <p className="py-10 text-center text-sm text-ink-faint">{t("This map's root wasn't found.", 'No se encontró la raíz de este mapa.')}</p>
       ) : mode === 'outline' ? (
         <OutlineView mapId={map.id} rootId={root.id} mapColor={map.color ?? null} />
       ) : (
         <Suspense
           fallback={
             <div className="flex justify-center py-16">
-              <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label="Cargando vista" />
+              <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label={t('Loading view', 'Cargando vista')} />
             </div>
           }
         >
@@ -244,9 +249,9 @@ function MapTitle({ map, rootId }: { map: IdeaMap; rootId: string | null }) {
       onChange={(e) => setTitle(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-      aria-label="Idea central del mapa"
+      aria-label={t("Map's central idea", 'Idea central del mapa')}
       className="min-w-0 flex-1 border-none bg-transparent text-lg font-bold text-ink placeholder-ink-faint outline-none focus:shadow-none"
-      placeholder="Idea central"
+      placeholder={t('Central idea', 'Idea central')}
     />
   )
 }
@@ -281,8 +286,8 @@ function MapColorMenu({ map }: { map: IdeaMap }) {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label="Color del árbol"
-        title="Color del árbol"
+        aria-label={t('Tree color', 'Color del árbol')}
+        title={t('Tree color', 'Color del árbol')}
         className="flex size-9 items-center justify-center rounded-lg border border-line/10 glass-input text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
         style={color ? { color } : undefined}
       >
@@ -292,16 +297,16 @@ function MapColorMenu({ map }: { map: IdeaMap }) {
       {open && (
         <div
           role="dialog"
-          aria-label="Color del árbol"
+          aria-label={t('Tree color', 'Color del árbol')}
           className="absolute right-0 z-40 mt-1 w-64 rounded-xl border border-line/10 glass-strong p-3 shadow-2xl"
           style={{ animation: 'menu-pop 0.14s ease-out both' }}
         >
           <p className="mb-2 text-[0.625rem] font-semibold tracking-wide text-ink-faint uppercase">
-            Color del árbol
+            {t('Tree color', 'Color del árbol')}
           </p>
           <ColorPicker value={color} onChange={(c) => void setMapColor(map.id, c)} allowNone allowCustom />
           <p className="mt-2 text-xs text-ink-faint">
-            Tiñe las ramas y las ideas que no tengan un color propio.
+            {t("Tints the branches and ideas that don't have their own color.", 'Tiñe las ramas y las ideas que no tengan un color propio.')}
           </p>
         </div>
       )}
@@ -311,7 +316,7 @@ function MapColorMenu({ map }: { map: IdeaMap }) {
 
 function ViewSwitcher({ value, onChange }: { value: IdeaView; onChange: (v: IdeaView) => void }) {
   return (
-    <div className="inline-flex items-center rounded-xl border border-line/10 glass-input p-0.5" role="group" aria-label="Vista del mapa">
+    <div className="inline-flex items-center rounded-xl border border-line/10 glass-input p-0.5" role="group" aria-label={t('Map view', 'Vista del mapa')}>
       {VIEW_OPTIONS.map((o) => {
         const active = value === o.id
         return (
@@ -320,7 +325,7 @@ function ViewSwitcher({ value, onChange }: { value: IdeaView; onChange: (v: Idea
             onClick={() => !o.soon && onChange(o.id)}
             disabled={o.soon}
             aria-pressed={active}
-            title={o.soon ? 'Disponible pronto' : undefined}
+            title={o.soon ? t('Coming soon', 'Disponible pronto') : undefined}
             className={`relative rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
               active
                 ? 'bg-accent-500/20 text-accent-300'
@@ -330,7 +335,7 @@ function ViewSwitcher({ value, onChange }: { value: IdeaView; onChange: (v: Idea
             }`}
           >
             {o.label}
-            {o.soon && <span className="ml-1 text-[0.5625rem] font-medium text-ink-faint">pronto</span>}
+            {o.soon && <span className="ml-1 text-[0.5625rem] font-medium text-ink-faint">{t('soon', 'pronto')}</span>}
           </button>
         )
       })}

@@ -42,6 +42,7 @@ import { CommentSection } from './detail/CommentSection'
 import { AttachmentSection } from './detail/AttachmentSection'
 import { RecurrenceSection } from './detail/RecurrenceSection'
 import { ConvertToHabit } from '../habits/ConvertToHabit'
+import { LOCALE, t } from '../../lib/i18n'
 
 interface TaskDetailProps {
   taskId: string
@@ -81,7 +82,7 @@ export function TaskDetailContent({ taskId, onClose }: TaskDetailProps) {
 
 export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
   return (
-    <Modal title="Editar tarea" onClose={onClose}>
+    <Modal title={t('Edit task', 'Editar tarea')} onClose={onClose}>
       <TaskDetailContent taskId={taskId} onClose={onClose} />
     </Modal>
   )
@@ -116,8 +117,8 @@ function DateTimePanel({
       <MiniCalendar value={day} onSelect={setDay} />
       <div className="flex items-center justify-between gap-2 px-1">
         <label className="flex items-center gap-2 text-sm text-ink-dim">
-          Hora
-          <TimeSelect value={time} onChange={setTime} ariaLabel="Hora del aviso" />
+          {t('Time', 'Hora')}
+          <TimeSelect value={time} onChange={setTime} ariaLabel={t('Reminder time', 'Hora del aviso')} />
         </label>
         <button
           type="button"
@@ -196,21 +197,21 @@ function NoteFullScreen({
   return createPortal(
     <div className="fixed inset-0 z-[70] flex flex-col glass-strong">
       <header className="flex items-center justify-between border-b border-line/5 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <h2 className="text-base font-semibold text-ink">Nota</h2>
+        <h2 className="text-base font-semibold text-ink">{t('Note', 'Nota')}</h2>
         <button
           type="button"
           onClick={onClose}
           className="text-[0.9375rem] font-semibold text-accent-400"
         >
-          Listo
+          {t('Done', 'Listo')}
         </button>
       </header>
       <textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Escribe tu nota…"
-        aria-label="Nota ampliada"
+        placeholder={t('Write your note…', 'Escribe tu nota…')}
+        aria-label={t('Expanded note', 'Nota ampliada')}
         className="mx-auto w-full max-w-3xl flex-1 resize-none border-none bg-transparent px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-base leading-relaxed text-ink outline-none placeholder-ink-muted focus:shadow-none"
       />
     </div>,
@@ -254,7 +255,7 @@ function SheetOption({
 
 /** Etiqueta corta de fecha+hora para las opciones rápidas (p. ej. "lun, 21:00"). */
 function shortWhen(ms: number): string {
-  return new Intl.DateTimeFormat('es', { weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(ms)
+  return new Intl.DateTimeFormat(LOCALE, { weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(ms)
 }
 
 /**
@@ -306,8 +307,8 @@ function ReminderSheet({
             <path d="M12 7v5l3 2" />
           </RowIcon>
         }
-        label="Más tarde hoy"
-        hint={new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(laterToday)}
+        label={t('Later today', 'Más tarde hoy')}
+        hint={new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' }).format(laterToday)}
         onClick={() => addAt(laterToday)}
       />
       <SheetOption
@@ -318,7 +319,7 @@ function ReminderSheet({
             <path d="m9 16 2 2 4-4" />
           </RowIcon>
         }
-        label="Mañana"
+        label={t('Tomorrow', 'Mañana')}
         hint={shortWhen(tomorrow9)}
         onClick={() => addAt(tomorrow9)}
       />
@@ -330,7 +331,7 @@ function ReminderSheet({
             <path d="m8 16 3 3 5-6" />
           </RowIcon>
         }
-        label="Semana próxima"
+        label={t('Next week', 'Semana próxima')}
         hint={shortWhen(nextWeek9)}
         onClick={() => addAt(nextWeek9)}
       />
@@ -350,7 +351,7 @@ function ReminderSheet({
             <path d="M16.5 15.2v1.3l.9.9" />
           </RowIcon>
         </span>
-        <span className="min-w-0 flex-1 text-[0.9375rem] text-ink lg:text-sm">Elegir una fecha y una hora</span>
+        <span className="min-w-0 flex-1 text-[0.9375rem] text-ink lg:text-sm">{t('Pick a date and time', 'Elegir una fecha y una hora')}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`size-4 shrink-0 text-ink-faint transition-transform ${customOpen ? 'rotate-90' : ''}`} aria-hidden="true">
           <path d="M9 6l6 6-6 6" />
         </svg>
@@ -358,7 +359,7 @@ function ReminderSheet({
       {customOpen && (
         <DateTimePanel
           initialMs={null}
-          applyLabel="Añadir aviso"
+          applyLabel={t('Add reminder', 'Añadir aviso')}
           onApply={(ms) => {
             createReminder({ taskId, remindAt: ms })
             setCustomOpen(false)
@@ -369,7 +370,7 @@ function ReminderSheet({
       {reminders.length > 0 && (
         <>
           <div className="my-2 border-t border-line/5" />
-          <p className="px-3 pb-1 text-xs font-medium text-ink-muted">Avisos programados</p>
+          <p className="px-3 pb-1 text-xs font-medium text-ink-muted">{t('Scheduled reminders', 'Avisos programados')}</p>
           {reminders.map((r) => (
             <div key={r.id}>
               <div className="flex items-center gap-1">
@@ -391,7 +392,7 @@ function ReminderSheet({
                 </button>
                 <button
                   onClick={() => deleteReminder(r.id)}
-                  aria-label="Eliminar recordatorio"
+                  aria-label={t('Delete reminder', 'Eliminar recordatorio')}
                   className="flex size-9 shrink-0 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-ink/5 hover:text-danger"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
@@ -402,7 +403,7 @@ function ReminderSheet({
               {editingId === r.id && (
                 <DateTimePanel
                   initialMs={r.remindAt}
-                  applyLabel="Guardar"
+                  applyLabel={t('Save', 'Guardar')}
                   onApply={(ms) => {
                     updateReminder(r.id, { remindAt: ms, dismissed: false, firedCount: 0 })
                     setEditingId(null)
@@ -420,12 +421,15 @@ function ReminderSheet({
           onClick={askPermission}
           className="mt-2 w-full rounded-lg border border-line/10 px-3 py-2 text-sm text-ink-dim transition-colors hover:bg-ink/5"
         >
-          Permitir notificaciones del sistema
+          {t('Allow system notifications', 'Permitir notificaciones del sistema')}
         </button>
       )}
       {permission === 'denied' && (
         <p className="mt-2 px-3 text-[0.6875rem] text-ink-faint">
-          Notificaciones del sistema bloqueadas; los avisos saldrán dentro de la app.
+          {t(
+            'System notifications are blocked; alerts will show inside the app.',
+            'Notificaciones del sistema bloqueadas; los avisos saldrán dentro de la app.',
+          )}
         </p>
       )}
     </div>
@@ -433,10 +437,10 @@ function ReminderSheet({
 }
 
 const REPEAT_PRESETS: { unit: RecurrenceUnit; label: string }[] = [
-  { unit: 'day', label: 'Diariamente' },
-  { unit: 'week', label: 'Semanalmente' },
-  { unit: 'month', label: 'Mensualmente' },
-  { unit: 'year', label: 'Anualmente' },
+  { unit: 'day', label: t('Daily', 'Diariamente') },
+  { unit: 'week', label: t('Weekly', 'Semanalmente') },
+  { unit: 'month', label: t('Monthly', 'Mensualmente') },
+  { unit: 'year', label: t('Yearly', 'Anualmente') },
 ]
 
 /**
@@ -464,7 +468,7 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
             <path d="M18 6 6 18M6 6l12 12" />
           </RowIcon>
         }
-        label="No repetir"
+        label={t("Don't repeat", 'No repetir')}
         selected={!rule}
         onClick={() => {
           updateTask(task.id, { recurrenceRule: null })
@@ -501,7 +505,7 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
             <path d="M16 2v4M8 2v4M3 10h18" />
           </RowIcon>
         }
-        label="Días laborales (L–V)"
+        label={t('Weekdays (Mon–Fri)', 'Días laborales (L–V)')}
         selected={isWorkdays}
         onClick={() => {
           updateTask(task.id, {
@@ -519,7 +523,7 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
             <path d="M8 15h.01M12 15h.01M16 15h.01" />
           </RowIcon>
         }
-        label="Días de la semana…"
+        label={t('Days of the week…', 'Días de la semana…')}
         selected={isCustomDays}
         onClick={() => {
           if (!hasDays) {
@@ -540,7 +544,7 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
       {showDays && rule && hasDays && (
         <div className="space-y-1.5 px-1 py-2">
           <span className="block text-xs font-medium tracking-wide text-ink-faint uppercase">
-            Se repite los días
+            {t('Repeats on', 'Se repite los días')}
           </span>
           <DayPicker
             value={rule.daysOfWeek ?? []}
@@ -558,7 +562,7 @@ function RepeatSheet({ task, onDone }: { task: Task; onDone: () => void }) {
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 3.6a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </RowIcon>
         }
-        label="Personalizado"
+        label={t('Custom', 'Personalizado')}
         selected={isCustom}
         onClick={() => {
           if (!rule || hasDays) {
@@ -637,16 +641,16 @@ type SheetId =
   | 'comentarios'
 
 const SHEET_TITLE: Record<SheetId, string> = {
-  fecha: 'Vencimiento',
-  recordar: 'Recordarme',
-  repetir: 'Repetir',
+  fecha: t('Due date', 'Vencimiento'),
+  recordar: t('Remind me', 'Recordarme'),
+  repetir: t('Repeat', 'Repetir'),
   pomodoro: 'Pomodoro',
-  habito: 'Convertir en hábito',
-  lista: 'Mover a una lista',
+  habito: t('Turn into a habit', 'Convertir en hábito'),
+  lista: t('Move to a list', 'Mover a una lista'),
   color: 'Color',
-  etiquetas: 'Etiquetas',
-  archivos: 'Archivos',
-  comentarios: 'Comentarios',
+  etiquetas: t('Tags', 'Etiquetas'),
+  archivos: t('Files', 'Archivos'),
+  comentarios: t('Comments', 'Comentarios'),
 }
 
 /** Duraciones de pomodoro ofrecidas para tareas y hábitos. */
@@ -740,7 +744,7 @@ function TaskForm({
       <div className="flex items-center gap-3 px-1">
         <button
           onClick={() => setTaskCompleted(task.id, !task.completed)}
-          aria-label={task.completed ? 'Marcar como pendiente' : 'Completar tarea'}
+          aria-label={task.completed ? t('Mark as pending', 'Marcar como pendiente') : t('Complete task', 'Completar tarea')}
           className={`flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
             task.completed ? 'border-accent-500 bg-accent-500' : 'border-ink-muted hover:border-accent-400'
           }`}
@@ -756,7 +760,7 @@ function TaskForm({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={saveTitle}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-          aria-label="Título"
+          aria-label={t('Title', 'Título')}
           className={`min-w-0 flex-1 border-none bg-transparent text-xl font-semibold text-ink outline-none placeholder-ink-faint ${
             task.completed ? 'text-ink-faint line-through' : ''
           }`}
@@ -779,8 +783,8 @@ function TaskForm({
           <input
             value={newSubtask}
             onChange={(e) => setNewSubtask(e.target.value)}
-            placeholder="Añadir paso"
-            aria-label="Añadir subtarea"
+            placeholder={t('Add step', 'Añadir paso')}
+            aria-label={t('Add subtask', 'Añadir subtarea')}
             className="min-w-0 flex-1 border-none bg-transparent text-[0.9375rem] text-ink outline-none placeholder-accent-300 lg:text-sm"
           />
         </form>
@@ -790,7 +794,7 @@ function TaskForm({
       <Group>
         <Row
           icon={calIcon}
-          label={dueValue ? 'Fecha de vencimiento' : 'Añadir fecha de vencimiento'}
+          label={dueValue ? t('Due date', 'Fecha de vencimiento') : t('Add due date', 'Añadir fecha de vencimiento')}
           value={dueValue}
           onClick={() => setSheet('fecha')}
         />
@@ -801,7 +805,7 @@ function TaskForm({
               <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
             </RowIcon>
           }
-          label={reminders.length > 0 ? 'Recordarme' : 'Añadir recordatorio'}
+          label={reminders.length > 0 ? t('Remind me', 'Recordarme') : t('Add reminder', 'Añadir recordatorio')}
           value={reminders.length > 0 ? `${reminders.length}` : null}
           onClick={() => setSheet('recordar')}
         />
@@ -814,7 +818,7 @@ function TaskForm({
               <path d="M21 13v1a4 4 0 0 1-4 4H3" />
             </RowIcon>
           }
-          label="Repetir"
+          label={t('Repeat', 'Repetir')}
           value={task.recurrenceRule ? describeRule(task.recurrenceRule) : null}
           onClick={() => setSheet('repetir')}
         />
@@ -826,7 +830,7 @@ function TaskForm({
               <path d="M9 2h6" />
             </RowIcon>
           }
-          label={task.pomodoroMinutes != null ? 'Pomodoro' : 'Añadir pomodoro'}
+          label={task.pomodoroMinutes != null ? 'Pomodoro' : t('Add pomodoro', 'Añadir pomodoro')}
           value={task.pomodoroMinutes != null ? `${task.pomodoroMinutes} min` : null}
           onClick={() => setSheet('pomodoro')}
         />
@@ -836,7 +840,7 @@ function TaskForm({
               <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
             </RowIcon>
           }
-          label="Convertir en hábito"
+          label={t('Turn into a habit', 'Convertir en hábito')}
           onClick={() => setSheet('habito')}
         />
       </Group>
@@ -849,7 +853,7 @@ function TaskForm({
               <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
             </RowIcon>
           }
-          label={currentList ? 'Lista' : 'Añadir a una lista'}
+          label={currentList ? t('List', 'Lista') : t('Add to a list', 'Añadir a una lista')}
           value={
             currentList ? (
               <span className="inline-flex items-center gap-1.5">
@@ -870,9 +874,9 @@ function TaskForm({
                 <path d="M4 22v-7" />
               </RowIcon>
             </span>
-            <span className="text-[0.9375rem] text-ink-muted lg:text-sm">Prioridad</span>
+            <span className="text-[0.9375rem] text-ink-muted lg:text-sm">{t('Priority', 'Prioridad')}</span>
           </div>
-          <div className="mt-2.5 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Prioridad">
+          <div className="mt-2.5 grid grid-cols-3 gap-2" role="radiogroup" aria-label={t('Priority', 'Prioridad')}>
             {PRIORITIES.map((p) => (
               <button
                 key={p}
@@ -898,7 +902,7 @@ function TaskForm({
               <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
             </RowIcon>
           }
-          label={task.color ? 'Color' : 'Añadir color'}
+          label={task.color ? 'Color' : t('Add color', 'Añadir color')}
           value={
             task.color ? (
               <span className="inline-block size-4 rounded-full border border-line/15" style={{ backgroundColor: task.color }} aria-hidden="true" />
@@ -913,7 +917,7 @@ function TaskForm({
               <path d="M7.5 7.5h.01" />
             </RowIcon>
           }
-          label={taskTags.length > 0 ? 'Etiquetas' : 'Añadir etiquetas'}
+          label={taskTags.length > 0 ? t('Tags', 'Etiquetas') : t('Add tags', 'Añadir etiquetas')}
           value={taskTags.length > 0 ? taskTags.map((t) => t.name).join(', ') : null}
           onClick={() => setSheet('etiquetas')}
         />
@@ -927,7 +931,7 @@ function TaskForm({
               <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
             </RowIcon>
           }
-          label={attachments.length > 0 ? 'Archivos' : 'Añadir archivo'}
+          label={attachments.length > 0 ? t('Files', 'Archivos') : t('Add file', 'Añadir archivo')}
           value={attachments.length > 0 ? `${attachments.length}` : null}
           onClick={() => setSheet('archivos')}
         />
@@ -937,7 +941,7 @@ function TaskForm({
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </RowIcon>
           }
-          label={comments.length > 0 ? 'Comentarios' : 'Añadir comentario'}
+          label={comments.length > 0 ? t('Comments', 'Comentarios') : t('Add comment', 'Añadir comentario')}
           value={comments.length > 0 ? `${comments.length}` : null}
           onClick={() => setSheet('comentarios')}
         />
@@ -951,15 +955,15 @@ function TaskForm({
             onChange={(e) => setNotes(e.target.value)}
             onBlur={saveNotes}
             rows={4}
-            placeholder="Añadir nota"
-            aria-label="Notas"
+            placeholder={t('Add note', 'Añadir nota')}
+            aria-label={t('Notes', 'Notas')}
             className="w-full resize-y border-none bg-transparent px-4 py-3.5 pr-11 text-[0.9375rem] text-ink outline-none placeholder-ink-muted focus:shadow-none lg:text-sm"
           />
           <button
             type="button"
             onClick={() => setNotesExpanded(true)}
-            aria-label="Ampliar nota"
-            title="Ampliar nota"
+            aria-label={t('Expand note', 'Ampliar nota')}
+            title={t('Expand note', 'Ampliar nota')}
             className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/10 hover:text-ink"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5" aria-hidden="true">
@@ -983,11 +987,11 @@ function TaskForm({
       {/* Pie: creada + papelera */}
       <div className="flex items-center gap-2 px-1 pt-1">
         <span className="flex-1 text-center text-xs text-ink-faint">
-          Creada el {formatDateTime(task.createdAt)}
+          {t('Created', 'Creada el')} {formatDateTime(task.createdAt)}
           {task.completed && task.completedAt !== null && (
             <>
               <br />
-              Completada el {formatDateTime(task.completedAt)}
+              {t('Completed', 'Completada el')} {formatDateTime(task.completedAt)}
             </>
           )}
         </span>
@@ -1006,7 +1010,7 @@ function TaskForm({
             <div className="space-y-1">
               <SheetOption
                 icon={calIcon}
-                label="Hoy"
+                label={t('Today', 'Hoy')}
                 selected={task.dueAt !== null && msToDateInput(task.dueAt) === msToDateInput(startOfToday())}
                 onClick={() => updateTask(task.id, { dueAt: startOfToday(), dueHasTime: false })}
               />
@@ -1018,7 +1022,7 @@ function TaskForm({
                     <path d="m9 16 2 2 4-4" />
                   </RowIcon>
                 }
-                label="Mañana"
+                label={t('Tomorrow', 'Mañana')}
                 selected={task.dueAt !== null && msToDateInput(task.dueAt) === msToDateInput(startOfDayOffset(1))}
                 onClick={() => updateTask(task.id, { dueAt: startOfDayOffset(1), dueHasTime: false })}
               />
@@ -1030,7 +1034,7 @@ function TaskForm({
                     <path d="m8 16 3 3 5-6" />
                   </RowIcon>
                 }
-                label="En una semana"
+                label={t('In a week', 'En una semana')}
                 onClick={() => updateTask(task.id, { dueAt: startOfDayOffset(7), dueHasTime: false })}
               />
               <div className="my-2 border-t border-line/5" />
@@ -1048,7 +1052,7 @@ function TaskForm({
                     <path d="M16 2v4M8 2v4M3 10h18" />
                   </RowIcon>
                 </span>
-                <span className="min-w-0 flex-1 text-[0.9375rem] text-ink lg:text-sm">Elegir una fecha</span>
+                <span className="min-w-0 flex-1 text-[0.9375rem] text-ink lg:text-sm">{t('Pick a date', 'Elegir una fecha')}</span>
                 {task.dueAt !== null && (
                   <span className="shrink-0 text-sm text-ink-faint lg:text-xs">{formatDue(task.dueAt)}</span>
                 )}
@@ -1081,12 +1085,12 @@ function TaskForm({
                         <path d="M12 7v5l3 2" />
                       </RowIcon>
                     </span>
-                    <span className="min-w-0 flex-1 text-[0.9375rem] text-ink lg:text-sm">Hora</span>
+                    <span className="min-w-0 flex-1 text-[0.9375rem] text-ink lg:text-sm">{t('Time', 'Hora')}</span>
                     <TimeSelect
                       value={timeValue}
                       onChange={setTime}
-                      noneLabel="Sin hora"
-                      ariaLabel="Hora programada"
+                      noneLabel={t('No time', 'Sin hora')}
+                      ariaLabel={t('Scheduled time', 'Hora programada')}
                     />
                   </label>
                   <div className="my-2 border-t border-line/5" />
@@ -1096,7 +1100,7 @@ function TaskForm({
                         <path d="M18 6 6 18M6 6l12 12" />
                       </RowIcon>
                     }
-                    label="Quitar fecha"
+                    label={t('Remove date', 'Quitar fecha')}
                     onClick={() => {
                       updateTask(task.id, { dueAt: null, dueHasTime: false })
                       closeSheet()
@@ -1125,7 +1129,7 @@ function TaskForm({
                       <path d="M9 2h6" />
                     </RowIcon>
                   }
-                  label={`${min} minutos`}
+                  label={t(`${min} minutes`, `${min} minutos`)}
                   selected={task.pomodoroMinutes === min}
                   onClick={() => updateTask(task.id, { pomodoroMinutes: min })}
                 />
@@ -1143,12 +1147,15 @@ function TaskForm({
                       // Abre la vista Estudio en pantalla completa (no minimizado).
                       void pomodoro.start({ taskId: task.id })
                       emitOpenStudy()
-                      emitToast({ title: '🍅 Pomodoro iniciado', body: `${task.title} · objetivo ${task.pomodoroMinutes} min` })
+                      emitToast({
+                        title: t('🍅 Pomodoro started', '🍅 Pomodoro iniciado'),
+                        body: `${task.title} · ${t('goal', 'objetivo')} ${task.pomodoroMinutes} min`,
+                      })
                       closeSheet()
                     }}
                     className="w-full rounded-xl bg-accent-600 px-4 py-2.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500"
                   >
-                    ▶ Empezar ahora · objetivo {task.pomodoroMinutes} min
+                    ▶ {t('Start now · goal', 'Empezar ahora · objetivo')} {task.pomodoroMinutes} min
                   </button>
                   <SheetOption
                     icon={
@@ -1156,7 +1163,7 @@ function TaskForm({
                         <path d="M18 6 6 18M6 6l12 12" />
                       </RowIcon>
                     }
-                    label="Quitar pomodoro"
+                    label={t('Remove pomodoro', 'Quitar pomodoro')}
                     onClick={() => {
                       updateTask(task.id, { pomodoroMinutes: null })
                       closeSheet()
@@ -1177,7 +1184,7 @@ function TaskForm({
                     <path d="M18 6 6 18M6 6l12 12" />
                   </RowIcon>
                 }
-                label="Sin lista"
+                label={t('No list', 'Sin lista')}
                 selected={!task.listId}
                 onClick={() => {
                   updateTask(task.id, { listId: null })
@@ -1245,7 +1252,8 @@ export function CustomMinutesInput({
   return (
     <div className={`flex min-h-13 items-center gap-3 rounded-xl px-3 ${current !== null ? 'text-accent-300' : ''}`}>
       <span className={`min-w-0 flex-1 text-[0.9375rem] lg:text-sm ${current !== null ? 'text-accent-300' : 'text-ink'}`}>
-        Personalizado{current !== null ? ` · ${current} min` : ''}
+        {t('Custom', 'Personalizado')}
+        {current !== null ? ` · ${current} min` : ''}
       </span>
       <input
         type="text"
@@ -1255,7 +1263,7 @@ export function CustomMinutesInput({
         onChange={(e) => setValue(e.target.value.replace(/\D/g, '').slice(0, 3))}
         onKeyDown={(e) => e.key === 'Enter' && valid && onApply(parsed)}
         placeholder="min"
-        aria-label="Minutos personalizados de pomodoro"
+        aria-label={t('Custom pomodoro minutes', 'Minutos personalizados de pomodoro')}
         className="w-20 rounded-md border border-line/10 glass-input px-2 py-1.5 text-center text-sm text-ink placeholder-ink-faint outline-none focus:border-accent-500/60"
       />
       <button
@@ -1285,13 +1293,13 @@ function CreateListInline({ onCreated }: { onCreated: (id: string) => void }) {
 
   return (
     <div className="space-y-2.5 rounded-xl border border-line/10 glass-input p-3">
-      <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Nueva lista</p>
+      <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">{t('New list', 'Nueva lista')}</p>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && void create()}
-        placeholder="Ej. Hogar, Trabajo…"
-        aria-label="Nombre de la lista nueva"
+        placeholder={t('E.g. Home, Work…', 'Ej. Hogar, Trabajo…')}
+        aria-label={t('New list name', 'Nombre de la lista nueva')}
         className="w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60"
       />
       <ColorPicker value={color} onChange={(c) => c && setColor(c)} allowCustom />
@@ -1301,7 +1309,7 @@ function CreateListInline({ onCreated }: { onCreated: (id: string) => void }) {
         onClick={() => void create()}
         className="w-full rounded-lg bg-accent-600 px-3 py-2 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500 disabled:opacity-40"
       >
-        Crear y asignar
+        {t('Create and assign', 'Crear y asignar')}
       </button>
     </div>
   )
@@ -1320,7 +1328,7 @@ function DeleteTaskButton({ onDelete }: { onDelete: () => void }) {
   return (
     <button
       onClick={() => (armed ? onDelete() : setArmed(true))}
-      aria-label={armed ? 'Confirmar eliminación' : 'Eliminar tarea'}
+      aria-label={armed ? t('Confirm deletion', 'Confirmar eliminación') : t('Delete task', 'Eliminar tarea')}
       className={`flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm transition-all ${
         armed ? 'bg-danger/15 font-semibold text-danger' : 'text-ink-muted hover:bg-ink/5 hover:text-danger'
       }`}
@@ -1331,7 +1339,7 @@ function DeleteTaskButton({ onDelete }: { onDelete: () => void }) {
         <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
         <path d="M10 11v6M14 11v6" />
       </svg>
-      {armed && '¿Seguro?'}
+      {armed && t('Sure?', '¿Seguro?')}
     </button>
   )
 }
@@ -1349,7 +1357,7 @@ function SubtaskRow({ subtask }: { subtask: Subtask }) {
     <div className="group flex min-h-12 items-center gap-3.5 py-1.5">
       <button
         onClick={() => setSubtaskCompleted(subtask.id, !subtask.completed)}
-        aria-label={subtask.completed ? 'Marcar pendiente' : 'Completar subtarea'}
+        aria-label={subtask.completed ? t('Mark pending', 'Marcar pendiente') : t('Complete subtask', 'Completar subtarea')}
         className={`flex size-5.5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
           subtask.completed ? 'border-accent-500 bg-accent-500' : 'border-ink-muted hover:border-accent-400'
         }`}
@@ -1365,14 +1373,14 @@ function SubtaskRow({ subtask }: { subtask: Subtask }) {
         onChange={(e) => setTitle(e.target.value)}
         onBlur={saveTitle}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-        aria-label="Título de subtarea"
+        aria-label={t('Subtask title', 'Título de subtarea')}
         className={`min-w-0 flex-1 border-none bg-transparent text-[0.9375rem] outline-none lg:text-sm ${
           subtask.completed ? 'text-ink-faint line-through' : 'text-ink-dim'
         }`}
       />
       <button
         onClick={() => deleteSubtask(subtask.id)}
-        aria-label="Eliminar subtarea"
+        aria-label={t('Delete subtask', 'Eliminar subtarea')}
         className="flex size-7 shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger focus:opacity-100"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">

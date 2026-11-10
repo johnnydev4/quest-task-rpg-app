@@ -10,6 +10,7 @@ import { TimeSelect } from '../ui/TimeSelect'
 import { SortMenu } from '../ui/SortMenu'
 import { DayPicker } from './DayPicker'
 import { HabitCard } from './HabitCard'
+import { LOCALE, t } from '../../lib/i18n'
 
 const inputClass =
   'w-full rounded-lg border border-line/10 glass-input px-3 py-2 text-sm text-ink placeholder-ink-faint outline-none transition-colors focus:border-accent-500/60'
@@ -17,10 +18,10 @@ const inputClass =
 type HabitSortMode = 'created' | 'name' | 'end' | 'manual'
 
 const HABIT_SORT_OPTIONS: { id: HabitSortMode; label: string }[] = [
-  { id: 'created', label: 'Creación' },
-  { id: 'name', label: 'Nombre (A–Z)' },
-  { id: 'end', label: 'Fecha límite' },
-  { id: 'manual', label: 'Manual (arrastrar)' },
+  { id: 'created', label: t('Created', 'Creación') },
+  { id: 'name', label: t('Name (A–Z)', 'Nombre (A–Z)') },
+  { id: 'end', label: t('End date', 'Fecha límite') },
+  { id: 'manual', label: t('Manual (drag)', 'Manual (arrastrar)') },
 ]
 
 export function HabitsView() {
@@ -46,7 +47,7 @@ export function HabitsView() {
     const a = [...arr]
     switch (habitSort) {
       case 'name':
-        return a.sort((x, y) => x.title.localeCompare(y.title, 'es', { sensitivity: 'base' }))
+        return a.sort((x, y) => x.title.localeCompare(y.title, LOCALE, { sensitivity: 'base' }))
       case 'end':
         // Fecha límite más próxima primero; los indefinidos, al final.
         return a.sort((x, y) => (x.endDate ?? Infinity) - (y.endDate ?? Infinity))
@@ -87,21 +88,21 @@ export function HabitsView() {
     <div className="space-y-5">
       {/* Crear hábito */}
       <form onSubmit={submit} className="space-y-3 rounded-2xl border border-line/5 glass-panel p-4">
-        <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Nuevo hábito</p>
+        <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">{t('New habit', 'Nuevo hábito')}</p>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ej. Leer 20 minutos, salir a caminar…"
-          aria-label="Título del hábito"
+          placeholder={t('E.g. Read 20 minutes, go for a walk…', t('E.g. Read 20 minutes, go for a walk…', 'Ej. Leer 20 minutos, salir a caminar…'))}
+          aria-label={t('Habit title', 'Título del hábito')}
           className={inputClass}
         />
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <div className="space-y-1.5">
-            <span className="block text-[0.6875rem] text-ink-faint">Días a cumplir</span>
+            <span className="block text-[0.6875rem] text-ink-faint">{t('Days to complete', 'Días a cumplir')}</span>
             <DayPicker value={days} onChange={setDays} />
           </div>
           <div className="space-y-1.5">
-            <span className="block text-[0.6875rem] text-ink-faint">Hasta</span>
+            <span className="block text-[0.6875rem] text-ink-faint">{t('Until', 'Hasta')}</span>
             <div className="flex items-center gap-2.5">
               <input
                 type="date"
@@ -112,7 +113,7 @@ export function HabitsView() {
                   const ms = dateInputToMs(e.target.value)
                   if (ms !== null) setEndDate(ms)
                 }}
-                aria-label="Fecha límite del hábito"
+                aria-label={t('Habit end date', 'Fecha límite del hábito')}
                 className="rounded-lg border border-line/10 glass-input px-3 py-1.5 text-sm text-ink outline-none focus:border-accent-500/60 disabled:opacity-40"
               />
               <label className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-dim">
@@ -120,26 +121,26 @@ export function HabitsView() {
                   type="checkbox"
                   checked={indefinite}
                   onChange={(e) => setIndefinite(e.target.checked)}
-                  aria-label="Hábito indefinido"
+                  aria-label={t('Indefinite habit', 'Hábito indefinido')}
                   className="size-4 accent-accent-500"
                 />
-                Indefinido
+                {t('Indefinite', 'Indefinido')}
               </label>
             </div>
           </div>
           <label className="space-y-1.5">
-            <span className="block text-[0.6875rem] text-ink-faint">Recordarme a las</span>
-            <TimeSelect value={reminderTime} onChange={setReminderTime} noneLabel="Sin aviso" ariaLabel="Hora del aviso del hábito" />
+            <span className="block text-[0.6875rem] text-ink-faint">{t('Remind me at', 'Recordarme a las')}</span>
+            <TimeSelect value={reminderTime} onChange={setReminderTime} noneLabel={t('No reminder', 'Sin aviso')} ariaLabel={t('Habit reminder time', 'Hora del aviso del hábito')} />
           </label>
           <label className="space-y-1.5">
             <span className="block text-[0.6875rem] text-ink-faint">Pomodoro</span>
             <select
               value={pomodoroMin}
               onChange={(e) => setPomodoroMin(e.target.value)}
-              aria-label="Minutos de pomodoro del hábito"
+              aria-label={t('Habit pomodoro minutes', 'Minutos de pomodoro del hábito')}
               className="rounded-md border border-line/10 glass-input px-2 py-1 text-sm text-ink outline-none focus:border-accent-500/60"
             >
-              <option value="">Sin pomodoro</option>
+              <option value="">{t('No pomodoro', 'Sin pomodoro')}</option>
               {[10, 15, 25, 45, 60, 90].map((m) => (
                 <option key={m} value={m}>
                   {m} min
@@ -152,7 +153,7 @@ export function HabitsView() {
             disabled={!title.trim() || days.length === 0}
             className="ml-auto rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500 disabled:opacity-40"
           >
-            Crear hábito
+            {t('Create habit', 'Crear hábito')}
           </button>
         </div>
       </form>
@@ -161,10 +162,17 @@ export function HabitsView() {
       {active.length === 0 && finished.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-12 text-center">
           <div className="flex size-14 items-center justify-center rounded-2xl glass-panel text-3xl">🔁</div>
-          <p className="font-medium text-ink-dim">Aún no tienes hábitos</p>
+          <p className="font-medium text-ink-dim">{t("You don't have any habits yet", 'Aún no tienes hábitos')}</p>
           <p className="max-w-sm text-sm text-ink-faint">
-            Crea uno arriba y cúmplelo en sus días: cada racha es un <strong>COMBO</strong> que sube de color
-            por el arcoíris y multiplica tu XP.
+            {t(
+              'Create one above and complete it on its days: every streak is a ',
+              'Crea uno arriba y cúmplelo en sus días: cada racha es un ',
+            )}
+            <strong>COMBO</strong>
+            {t(
+              ' that climbs the rainbow and multiplies your XP.',
+              ' que sube de color por el arcoíris y multiplica tu XP.',
+            )}
           </p>
         </div>
       ) : (
@@ -172,9 +180,9 @@ export function HabitsView() {
           {active.length > 0 && (
             <div className="flex items-center justify-between px-1">
               <span className="text-sm font-semibold text-ink-muted">
-                Activos <span className="text-xs font-normal text-ink-faint">{active.length}</span>
+                {t('Active', 'Activos')} <span className="text-xs font-normal text-ink-faint">{active.length}</span>
               </span>
-              <SortMenu value={habitSort} options={HABIT_SORT_OPTIONS} onChange={changeHabitSort} label="Ordenar hábitos" />
+              <SortMenu value={habitSort} options={HABIT_SORT_OPTIONS} onChange={changeHabitSort} label={t('Sort habits', 'Ordenar hábitos')} />
             </div>
           )}
           <SortableList
@@ -197,7 +205,7 @@ export function HabitsView() {
       {finished.length > 0 && (
         <div className="space-y-2">
           <h2 className="px-1 text-sm font-semibold text-ink-muted">
-            Finalizados <span className="text-xs font-normal text-ink-faint">{finished.length}</span>
+            {t('Finished', 'Finalizados')} <span className="text-xs font-normal text-ink-faint">{finished.length}</span>
           </h2>
           {finished.map((h) => (
             <HabitCard key={h.id} habit={h} onManage={() => openHabit(h.id)} />
@@ -209,14 +217,14 @@ export function HabitsView() {
       {/* Leyenda de la escalera de combos */}
       <div className="rounded-2xl border border-line/5 glass-panel p-4">
         <p className="mb-2 text-xs font-semibold tracking-wide text-ink-faint uppercase">
-          Escalera de combos (cada cumplimiento sube el color y el XP)
+          {t('Combo ladder (each completion raises the color and the XP)', 'Escalera de combos (cada cumplimiento sube el color y el XP)')}
         </p>
         <div className="flex flex-wrap gap-1.5">
           {COMBO_TIERS.map((tier) => (
             <span
               key={tier.combo}
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold text-white"
-              style={{ background: tier.name === 'arcoíris' ? RAINBOW_GRADIENT : tier.color }}
+              style={{ background: tier.combo === 7 ? RAINBOW_GRADIENT : tier.color }}
             >
               {tier.combo === 7 ? '7+' : tier.combo} · ×{tier.mult} XP {tier.name}
             </span>

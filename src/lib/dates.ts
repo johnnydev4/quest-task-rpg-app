@@ -1,3 +1,4 @@
+import { LOCALE, t } from './i18n'
 /** Medianoche local de hoy. Se usa la API de Date (no aritmética de ms) para respetar cambios de horario. */
 export function startOfToday(): number {
   const d = new Date()
@@ -17,12 +18,12 @@ export function isOverdue(dueAt: number): boolean {
 }
 
 export function formatDue(dueAt: number): string {
-  if (dueAt >= startOfToday() && dueAt < startOfDayOffset(1)) return 'Hoy'
-  if (dueAt >= startOfDayOffset(1) && dueAt < startOfDayOffset(2)) return 'Mañana'
-  if (dueAt >= startOfDayOffset(-1) && dueAt < startOfToday()) return 'Ayer'
-  if (dueAt >= startOfDayOffset(-2) && dueAt < startOfDayOffset(-1)) return 'Anteayer'
+  if (dueAt >= startOfToday() && dueAt < startOfDayOffset(1)) return t('Today', 'Hoy')
+  if (dueAt >= startOfDayOffset(1) && dueAt < startOfDayOffset(2)) return t('Tomorrow', 'Mañana')
+  if (dueAt >= startOfDayOffset(-1) && dueAt < startOfToday()) return t('Yesterday', 'Ayer')
+  if (dueAt >= startOfDayOffset(-2) && dueAt < startOfDayOffset(-1)) return t('2 days ago', 'Anteayer')
   const withYear = new Date(dueAt).getFullYear() !== new Date().getFullYear()
-  return new Intl.DateTimeFormat('es', {
+  return new Intl.DateTimeFormat(LOCALE, {
     day: 'numeric',
     month: 'short',
     ...(withYear ? { year: 'numeric' } : {}),
@@ -67,11 +68,11 @@ export function dateTimeInputToMs(value: string): number | null {
 }
 
 export function formatDueTime(ms: number): string {
-  return new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(ms)
+  return new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' }).format(ms)
 }
 
 export function formatDateTime(ms: number): string {
-  return new Intl.DateTimeFormat('es', {
+  return new Intl.DateTimeFormat(LOCALE, {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',

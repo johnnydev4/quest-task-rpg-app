@@ -16,6 +16,7 @@ import { StarRating } from '../ui/StarRating'
 import { NodeDetailsModal } from './NodeDetailsModal'
 import { QuestLinkMenu } from './QuestLinkMenu'
 import { flattenOutline, groupByParent, resolveNodeColors, type FlatRow } from './tree'
+import { t } from '../../lib/i18n'
 
 /** Ancho (px) de cada nivel de indentación en la lista. */
 const INDENT = 22
@@ -53,7 +54,7 @@ export function OutlineView({ mapId, rootId, mapColor = null }: OutlineViewProps
   if (nodes === undefined) {
     return (
       <div className="flex justify-center py-16">
-        <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label="Cargando" />
+        <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label={t('Loading', 'Cargando')} />
       </div>
     )
   }
@@ -62,15 +63,19 @@ export function OutlineView({ mapId, rootId, mapColor = null }: OutlineViewProps
     <div className="rounded-2xl border border-line/10 glass-panel p-3 sm:p-4">
       {flat.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-12 text-center">
-          <p className="font-medium text-ink-dim">Empieza a descomponer tu idea</p>
+          <p className="font-medium text-ink-dim">{t('Start breaking down your idea', 'Empieza a descomponer tu idea')}</p>
           <p className="max-w-xs text-sm text-ink-faint">
-            Añade la primera rama y ve troceándola. Usa <Kbd>Enter</Kbd> para seguir y <Kbd>Tab</Kbd> para anidar.
+            {t('Add the first branch and keep splitting it. Use ', 'Añade la primera rama y ve troceándola. Usa ')}
+            <Kbd>Enter</Kbd>
+            {t(' to continue and ', ' para seguir y ')}
+            <Kbd>Tab</Kbd>
+            {t(' to nest.', ' para anidar.')}
           </p>
           <button
             onClick={() => void addFirst()}
             className="flex items-center gap-1.5 rounded-lg bg-accent-500/15 px-3.5 py-2 text-sm font-semibold text-accent-300 transition-colors hover:bg-accent-500/25"
           >
-            <PlusIcon className="size-4" /> Añadir primera rama
+            <PlusIcon className="size-4" /> {t('Add first branch', 'Añadir primera rama')}
           </button>
         </div>
       ) : (
@@ -94,7 +99,7 @@ export function OutlineView({ mapId, rootId, mapColor = null }: OutlineViewProps
             onClick={() => void addFirst()}
             className="mt-1 flex items-center gap-1.5 self-start rounded-lg px-2 py-1.5 text-xs font-medium text-ink-faint transition-colors hover:bg-ink/5 hover:text-ink-dim"
           >
-            <PlusIcon className="size-3.5" /> Añadir rama
+            <PlusIcon className="size-3.5" /> {t('Add branch', 'Añadir rama')}
           </button>
         </div>
       )}
@@ -232,7 +237,7 @@ function NodeRow({
         {hasChildren ? (
           <button
             onClick={() => void toggleCollapsed(node.id)}
-            aria-label={node.collapsed ? 'Desplegar rama' : 'Plegar rama'}
+            aria-label={node.collapsed ? t('Expand branch', 'Desplegar rama') : t('Collapse branch', 'Plegar rama')}
             aria-expanded={!node.collapsed}
             className="flex size-5 shrink-0 items-center justify-center rounded text-ink-faint transition-colors hover:bg-ink/10 hover:text-ink"
           >
@@ -255,7 +260,7 @@ function NodeRow({
           onChange={(e) => setText(e.target.value)}
           onBlur={commit}
           onKeyDown={(e) => void onKeyDown(e)}
-          placeholder="Escribe una idea…"
+          placeholder={t('Write an idea…', 'Escribe una idea…')}
           aria-label="Idea"
           className="min-w-0 flex-1 border-none bg-transparent py-0.5 text-sm text-ink placeholder-ink-faint outline-none focus:shadow-none"
         />
@@ -272,7 +277,7 @@ function NodeRow({
 
         {/* Insignia siempre visible si el nodo está vinculado a una misión. */}
         {node.linkedQuestId && (
-          <span className="shrink-0 text-accent-400" title="Vinculado a una misión" aria-hidden="true">
+          <span className="shrink-0 text-accent-400" title={t('Linked to a quest', 'Vinculado a una misión')} aria-hidden="true">
             <SwordIcon className="size-3.5" />
           </span>
         )}
@@ -288,8 +293,8 @@ function NodeRow({
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <button
             onClick={() => onDetails(node.id)}
-            aria-label="Personalizar idea"
-            title="Color, valoración y nota"
+            aria-label={t('Customize idea', 'Personalizar idea')}
+            title={t('Color, rating and note', 'Color, valoración y nota')}
             className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-ink/10 hover:text-accent-300"
           >
             <PaletteIcon className="size-3.5" />
@@ -297,16 +302,16 @@ function NodeRow({
           <QuestLinkMenu nodeId={node.id} linkedQuestId={node.linkedQuestId} />
           <button
             onClick={() => void onAddChild()}
-            aria-label="Añadir sub-idea"
-            title="Añadir sub-idea"
+            aria-label={t('Add sub-idea', 'Añadir sub-idea')}
+            title={t('Add sub-idea', 'Añadir sub-idea')}
             className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-ink/10 hover:text-accent-300"
           >
             <PlusIcon className="size-3.5" />
           </button>
           <button
             onClick={() => void deleteNode(node.id)}
-            aria-label="Eliminar idea"
-            title="Eliminar (y su rama)"
+            aria-label={t('Delete idea', 'Eliminar idea')}
+            title={t('Delete (and its branch)', 'Eliminar (y su rama)')}
             className="flex size-6 items-center justify-center rounded text-ink-faint transition-colors hover:bg-danger/10 hover:text-danger"
           >
             <TrashIcon className="size-3.5" />

@@ -1,3 +1,4 @@
+import { LOCALE, t } from './i18n'
 /**
  * Temática RPG mensual: cada mes lleva un título épico basado en su propio
  * nombre (p. ej. "La Gran Misión de Agosto"). La misión principal del mes usa
@@ -22,101 +23,101 @@ export interface MonthTheme {
 
 export const MONTH_THEMES: MonthTheme[] = [
   {
-    creature: 'Fénix',
+    creature: t('Phoenix', 'Fénix'),
     emoji: '🐦‍🔥',
-    epicTitle: 'El Sendero de Enero',
-    motto: 'Renace de tus cenizas: cada comienzo te pertenece.',
+    epicTitle: t('The January Path', 'El Sendero de Enero'),
+    motto: t('Rise from your ashes: every beginning is yours.', 'Renace de tus cenizas: cada comienzo te pertenece.'),
     colorA: '#f97316',
     colorB: '#dc2626',
   },
   {
-    creature: 'Unicornio',
+    creature: t('Unicorn', 'Unicornio'),
     emoji: '🦄',
-    epicTitle: 'La Chispa de Febrero',
-    motto: 'Persigue lo imposible con el corazón por delante.',
+    epicTitle: t('The February Spark', 'La Chispa de Febrero'),
+    motto: t('Chase the impossible, heart first.', 'Persigue lo imposible con el corazón por delante.'),
     colorA: '#ec4899',
     colorB: '#a855f7',
   },
   {
-    creature: 'Grifo',
+    creature: t('Griffin', 'Grifo'),
     emoji: '🦅',
-    epicTitle: 'El Despertar de Marzo',
-    motto: 'Coraje y vigilia: una nueva etapa despierta.',
+    epicTitle: t('The March Awakening', 'El Despertar de Marzo'),
+    motto: t('Courage and vigilance: a new chapter awakens.', 'Coraje y vigilia: una nueva etapa despierta.'),
     colorA: '#f59e0b',
     colorB: '#92400e',
   },
   {
-    creature: 'Pegaso',
+    creature: t('Pegasus', 'Pegaso'),
     emoji: '🪽',
-    epicTitle: 'La Conquista de Abril',
-    motto: 'Despliega las alas: crea y crece sin límites.',
+    epicTitle: t('The April Conquest', 'La Conquista de Abril'),
+    motto: t('Spread your wings: create and grow without limits.', 'Despliega las alas: crea y crece sin límites.'),
     colorA: '#38bdf8',
     colorB: '#818cf8',
   },
   {
     creature: 'Kirin',
     emoji: '🦌',
-    epicTitle: 'El Ascenso de Mayo',
-    motto: 'Paz y fortuna acompañan cada paso firme.',
+    epicTitle: t('The May Ascent', 'El Ascenso de Mayo'),
+    motto: t('Peace and fortune follow every steady step.', 'Paz y fortuna acompañan cada paso firme.'),
     colorA: '#10b981',
     colorB: '#0d9488',
   },
   {
-    creature: 'Sirena',
+    creature: t('Mermaid', 'Sirena'),
     emoji: '🧜‍♀️',
-    epicTitle: 'El Desafío de Junio',
-    motto: 'Sumérgete en el misterio y emerge con tu verdad.',
+    epicTitle: t('The June Challenge', 'El Desafío de Junio'),
+    motto: t('Dive into the mystery and emerge with your truth.', 'Sumérgete en el misterio y emerge con tu verdad.'),
     colorA: '#06b6d4',
     colorB: '#3b82f6',
   },
   {
-    creature: 'Dragón',
+    creature: t('Dragon', 'Dragón'),
     emoji: '🐉',
-    epicTitle: 'La Cima de Julio',
-    motto: 'Poder, fuego y liderazgo: este mes se conquista.',
+    epicTitle: t('The July Summit', 'La Cima de Julio'),
+    motto: t('Power, fire and leadership: this month is yours to conquer.', 'Poder, fuego y liderazgo: este mes se conquista.'),
     colorA: '#dc2626',
     colorB: '#f59e0b',
     image: '/creatures/dragon.svg',
     bannerImage: '/creatures/dragon-banner.png',
   },
   {
-    creature: 'Mantícora',
+    creature: t('Manticore', 'Mantícora'),
     emoji: '🦁',
-    epicTitle: 'La Gran Misión de Agosto',
-    motto: 'Fuerza y determinación: resiste y vence.',
+    epicTitle: t('The Great August Quest', 'La Gran Misión de Agosto'),
+    motto: t('Strength and determination: endure and prevail.', 'Fuerza y determinación: resiste y vence.'),
     colorA: '#e11d48',
     colorB: '#7f1d1d',
     bannerImage: '/creatures/manticore-banner.jpg',
   },
   {
-    creature: 'Hipogrifo',
+    creature: t('Hippogriff', 'Hipogrifo'),
     emoji: '🪶',
-    epicTitle: 'La Travesía de Septiembre',
-    motto: 'Sabiduría y equilibrio para cruzar la transición.',
+    epicTitle: t('The September Crossing', 'La Travesía de Septiembre'),
+    motto: t('Wisdom and balance to cross the transition.', 'Sabiduría y equilibrio para cruzar la transición.'),
     colorA: '#6366f1',
     colorB: '#14b8a6',
   },
   {
-    creature: 'Cerbero',
+    creature: t('Cerberus', 'Cerbero'),
     emoji: '🐺',
-    epicTitle: 'El Reto de Octubre',
-    motto: 'Transfórmate: cruza el umbral de lo desconocido.',
+    epicTitle: t('The October Trial', 'El Reto de Octubre'),
+    motto: t('Transform: cross the threshold of the unknown.', 'Transfórmate: cruza el umbral de lo desconocido.'),
     colorA: '#7c3aed',
     colorB: '#312e81',
   },
   {
     creature: 'Kraken',
     emoji: '🐙',
-    epicTitle: 'La Forja de Noviembre',
-    motto: 'Desciende a lo profundo y vuelve más fuerte.',
+    epicTitle: t('The November Forge', 'La Forja de Noviembre'),
+    motto: t('Descend into the depths and return stronger.', 'Desciende a lo profundo y vuelve más fuerte.'),
     colorA: '#0ea5e9',
     colorB: '#1e3a8a',
   },
   {
-    creature: 'Cabra de Yule',
+    creature: t('Yule Goat', 'Cabra de Yule'),
     emoji: '🐐',
-    epicTitle: 'El Gran Cierre de Diciembre',
-    motto: 'Celebra, protege y cierra el ciclo con abundancia.',
+    epicTitle: t('The Grand December Finale', 'El Gran Cierre de Diciembre'),
+    motto: t('Celebrate, protect and close the cycle with abundance.', 'Celebra, protege y cierra el ciclo con abundancia.'),
     colorA: '#ca8a04',
     colorB: '#166534',
   },
@@ -145,12 +146,12 @@ export function weekRangeLabel(monthKey: string, week: number): string {
   const lastDay = new Date(y, m, 0).getDate()
   const from = (week - 1) * 7 + 1
   const to = week === 4 ? lastDay : Math.min(week * 7, lastDay)
-  const monthShort = new Intl.DateTimeFormat('es', { month: 'short' }).format(new Date(y, m - 1, 1))
+  const monthShort = new Intl.DateTimeFormat(LOCALE, { month: 'short' }).format(new Date(y, m - 1, 1))
   return `${from} – ${to} ${monthShort}`
 }
 
 export function monthLabelOf(monthKey: string): string {
   const [y, m] = monthKey.split('-').map(Number)
-  const label = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(new Date(y, m - 1, 1))
+  const label = new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' }).format(new Date(y, m - 1, 1))
   return label.charAt(0).toUpperCase() + label.slice(1)
 }

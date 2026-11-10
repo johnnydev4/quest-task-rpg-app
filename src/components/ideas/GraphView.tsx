@@ -22,6 +22,7 @@ import { useSettings } from '../../lib/useSettings'
 import { NoteIcon, PaletteIcon, PlusIcon, StarIcon, SwordIcon } from '../ui/icons'
 import { NodeDetailsModal } from './NodeDetailsModal'
 import { findRoot, groupByParent, resolveNodeColors } from './tree'
+import { t } from '../../lib/i18n'
 
 // Dimensiones del nodo y separaciones que alimentan el layout de d3.
 const NODE_W = 200
@@ -109,7 +110,7 @@ function textWidthFor(linked: boolean, hasNote: boolean): number {
 
 /** Altura que necesita un nodo para mostrar todo su texto, estrellas y nota. */
 function nodeHeight(n: IdeaNode): number {
-  const lines = wrapLines(n.text || 'Sin texto', textWidthFor(!!n.linkedQuestId, !!n.note)).length
+  const lines = wrapLines(n.text || t('No text', 'Sin texto'), textWidthFor(!!n.linkedQuestId, !!n.note)).length
   const rating = n.rating ? RATING_H : 0
   const note = n.note ? NOTE_PAD_Y + wrapLines(n.note, NOTE_W, NOTE_FONT).length * NOTE_LINE_H : 0
   return Math.max(NODE_H, NODE_PAD_Y * 2 + lines * TEXT_LINE_H + rating + note)
@@ -285,7 +286,7 @@ export function GraphView({ mapId, rootId, layout, mapColor = null }: GraphViewP
   if (data === undefined) {
     return (
       <div className="flex justify-center py-16">
-        <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label="Cargando" />
+        <div className="size-7 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-label={t('Loading', 'Cargando')} />
       </div>
     )
   }
@@ -366,7 +367,7 @@ function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
 
       <div className="flex items-center gap-1.5">
         {linked && (
-          <span className="shrink-0 text-accent-400" title="Vinculado a una misión" aria-hidden="true">
+          <span className="shrink-0 text-accent-400" title={t('Linked to a quest', 'Vinculado a una misión')} aria-hidden="true">
             <SwordIcon className="size-3.5" />
           </span>
         )}
@@ -395,24 +396,24 @@ function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
                 setEditing(false)
               }
             }}
-            aria-label="Texto de la idea"
+            aria-label={t('Idea text', 'Texto de la idea')}
             className="nodrag nopan min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent p-0 text-sm leading-5 text-ink outline-none focus:shadow-none"
           />
         ) : (
           <button
             onClick={() => setEditing(true)}
             className="nodrag nopan min-w-0 flex-1 cursor-text whitespace-pre-wrap break-words text-left text-sm font-medium leading-5 text-ink"
-            title="Clic para editar · arrastra el nodo para moverlo"
+            title={t('Click to edit · drag the node to move it', t('Click to edit · drag the node to move it', 'Clic para editar · arrastra el nodo para moverlo'))}
           >
-            {text || <span className="text-ink-faint">Sin texto</span>}
+            {text || <span className="text-ink-faint">{t('No text', 'Sin texto')}</span>}
           </button>
         )}
 
         {/* Personalizar la idea: color, estrellas y nota. */}
         <button
           onClick={() => openDetails(id)}
-          aria-label="Personalizar idea"
-          title="Color, valoración y nota"
+          aria-label={t('Customize idea', 'Personalizar idea')}
+          title={t('Color, rating and note', 'Color, valoración y nota')}
           className="nodrag nopan flex size-5 shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity hover:bg-ink/10 hover:text-accent-300 group-hover:opacity-100"
         >
           <PaletteIcon className="size-3.5" />
@@ -421,7 +422,7 @@ function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
         {/* Añadir sub-idea (aparece al pasar el ratón). */}
         <button
           onClick={() => void addChild(mapId, id, '')}
-          aria-label="Añadir sub-idea"
+          aria-label={t('Add sub-idea', 'Añadir sub-idea')}
           className="nodrag nopan flex size-5 shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity hover:bg-ink/10 hover:text-accent-300 group-hover:opacity-100"
         >
           <PlusIcon className="size-3.5" />
@@ -430,7 +431,7 @@ function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
 
       {/* Valoración: insignia de solo lectura; se puntúa desde el panel. */}
       {rating !== null && (
-        <span className="flex items-center gap-px text-amber-400" aria-label={`Valoración: ${rating} de 5`}>
+        <span className="flex items-center gap-px text-amber-400" aria-label={t(`Rating: ${rating} of 5`, `Valoración: ${rating} de 5`)}>
           {[1, 2, 3, 4, 5].map((n) => (
             <StarIcon key={n} className="size-3" filled={n <= rating} />
           ))}
@@ -450,7 +451,7 @@ function IdeaFlowNode({ id, data }: NodeProps<FlowNode>) {
       {hasChildren && (
         <button
           onClick={() => void toggleCollapsed(id)}
-          aria-label={collapsed ? 'Desplegar rama' : 'Plegar rama'}
+          aria-label={collapsed ? t('Expand branch', 'Desplegar rama') : t('Collapse branch', 'Plegar rama')}
           className="nodrag nopan absolute -bottom-2.5 left-1/2 flex h-5 -translate-x-1/2 items-center justify-center rounded-full border border-line/15 bg-surface-700 px-1.5 text-ink-dim shadow-sm transition-colors hover:text-accent-300"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`size-3 transition-transform ${collapsed ? '' : 'rotate-180'}`} aria-hidden="true">

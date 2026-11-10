@@ -1,5 +1,6 @@
 import { db } from '../db/db'
 import { localDateKey } from '../lib/dates'
+import { t } from '../lib/i18n'
 
 /** Respaldo manual (spec §5): exporta/importa todos los datos como JSON. */
 
@@ -23,7 +24,7 @@ function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve((reader.result as string).split(',')[1] ?? '')
-    reader.onerror = () => reject(new Error('No se pudo leer el adjunto'))
+    reader.onerror = () => reject(new Error(t("Couldn't read the attachment", 'No se pudo leer el adjunto')))
     reader.readAsDataURL(blob)
   })
 }
@@ -63,7 +64,7 @@ export async function exportData(): Promise<void> {
 
 export async function importData(file: File): Promise<number> {
   const json = JSON.parse(await file.text()) as Record<string, unknown>
-  if (json.app !== 'quest') throw new Error('El archivo no es un respaldo de Quest')
+  if (json.app !== 'quest') throw new Error(t('This file is not a Quest backup', 'El archivo no es un respaldo de Quest'))
 
   let count = 0
   await db.transaction('rw', db.tables, async () => {

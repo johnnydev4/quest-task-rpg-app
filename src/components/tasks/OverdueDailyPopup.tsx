@@ -6,6 +6,7 @@ import { formatDue, startOfToday } from '../../lib/dates'
 import { recursOnDay } from '../../lib/recurrence'
 import { moveOverdueToToday, setTaskCompleted, skipOverdue } from '../../db/repo/tasks'
 import { CheckCircleIcon, ForwardIcon, HistoryIcon, SunIcon } from '../ui/icons'
+import { t } from '../../lib/i18n'
 
 /**
  * Aviso diario de tareas vencidas: una vez al día, al entrar a Hoy, sube desde
@@ -65,7 +66,7 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
     <div
       className="pointer-events-none fixed inset-x-0 bottom-0 z-[65] flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       role="dialog"
-      aria-label="Tareas vencidas"
+      aria-label={t('Overdue tasks', 'Tareas vencidas')}
     >
       <div
         className="pointer-events-auto w-full max-w-md overflow-hidden rounded-2xl border border-line/10 glass-strong shadow-2xl"
@@ -75,15 +76,16 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
           <HistoryIcon className="size-4 shrink-0 text-accent-400" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-ink">
-              {visible.length} {visible.length === 1 ? 'tarea vencida' : 'tareas vencidas'}
+              {visible.length}{' '}
+              {visible.length === 1 ? t('overdue task', 'tarea vencida') : t('overdue tasks', 'tareas vencidas')}
             </p>
             <p className="text-xs text-ink-muted">
-              {movableIds.length === 0 ? 'Complétalas o sáltalas.' : 'Sáltalas o tráelas al día de hoy.'}
+              {movableIds.length === 0 ? t('Complete or skip them.', 'Complétalas o sáltalas.') : t('Skip them or bring them to today.', 'Sáltalas o tráelas al día de hoy.')}
             </p>
           </div>
           <button
             onClick={close}
-            aria-label="Cerrar aviso"
+            aria-label={t('Close notice', 'Cerrar aviso')}
             className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4" aria-hidden="true">
@@ -93,37 +95,37 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
         </div>
 
         <ul className="max-h-64 overflow-y-auto px-2 py-2">
-          {visible.map((t, i) => (
+          {visible.map((task, i) => (
             <li
-              key={t.id}
+              key={task.id}
               className="flex items-center gap-1.5 rounded-xl px-2 py-1.5"
               style={{ animation: 'sheet-up 0.3s ease-out both', animationDelay: `${120 + i * 70}ms` }}
             >
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm text-ink">{t.title}</span>
-                <span className="block text-[0.6875rem] text-ink-faint">{t.dueAt !== null && formatDue(t.dueAt)}</span>
+                <span className="block truncate text-sm text-ink">{task.title}</span>
+                <span className="block text-[0.6875rem] text-ink-faint">{task.dueAt !== null && formatDue(task.dueAt)}</span>
               </span>
               <button
-                onClick={() => void handle((id) => setTaskCompleted(id, true), [t.id])}
-                aria-label={`Completar ${t.title}`}
-                title="Completar"
+                onClick={() => void handle((id) => setTaskCompleted(id, true), [task.id])}
+                aria-label={`${t('Complete', 'Completar')} ${task.title}`}
+                title={t('Complete', 'Completar')}
                 className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-ok/10 hover:text-ok"
               >
                 <CheckCircleIcon className="size-4" />
               </button>
               <button
-                onClick={() => void handle(skipOverdue, [t.id])}
-                aria-label={`Saltar ${t.title}`}
-                title="Saltar"
+                onClick={() => void handle(skipOverdue, [task.id])}
+                aria-label={`${t('Skip', 'Saltar')} ${task.title}`}
+                title={t('Skip', 'Saltar')}
                 className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
               >
                 <ForwardIcon className="size-4" />
               </button>
-              {!recursToday(t) && (
+              {!recursToday(task) && (
                 <button
-                  onClick={() => void handle(moveOverdueToToday, [t.id])}
-                  aria-label={`Agregar ${t.title} a hoy`}
-                  title="Agregar a hoy"
+                  onClick={() => void handle(moveOverdueToToday, [task.id])}
+                  aria-label={t(`Add ${task.title} to today`, `Agregar ${task.title} a hoy`)}
+                  title={t('Add to today', 'Agregar a hoy')}
                   className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line/10 text-ink-dim transition-colors hover:bg-accent-500/10 hover:text-accent-400"
                 >
                   <SunIcon className="size-4" />
@@ -139,7 +141,7 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
             disabled={busy}
             className="flex-1 rounded-xl border border-line/10 px-3 py-2 text-sm font-medium text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink disabled:opacity-50"
           >
-            Saltar todas
+            {t('Skip all', 'Saltar todas')}
           </button>
           {movableIds.length > 0 && (
             <button
@@ -147,7 +149,7 @@ export function OverdueDailyPopup({ tasks, onClose }: { tasks: Task[]; onClose: 
               disabled={busy}
               className="flex-1 rounded-xl bg-accent-600 px-3 py-2 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-500 disabled:opacity-50"
             >
-              Agregar a hoy
+              {t('Add to today', 'Agregar a hoy')}
             </button>
           )}
         </div>

@@ -8,6 +8,7 @@ import { playSidebarHover } from '../../lib/sound'
 import { reorderLists } from '../../db/repo/lists'
 import { SortableItem, SortableList } from '../ui/Sortable'
 import { PlayerCard } from '../rpg/PlayerCard'
+import { t } from '../../lib/i18n'
 
 interface SidebarProps {
   lists: List[]
@@ -106,11 +107,11 @@ export function Sidebar({
       {/* Desde "Hoy" hasta las etiquetas todo va en una sola zona con scroll:
           en móvil el menú completo no cabe en pantalla y quedaba cortado. */}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Vistas">
+      <nav className="flex shrink-0 flex-col gap-0.5" aria-label={t('Views', 'Vistas')}>
         <NavItem
           active={view.kind === 'today'}
           onClick={() => onSelect({ kind: 'today' })}
-          label="Hoy"
+          label={t('Today', 'Hoy')}
           count={counts.today}
           icon={icon(
             <>
@@ -122,7 +123,7 @@ export function Sidebar({
         <NavItem
           active={view.kind === 'all'}
           onClick={() => onSelect({ kind: 'all' })}
-          label="Todas"
+          label={t('All', 'Todas')}
           count={counts.all}
           icon={icon(
             <>
@@ -134,7 +135,7 @@ export function Sidebar({
         <NavItem
           active={view.kind === 'upcoming'}
           onClick={() => onSelect({ kind: 'upcoming' })}
-          label="Próximas"
+          label={t('Upcoming', 'Próximas')}
           count={counts.upcoming}
           icon={icon(
             <>
@@ -146,7 +147,7 @@ export function Sidebar({
         <NavItem
           active={view.kind === 'calendar'}
           onClick={() => onSelect({ kind: 'calendar' })}
-          label="Calendario"
+          label={t('Calendar', 'Calendario')}
           icon={icon(
             <>
               <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -158,7 +159,7 @@ export function Sidebar({
         <NavItem
           active={view.kind === 'habits'}
           onClick={() => onSelect({ kind: 'habits' })}
-          label="Hábitos"
+          label={t('Habits', 'Hábitos')}
           icon={icon(
             <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />,
           )}
@@ -184,7 +185,7 @@ export function Sidebar({
           <NavItem
             active={view.kind === 'quests'}
             onClick={() => onSelect({ kind: 'quests' })}
-            label="Misiones"
+            label={t('Quests', 'Misiones')}
             icon={icon(
               <>
                 <path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 8 2a6 6 0 0 0 3-.8V14a6 6 0 0 1-3 .8c-3 0-5-2-8-2a6 6 0 0 0-4 1.2" />
@@ -208,10 +209,10 @@ export function Sidebar({
       </nav>
 
       <div className="mt-5 mb-1 flex shrink-0 items-center justify-between px-3">
-        <span className="text-sm font-semibold tracking-wide text-ink-faint uppercase lg:text-xs">Listas</span>
+        <span className="text-sm font-semibold tracking-wide text-ink-faint uppercase lg:text-xs">{t('Lists', 'Listas')}</span>
         <button
           onClick={onNewList}
-          aria-label="Nueva lista"
+          aria-label={t('New list', 'Nueva lista')}
           className="flex size-6 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-ink/10 hover:text-ink"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="size-4" aria-hidden="true">
@@ -238,7 +239,7 @@ export function Sidebar({
               onClick={() => onSelect({ kind: 'list', listId: list.id })}
               label={list.emoji ? `${list.emoji} ${list.name}` : list.name}
               count={counts.byList[list.id] ?? 0}
-              badge={list.statLevel > 1 ? `Nv ${list.statLevel}` : undefined}
+              badge={list.statLevel > 1 ? `${t('Lv', 'Nv')} ${list.statLevel}` : undefined}
               fadeMetaOnHover
               icon={
                 <span
@@ -250,7 +251,7 @@ export function Sidebar({
             />
             <button
               onClick={() => onEditList(list.id)}
-              aria-label={`Editar lista ${list.name}`}
+              aria-label={`${t('Edit list', 'Editar lista')} ${list.name}`}
               className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink focus:opacity-100"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
@@ -268,14 +269,14 @@ export function Sidebar({
             onClick={onNewList}
             className="mx-3 rounded-lg border border-dashed border-line/10 px-3 py-2 text-left text-xs text-ink-faint transition-colors hover:border-line/20 hover:text-ink-dim"
           >
-            Crea tu primera lista (Hogar, Trabajo…)
+            {t('Create your first list (Home, Work…)', 'Crea tu primera lista (Hogar, Trabajo…)')}
           </button>
         )}
 
         {tags.length > 0 && (
           <>
             <div className="mt-4 mb-1 px-3">
-              <span className="text-sm font-semibold tracking-wide text-ink-faint uppercase lg:text-xs">Etiquetas</span>
+              <span className="text-sm font-semibold tracking-wide text-ink-faint uppercase lg:text-xs">{t('Tags', 'Etiquetas')}</span>
             </div>
             {tags.map((tag) => (
               <div key={tag.id} className="group relative">
@@ -294,7 +295,7 @@ export function Sidebar({
                 />
                 <button
                   onClick={() => onEditTag(tag.id)}
-                  aria-label={`Editar etiqueta ${tag.name}`}
+                  aria-label={`${t('Edit tag', 'Editar etiqueta')} ${tag.name}`}
                   className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink focus:opacity-100"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
@@ -311,10 +312,10 @@ export function Sidebar({
       {/* En móvil el texto y el engranaje son más grandes (objetivo táctil cómodo); en escritorio, compactos */}
       <div className="mt-4 flex items-center gap-2 border-t border-line/5 px-3 pt-3 text-sm text-ink-faint lg:text-xs">
         <span className={`size-2 rounded-full lg:size-1.5 ${online ? 'bg-ok' : 'bg-warn'}`} aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate">{online ? 'Online' : 'Offline — todo se guarda local'}</span>
+        <span className="min-w-0 flex-1 truncate">{online ? 'Online' : t('Offline — everything is saved locally', 'Offline — todo se guarda local')}</span>
         <button
           onClick={onOpenSettings}
-          aria-label="Ajustes"
+          aria-label={t('Settings', 'Ajustes')}
           className="flex size-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-ink/10 hover:text-ink lg:size-7 lg:rounded-md"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5.5 lg:size-4" aria-hidden="true">

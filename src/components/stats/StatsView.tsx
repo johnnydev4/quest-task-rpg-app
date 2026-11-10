@@ -28,6 +28,7 @@ import {
 } from '../../lib/statsData'
 import { dateInputToMs, msToDateInput, startOfDayOffset, startOfToday } from '../../lib/dates'
 import ContributionGraph from './ContributionGraph'
+import { t } from '../../lib/i18n'
 
 function cssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#8b5cf6'
@@ -52,10 +53,10 @@ function Summary({ label, value }: { label: string; value: string }) {
 }
 
 const RANGES: { id: StatsRange; label: string }[] = [
-  { id: '7d', label: 'Semana' },
-  { id: '30d', label: 'Mes' },
-  { id: '12m', label: 'Año' },
-  { id: 'custom', label: 'Personalizado' },
+  { id: '7d', label: t('Week', 'Semana') },
+  { id: '30d', label: t('Month', 'Mes') },
+  { id: '12m', label: t('Year', 'Año') },
+  { id: 'custom', label: t('Custom', 'Personalizado') },
 ]
 
 export default function StatsView() {
@@ -127,19 +128,22 @@ export default function StatsView() {
   const mins = stats.totals.focusMinutes % 60
 
   // Productividad: minutos de foco + tareas completadas, desglosado por fecha.
-  const productividad = stats.tasksPerBucket.map((t, i) => ({
-    label: t.label,
-    tareas: t.tareas,
+  const productividad = stats.tasksPerBucket.map((b, i) => ({
+    label: b.label,
+    tareas: b.tareas,
     minutos: stats.focusPerBucket[i]?.minutos ?? 0,
   }))
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Summary label="Tareas completadas" value={String(stats.totals.completed)} />
-        <Summary label="Racha actual" value={streak > 0 ? `${streak} días` : '—'} />
-        <Summary label="Tiempo de foco" value={hours > 0 ? `${hours} h ${mins} m` : `${mins} min`} />
-        <Summary label="Nivel" value={String(level)} />
+        <Summary label={t('Completed tasks', 'Tareas completadas')} value={String(stats.totals.completed)} />
+        <Summary
+          label={t('Current streak', 'Racha actual')}
+          value={streak > 0 ? `${streak} ${t(streak === 1 ? 'day' : 'days', 'días')}` : '—'}
+        />
+        <Summary label={t('Focus time', 'Tiempo de foco')} value={hours > 0 ? `${hours} h ${mins} m` : `${mins} min`} />
+        <Summary label={t('Level', 'Nivel')} value={String(level)} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -166,7 +170,7 @@ export default function StatsView() {
                 const ms = dateInputToMs(e.target.value)
                 if (ms !== null) setCustomFrom(ms)
               }}
-              aria-label="Desde"
+              aria-label={t('From', 'Desde')}
               className="rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink"
             />
             →
@@ -177,19 +181,19 @@ export default function StatsView() {
                 const ms = dateInputToMs(e.target.value)
                 if (ms !== null) setCustomTo(ms)
               }}
-              aria-label="Hasta"
+              aria-label={t('To', 'Hasta')}
               className="rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink"
             />
           </span>
         )}
       </div>
 
-      <Card title="Actividad diaria · último año">
+      <Card title={t('Daily activity · last year', 'Actividad diaria · último año')}>
         <ContributionGraph tasks={tasks} sessions={sessions} />
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Productividad · foco y tareas por fecha" className="lg:col-span-2">
+        <Card title={t('Productivity · focus and tasks by date', t('Productivity · focus and tasks by date', 'Productividad · foco y tareas por fecha'))} className="lg:col-span-2">
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart data={productividad}>
               <CartesianGrid stroke={grid} vertical={false} />
@@ -217,7 +221,7 @@ export default function StatsView() {
                 yAxisId="minutos"
                 type="monotone"
                 dataKey="minutos"
-                name="Minutos de foco"
+                name={t('Focus minutes', 'Minutos de foco')}
                 stroke={accent}
                 strokeWidth={2.5}
                 dot={{ r: 2.5 }}
@@ -226,7 +230,7 @@ export default function StatsView() {
                 yAxisId="tareas"
                 type="monotone"
                 dataKey="tareas"
-                name="Tareas completadas"
+                name={t('Completed tasks', 'Tareas completadas')}
                 stroke={cssVar('--t-ok')}
                 strokeWidth={2.5}
                 dot={{ r: 2.5 }}
@@ -235,17 +239,17 @@ export default function StatsView() {
           </ResponsiveContainer>
         </Card>
 
-        <Card title="Pomodoro por tarea o hábito" className="lg:col-span-2">
+        <Card title={t('Pomodoro by task or habit', 'Pomodoro por tarea o hábito')} className="lg:col-span-2">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <select
               value={selectedKey}
               onChange={(e) => setFocusOverride(e.target.value)}
-              aria-label="Elegir tarea o hábito"
+              aria-label={t('Pick a task or habit', 'Elegir tarea o hábito')}
               className="max-w-full rounded-md border border-line/10 glass-input px-2 py-1 text-xs text-ink"
             >
-              <option value="">Elige una tarea o hábito…</option>
+              <option value="">{t('Pick a task or habit…', 'Elige una tarea o hábito…')}</option>
               {taskOpts.length > 0 && (
-                <optgroup label="Tareas">
+                <optgroup label={t('Tasks', 'Tareas')}>
                   {taskOpts.map((o) => (
                     <option key={o.key} value={o.key}>
                       {o.title} · {o.minutes} min
@@ -254,7 +258,7 @@ export default function StatsView() {
                 </optgroup>
               )}
               {habitOpts.length > 0 && (
-                <optgroup label="Hábitos">
+                <optgroup label={t('Habits', 'Hábitos')}>
                   {habitOpts.map((o) => (
                     <option key={o.key} value={o.key}>
                       {o.title} · {o.minutes} min
@@ -270,8 +274,8 @@ export default function StatsView() {
                   aria-pressed={isPinned}
                   title={
                     isPinned
-                      ? 'Desfijar: dejará de aparecer al abrir Estadísticas'
-                      : 'Fijar: aparecerá al abrir Estadísticas'
+                      ? t('Unpin: it will stop showing when you open Stats', 'Desfijar: dejará de aparecer al abrir Estadísticas')
+                      : t('Pin: it will show when you open Stats', 'Fijar: aparecerá al abrir Estadísticas')
                   }
                   className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                     isPinned
@@ -280,21 +284,30 @@ export default function StatsView() {
                   }`}
                 >
                   {isPinned ? <PinOffIcon className="size-3.5" /> : <PinIcon className="size-3.5" />}
-                  {isPinned ? 'Desfijar' : 'Fijar'}
+                  {isPinned ? t('Unpin', 'Desfijar') : t('Pin', 'Fijar')}
                 </button>
                 <span className="text-xs text-ink-faint">
-                  {focusByEntityTotal} min de foco en el periodo
+                  {t(
+                    `${focusByEntityTotal} min of focus in this period`,
+                    `${focusByEntityTotal} min de foco en el periodo`,
+                  )}
                 </span>
               </>
             )}
           </div>
           {entityOptions.length === 0 ? (
             <p className="py-8 text-center text-sm text-ink-faint">
-              Vincula un pomodoro a una tarea o hábito para ver aquí su tiempo de foco por fecha.
+              {t(
+                'Link a pomodoro to a task or habit to see its focus time by date here.',
+                'Vincula un pomodoro a una tarea o hábito para ver aquí su tiempo de foco por fecha.',
+              )}
             </p>
           ) : !selectedKey ? (
             <p className="py-8 text-center text-sm text-ink-faint">
-              Elige una tarea o hábito para ver su tiempo de pomodoro por fecha.
+              {t(
+                'Pick a task or habit to see its pomodoro time by date.',
+                'Elige una tarea o hábito para ver su tiempo de pomodoro por fecha.',
+              )}
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
@@ -303,37 +316,37 @@ export default function StatsView() {
                 <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(128,128,128,0.2)' }} />
-                <Line type="monotone" dataKey="minutos" name="Minutos de foco" stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
+                <Line type="monotone" dataKey="minutos" name={t('Focus minutes', 'Minutos de foco')} stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
               </LineChart>
             </ResponsiveContainer>
           )}
         </Card>
 
-        <Card title="Tareas completadas">
+        <Card title={t('Completed tasks', 'Tareas completadas')}>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={stats.tasksPerBucket}>
               <CartesianGrid stroke={grid} vertical={false} />
               <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
               <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
               <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(128,128,128,0.2)' }} />
-              <Line type="monotone" dataKey="tareas" stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
+              <Line type="monotone" dataKey="tareas" name={t('Tasks', 'Tareas')} stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
             </LineChart>
           </ResponsiveContainer>
         </Card>
 
-        <Card title="Minutos de foco (modo estudio)">
+        <Card title={t('Focus minutes (study mode)', 'Minutos de foco (modo estudio)')}>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={stats.focusPerBucket}>
               <CartesianGrid stroke={grid} vertical={false} />
               <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" />
               <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
               <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(128,128,128,0.2)' }} />
-              <Line type="monotone" dataKey="minutos" stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
+              <Line type="monotone" dataKey="minutos" name={t('Focus minutes', 'Minutos de foco')} stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
             </LineChart>
           </ResponsiveContainer>
         </Card>
 
-        <Card title="XP acumulado en el periodo">
+        <Card title={t('XP earned in the period', 'XP acumulado en el periodo')}>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={stats.xpLine}>
               <CartesianGrid stroke={grid} vertical={false} />
@@ -345,7 +358,7 @@ export default function StatsView() {
           </ResponsiveContainer>
         </Card>
 
-        <Card title="Distribución por prioridad">
+        <Card title={t('Priority breakdown', 'Distribución por prioridad')}>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
@@ -368,9 +381,9 @@ export default function StatsView() {
           </ResponsiveContainer>
         </Card>
 
-        <Card title="Atributos por lista (XP de categoría)">
+        <Card title={t('Attributes by list (category XP)', 'Atributos por lista (XP de categoría)')}>
           {stats.byList.length === 0 ? (
-            <p className="py-8 text-center text-sm text-ink-faint">Crea listas para ver tus atributos RPG.</p>
+            <p className="py-8 text-center text-sm text-ink-faint">{t('Create lists to see your RPG attributes.', 'Crea listas para ver tus atributos RPG.')}</p>
           ) : (
             <div className="space-y-2.5 py-1">
               {stats.byList.map((l) => {
@@ -379,7 +392,7 @@ export default function StatsView() {
                   <div key={l.name} className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-medium text-ink-dim">
-                        {l.name} <span className="text-ink-faint">· Nv {l.nivel}</span>
+                        {l.name} <span className="text-ink-faint">· {t('Lv', 'Nv')} {l.nivel}</span>
                       </span>
                       <span className="text-ink-faint">{l.xp} XP</span>
                     </div>
@@ -396,9 +409,9 @@ export default function StatsView() {
           )}
         </Card>
 
-        <Card title="Por etiqueta">
+        <Card title={t('By tag', 'Por etiqueta')}>
           {stats.byTag.length === 0 ? (
-            <p className="py-8 text-center text-sm text-ink-faint">Completa tareas con etiquetas para ver su distribución.</p>
+            <p className="py-8 text-center text-sm text-ink-faint">{t('Complete tagged tasks to see their breakdown.', 'Completa tareas con etiquetas para ver su distribución.')}</p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={stats.byTag}>
@@ -406,16 +419,16 @@ export default function StatsView() {
                 <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={false} interval={0} />
                 <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(128,128,128,0.2)' }} />
-                <Line type="monotone" dataKey="value" name="Tareas" stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
+                <Line type="monotone" dataKey="value" name={t('Tasks', 'Tareas')} stroke={accent} strokeWidth={2.5} dot={{ r: 2.5 }} />
               </LineChart>
             </ResponsiveContainer>
           )}
         </Card>
       </div>
 
-      <Card title="Mejores rachas">
+      <Card title={t('Best streaks', 'Mejores rachas')}>
         {stats.streakHistory.length === 0 ? (
-          <p className="py-4 text-center text-sm text-ink-faint">Completa tareas en días seguidos para construir rachas.</p>
+          <p className="py-4 text-center text-sm text-ink-faint">{t('Complete tasks on consecutive days to build streaks.', 'Completa tareas en días seguidos para construir rachas.')}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {stats.streakHistory.map((s, i) => (
@@ -423,7 +436,8 @@ export default function StatsView() {
                 key={i}
                 className="inline-flex items-center gap-1.5 rounded-full border border-warn/30 bg-warn/10 px-3 py-1 text-xs font-medium text-warn"
               >
-                <FlameIcon className="size-3" /> {s.days} {s.days === 1 ? 'día' : 'días'}
+                <FlameIcon className="size-3" /> {s.days}{' '}
+                {s.days === 1 ? t('day', 'día') : t('days', 'días')}
                 <span className="text-warn/60">
                   {s.start}
                   {s.days > 1 && ` → ${s.end}`}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FilterIcon } from './icons'
+import { t } from '../../lib/i18n'
 
 export interface FilterOption {
   id: string
@@ -19,7 +20,7 @@ export function FilterMenu({
   options,
   hidden,
   onChange,
-  label = 'Filtrar',
+  label = t('Filter', 'Filtrar'),
 }: {
   options: FilterOption[]
   /** Ids ocultos del resultado. */
@@ -98,13 +99,13 @@ export function FilterMenu({
         >
           <div className="flex items-center justify-between gap-2 px-3 py-1.5">
             <span className="text-[0.6875rem] font-semibold tracking-wide text-ink-faint uppercase">
-              Mostrar listas
+              {t('Show lists', 'Mostrar listas')}
             </span>
             <button
               onClick={() => onChange(activeCount > 0 ? new Set() : new Set(options.map((o) => o.id)))}
               className="shrink-0 text-[0.6875rem] font-medium text-accent-400 transition-colors hover:text-accent-300"
             >
-              {activeCount > 0 ? 'Todas' : 'Ninguna'}
+              {activeCount > 0 ? t('All', 'Todas') : t('None', 'Ninguna')}
             </button>
           </div>
           {options.map((o) => {

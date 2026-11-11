@@ -57,6 +57,9 @@ export default defineConfig({
         // (los .mp4/.webm precacheados rompen las peticiones Range en Safari).
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff2}'],
         navigateFallback: 'index.html',
+        // La landing (public/landing/) es una página aparte: el SW no debe
+        // responderle con el index.html de la app.
+        navigateFallbackDenylist: [/^\/landing/],
         // Video de fondo por defecto: cache-first en tiempo de ejecución con
         // soporte de Range (obligatorio para reproducir video desde caché).
         // Así el nebula sigue disponible offline, igual que las imágenes propias.

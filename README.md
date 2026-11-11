@@ -13,6 +13,8 @@ principles in mind. Offline-first and installable as an app on desktop and mobil
 ## Live demo
 [View it live](https://quest-task-rpg-app.vercel.app/?demo) · [en español](https://quest-task-rpg-app.vercel.app/?demo&lang=es)
 
+[Landing page](https://quest-task-rpg-app.vercel.app/landing/) (EN/ES) — static page in `public/landing/` that presents the app.
+
 ## Features
 
 - **Tasks & lists** — Full CRUD with subtasks, colors, priorities, notes, comments,

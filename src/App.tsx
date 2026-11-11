@@ -910,9 +910,9 @@ export default function App() {
               {/* La misión de la semana destaca sobre las side quests (tareas normales) */}
               {MISSIONS_ENABLED && <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />}
               {isEmpty && pendingHabits.length === 0 && daySections.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <div className="mx-auto mt-6 flex max-w-sm flex-col items-center gap-3 rounded-2xl px-6 py-8 text-center glass-strong">
                   <p className="font-medium text-ink-dim">{t('Nothing for today', 'Nada para hoy')}</p>
-                  <p className="max-w-xs text-sm text-ink-faint">
+                  <p className="max-w-xs text-sm text-ink-muted">
                     {t(
                       'Add a task below and start gaining ground, one at a time.',
                       'Añade una tarea abajo y empieza a ganar terreno, una a la vez.',
@@ -983,7 +983,7 @@ export default function App() {
                 </div>
               )}
               {isEmpty ? (
-                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                <div className="mx-auto mt-6 flex max-w-sm flex-col items-center gap-3 rounded-2xl px-6 py-10 text-center glass-strong">
                   <div className="flex size-14 items-center justify-center rounded-2xl glass-panel text-3xl">✨</div>
                   {view.kind === 'all' && allSearch.trim() ? (
                     <>
@@ -1008,7 +1008,7 @@ export default function App() {
                   ) : (
                     <>
                       <p className="font-medium text-ink-dim">{t('No tasks yet', 'Sin tareas aún')}</p>
-                      <p className="max-w-xs text-sm text-ink-faint">
+                      <p className="max-w-xs text-sm text-ink-muted">
                         {t(
                           'Add a task below and start gaining ground, one at a time.',
                           'Añade una tarea abajo y empieza a ganar terreno, una a la vez.',

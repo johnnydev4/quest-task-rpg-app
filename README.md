@@ -28,6 +28,9 @@ principles in mind. Offline-first and installable as an app on desktop and mobil
   auto-detects the date, time, recurrence, and tag.
 - **RPG progression** — XP weighted by priority, rising level curve, per-list stats,
   non-punitive streaks, level titles, synthesized ASMR sounds, and a level-up animation.
+- **Weekly Main Quest** — Every Monday the Today tab asks for the one task you must
+  conquer that week. Mark it done and 20% of your current level's XP is delivered on
+  Sunday when the week closes; it can be renamed or skipped for the week.
 - **Monthly Missions** — A "main quest" per month themed around a mythical creature
   (Dragon, Phoenix, Kraken…), broken into weekly missions with steps and big XP rewards.
 - **Habits with COMBOS** — Turn a task into a recurring habit with scheduled days and an

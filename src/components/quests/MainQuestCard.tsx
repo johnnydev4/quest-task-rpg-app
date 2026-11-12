@@ -35,7 +35,8 @@ export function MainQuestCard() {
   }, [])
 
   const weekKey = weekKeyOf()
-  const quest = useLiveQuery(() => db.mainQuests.get(weekKey), [weekKey, today])
+  // `undefined` mientras carga; `null` = esta semana aún no tiene fila.
+  const quest = useLiveQuery(async () => (await db.mainQuests.get(weekKey)) ?? null, [weekKey, today])
   const { totalXp } = useProfile()
   const xp = mainQuestXpFor(totalXp)
 
@@ -81,9 +82,10 @@ export function MainQuestCard() {
   }
 
   const header = (
-    <p className="flex items-center gap-1.5 text-[0.6875rem] font-bold tracking-widest text-accent-300 uppercase">
-      <CrownIcon className="size-3.5" /> Main quest
-      <span className="font-medium tracking-normal text-ink-muted normal-case">
+    <p className="flex min-w-0 items-center gap-1.5 text-[0.6875rem] font-bold tracking-widest text-accent-300 uppercase">
+      <CrownIcon className="size-3.5 shrink-0" />
+      <span className="whitespace-nowrap">Main quest</span>
+      <span className="hidden truncate font-medium tracking-normal text-ink-muted normal-case sm:inline">
         · {t(`Week of ${weekLabel}`, `Semana del ${weekLabel}`)}
       </span>
     </p>
@@ -166,7 +168,7 @@ export function MainQuestCard() {
     <section className={shell} style={shellStyle} aria-label="Main quest">
       <div className="flex items-center justify-between gap-2">
         {header}
-        <span className="flex shrink-0 items-center gap-1 text-[0.6875rem] font-medium text-ink-muted">
+        <span className="flex shrink-0 items-center gap-1 text-right text-[0.6875rem] font-medium text-ink-muted">
           {rewarded ? (
             <>
               <TrophyIcon className="size-3.5 text-accent-300" /> {t('Conquered', 'Conquistada')} · +{quest.rewardXp} XP

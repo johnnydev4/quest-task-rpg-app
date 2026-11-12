@@ -39,6 +39,31 @@ export function localDateKey(offsetDays = 0): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+/** Día local 'YYYY-MM-DD' de una fecha concreta. */
+export function dateKeyOf(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** Medianoche local del lunes de la semana a la que pertenece `d` (semanas lunes→domingo). */
+export function mondayOf(d: Date = new Date()): Date {
+  const m = new Date(d)
+  m.setHours(0, 0, 0, 0)
+  // getDay(): 0=domingo … 6=sábado. El domingo cierra la semana (retrocede 6 días).
+  m.setDate(m.getDate() - ((m.getDay() + 6) % 7))
+  return m
+}
+
+/** Clave de la semana (su lunes, 'YYYY-MM-DD'): identifica la main quest semanal. */
+export function weekKeyOf(d: Date = new Date()): string {
+  return dateKeyOf(mondayOf(d))
+}
+
+/** Día 'YYYY-MM-DD' del domingo que cierra la semana identificada por `weekKey`. */
+export function sundayKeyOfWeek(weekKey: string): string {
+  const [y, m, d] = weekKey.split('-').map(Number)
+  return dateKeyOf(new Date(y, m - 1, d + 6))
+}
+
 /** Convierte ms → valor de <input type="date"> en zona local. */
 export function msToDateInput(ms: number | null): string {
   if (ms === null) return ''

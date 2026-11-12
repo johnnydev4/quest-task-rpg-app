@@ -16,6 +16,7 @@ const TABLES = [
   'settings',
   'quests',
   'questSteps',
+  'mainQuests',
   'habits',
   'habitLogs',
 ] as const

@@ -23,6 +23,7 @@ const TABLES = [
   'profile',
   'quests',
   'questSteps',
+  'mainQuests',
   'habits',
   'habitLogs',
   'daySections',

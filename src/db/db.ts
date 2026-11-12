@@ -10,6 +10,7 @@ import type {
   IdeaMap,
   IdeaNode,
   List,
+  MainQuest,
   PlayerProfile,
   Quest,
   QuestStep,
@@ -38,6 +39,7 @@ const db = new Dexie(DB_NAME) as Dexie & {
   tombstones: EntityTable<Tombstone, 'id'>
   quests: EntityTable<Quest, 'id'>
   questSteps: EntityTable<QuestStep, 'id'>
+  mainQuests: EntityTable<MainQuest, 'id'>
   habits: EntityTable<Habit, 'id'>
   habitLogs: EntityTable<HabitLog, 'id'>
   daySections: EntityTable<DaySection, 'id'>
@@ -151,6 +153,10 @@ db.version(10).stores({
   ideaNodes: 'id, mapId, parentId, order',
 })
 
+// Main quest semanal de la pestaña Hoy: una fila por semana (id = lunes
+// 'YYYY-MM-DD'), con la recompensa del domingo registrada en la propia fila.
+db.version(11).stores({ mainQuests: 'id, weekKey' })
+
 // Disparo de sincronización con debounce: cualquier escritura en una tabla
 // sincronizada emite `quest:changed` en window. sync.ts se suscribe y llama a
 // scheduleSync(); el evento evita un ciclo de imports db<->sync.
@@ -166,6 +172,7 @@ const SYNCED_TABLES = [
   'profile',
   'quests',
   'questSteps',
+  'mainQuests',
   'habits',
   'habitLogs',
   'daySections',

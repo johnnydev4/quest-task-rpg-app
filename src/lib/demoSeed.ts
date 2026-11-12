@@ -82,7 +82,7 @@ export async function seedDemo(): Promise<void> {
   const tables = [
     'tasks', 'subtasks', 'comments', 'attachments', 'reminders', 'tags', 'lists',
     'habits', 'habitLogs', 'daySections', 'studySessions', 'ideaMaps', 'ideaNodes',
-    'quests', 'questSteps', 'profile', 'tombstones',
+    'quests', 'questSteps', 'mainQuests', 'profile', 'tombstones',
   ] as const
   for (const name of tables) await db.table(name).clear()
 

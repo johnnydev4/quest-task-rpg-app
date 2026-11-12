@@ -167,6 +167,32 @@ export interface Quest {
   syncStatus: SyncStatus
 }
 
+/**
+ * Main quest semanal (pestaña Hoy): la única tarea que el usuario elige como
+ * prioridad de la semana (lunes a domingo). Una fila por semana, con `id` =
+ * `weekKey` (lunes 'YYYY-MM-DD'), así dos dispositivos nunca crean duplicados.
+ * Completarla otorga un porcentaje del nivel actual (`MAIN_QUEST_XP_SHARE`),
+ * que se entrega el domingo al cerrar la semana (`rewardedAt`).
+ */
+export interface MainQuest {
+  id: string
+  /** Lunes de la semana, 'YYYY-MM-DD' local. */
+  weekKey: string
+  /** Vacío mientras el usuario no haya elegido (p. ej. al descartar sin elegir). */
+  title: string
+  completed: boolean
+  completedAt: number | null
+  /** El usuario descartó la main quest de esa semana: no se vuelve a preguntar. */
+  dismissed: boolean
+  /** Momento en que se entregó la recompensa; null = pendiente o no ganada. */
+  rewardedAt: number | null
+  /** XP entregado (0 hasta que se entrega). */
+  rewardXp: number
+  createdAt: number
+  updatedAt: number
+  syncStatus: SyncStatus
+}
+
 /** Paso de una misión (checklist épica). */
 export interface QuestStep {
   id: string

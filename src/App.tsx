@@ -48,6 +48,8 @@ import { MiniTimer } from './components/study/MiniTimer'
 import { CalendarView } from './components/calendar/CalendarView'
 import { QuestsView } from './components/quests/QuestsView'
 import { WeeklyQuestBanner } from './components/quests/WeeklyQuestBanner'
+import { MainQuestCard } from './components/quests/MainQuestCard'
+import { grantDueMainQuestRewards } from './db/repo/mainQuests'
 import { IdeasView } from './components/ideas/IdeasView'
 import { HabitsView } from './components/habits/HabitsView'
 import { HabitsDoneToday, PendingHabits, useTodayHabits } from './components/habits/HabitsToday'
@@ -386,6 +388,14 @@ export default function App() {
   useEffect(() => {
     if (view.kind !== 'today') setOverdueNotice(null)
   }, [view.kind])
+
+  // Recompensa de la main quest semanal: al entrar a Hoy (y al cambiar el día)
+  // se entrega el XP de toda main quest completada cuya semana ya cerró. Se
+  // espera a que asiente la sincronización, por si otro dispositivo ya la premió.
+  useEffect(() => {
+    if (view.kind !== 'today' || !syncSettled) return
+    void grantDueMainQuestRewards()
+  }, [view.kind, syncSettled, sod])
 
   const counts = useMemo(() => {
     const byList: Record<string, number> = {}
@@ -907,6 +917,8 @@ export default function App() {
             </Suspense>
           ) : view.kind === 'today' ? (
             <>
+              {/* MAIN QUEST de la semana: la tarea principal elegida cada lunes, encima de todo */}
+              <MainQuestCard />
               {/* La misión de la semana destaca sobre las side quests (tareas normales) */}
               {MISSIONS_ENABLED && <WeeklyQuestBanner onOpen={() => setView({ kind: 'quests' })} />}
               {isEmpty && pendingHabits.length === 0 && daySections.length === 0 ? (

@@ -124,8 +124,8 @@ a {
 
 /* Barras de scroll finas y tematizadas (las nativas de Windows rompen la estética glass) */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--t-ink) 18%, transparent) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 *::-webkit-scrollbar {

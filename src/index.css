@@ -122,7 +122,8 @@ a {
   touch-action: manipulation;
 }
 
-/* Barras de scroll finas y tematizadas (las nativas de Windows rompen la estética glass) */
+/* Barras de scroll invisibles (las nativas de Windows rompen la estética glass).
+   El contenido sigue siendo desplazable con rueda, teclado y gestos táctiles. */
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;

@@ -129,23 +129,12 @@ a {
 }
 
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 0;
+  height: 0;
+  display: none;
 }
 
-*::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--t-ink) 16%, transparent);
-  border: 3px solid transparent;
-  border-radius: 8px;
-  background-clip: padding-box;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--t-ink) 28%, transparent);
-  border: 3px solid transparent;
-  background-clip: padding-box;
-}
-
+*::-webkit-scrollbar-thumb,
 *::-webkit-scrollbar-track {
   background: transparent;
 }

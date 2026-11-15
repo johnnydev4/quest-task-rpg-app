@@ -118,6 +118,7 @@ Un modo de estudio/foco concentrado basado en la técnica Pomodoro, pensado para
 - **Sonido y notificación** al terminar cada fase (foco → descanso y descanso → foco). Sonidos opcionales y con volumen ajustable.
 - **Sonidos ambientales/ASMR de fondo** opcionales durante el foco (ej. lluvia, ruido blanco, cafetería), reproducibles en bucle.
 - Vincular opcionalmente cada sesión a una **tarea o categoría** concreta, para saber en qué se estudió.
+- **Empezar desde la tarea o el hábito:** las tareas y los hábitos con minutos de pomodoro asignados muestran un botón ▶ con esos minutos junto a su fila; al pulsarlo arranca el foco ya vinculado y abre la vista de estudio a pantalla completa.
 - **Registro de tiempo efectivo:** guarda automáticamente los **minutos de foco realmente completados cada día** (solo cuenta el tiempo de foco real; no cuenta descansos ni pausas). Este dato diario alimenta el reporte de productividad (sección 9).
 - **Precisión en segundo plano:** el temporizador debe contar el tiempo correctamente aunque la pantalla se apague o la app pase a segundo plano. Usa marcas de tiempo (timestamps) reales, no solo `setInterval`, para calcular el tiempo transcurrido.
 - **Integración RPG:** completar sesiones de estudio también otorga XP (ponderado por minutos de foco), alimentando el nivel y los stats.

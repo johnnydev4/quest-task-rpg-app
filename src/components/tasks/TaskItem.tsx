@@ -330,6 +330,31 @@ export function TaskItem({
           </span>
         )}
       </button>
+      {/* Pomodoro vinculado: arranca un foco con los minutos de la tarea */}
+      {task.pomodoroMinutes != null && !task.completed && (
+        <button
+          onClick={() => {
+            // Abre la vista Estudio en pantalla completa (no minimizado).
+            void pomodoro.start({ taskId: task.id })
+            emitOpenStudy()
+            emitToast({
+              title: t('🍅 Pomodoro started', '🍅 Pomodoro iniciado'),
+              body: `${task.title} · ${t('goal', 'objetivo')} ${task.pomodoroMinutes} min`,
+            })
+          }}
+          aria-label={t(
+            `Start a ${task.pomodoroMinutes}-minute pomodoro`,
+            `Empezar pomodoro de ${task.pomodoroMinutes} minutos`,
+          )}
+          title={`Pomodoro · ${task.pomodoroMinutes} min`}
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-line/10 px-2 py-1 text-[0.625rem] font-semibold text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" className="size-3" aria-hidden="true">
+            <path d="M8 5.14v13.72L19 12z" />
+          </svg>
+          {task.pomodoroMinutes}m
+        </button>
+      )}
       {showOverdueActions && !task.completed && (
         <span className="flex shrink-0 items-center gap-1">
           <button

@@ -60,6 +60,7 @@ Requisito de arquitectura: **local-first con sincronización**. La fuente de ver
 - **Nube:** al iniciar sesión (Supabase Auth, email/contraseña + opción magic link), los datos sincronizan a Postgres y los archivos a Supabase Storage, permitiendo usar la app en varios dispositivos.
 - **Modo sin cuenta:** la app debe ser 100% usable **sin registrarse** (solo local). El login es opcional y solo activa la sincronización multi-dispositivo.
 - **Exportar/Importar:** permite exportar todos los datos a un archivo JSON y reimportarlos (respaldo local manual).
+- **Exportar mapas de ideas a texto:** desde el panel de Ideas, cualquier mapa (o todos de golpe) se exporta como lista indentada en texto plano, para descargarla como `.txt` o copiarla al portapapeles y pegarla en cualquier sitio.
 
 ---
 

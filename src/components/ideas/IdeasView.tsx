@@ -5,7 +5,8 @@ import type { IdeaMap, IdeaView } from '../../db/types'
 import { createMap, deleteMap, renameMap, setMapColor, setMapView, setNodeText } from '../../db/repo/ideas'
 import { ColorPicker } from '../ui/ColorPicker'
 import { ConfirmButton } from '../ui/ConfirmButton'
-import { HierarchyIcon, PaletteIcon, PlusIcon } from '../ui/icons'
+import { CopyIcon, DownloadIcon, HierarchyIcon, PaletteIcon, PlusIcon } from '../ui/icons'
+import { copyText, downloadText, mapsToText, textFileName } from './exportText'
 import { OutlineView } from './OutlineView'
 import { findRoot } from './tree'
 import { t } from '../../lib/i18n'
@@ -115,6 +116,16 @@ function Gallery({ maps, onOpen }: { maps: IdeaMap[]; onOpen: (id: string) => vo
           </p>
         </div>
       ) : (
+        <>
+        {/* Exportar todos los mapas de golpe, en un solo archivo de texto. */}
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-ink-faint">
+            {maps.length === 1
+              ? t('1 map', '1 mapa')
+              : t(`${maps.length} maps`, `${maps.length} mapas`)}
+          </p>
+          <ExportMenu maps={maps} batch />
+        </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {maps.map((m) => {
             const count = countByMap.get(m.id) ?? 0
@@ -145,6 +156,7 @@ function Gallery({ maps, onOpen }: { maps: IdeaMap[]; onOpen: (id: string) => vo
             )
           })}
         </div>
+        </>
       )}
     </div>
   )
@@ -186,6 +198,7 @@ function MapWorkspace({ mapId, onBack }: { mapId: string; onBack: () => void }) 
         </button>
         <MapTitle map={map} rootId={root?.id ?? null} />
         <div className="flex items-center gap-2">
+          <ExportMenu maps={[map]} />
           <MapColorMenu map={map} />
           <ViewSwitcher value={mode} onChange={(v) => void setMapView(map.id, v)} />
           <ConfirmButton
@@ -339,6 +352,114 @@ function ViewSwitcher({ value, onChange }: { value: IdeaView; onChange: (v: Idea
           </button>
         )
       })}
+    </div>
+  )
+}
+
+/**
+ * Exportar a texto plano: descarga un `.txt` con la lista indentada o la copia
+ * al portapapeles para pegarla donde sea. Sirve para un mapa (desde su espacio
+ * de trabajo) o para todos (`batch`, desde la galería). Los nodos se leen en el
+ * momento de exportar: no hace falta una suscripción viva para un menú que casi
+ * siempre está cerrado.
+ */
+function ExportMenu({ maps, batch = false }: { maps: IdeaMap[]; batch?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'copied' | 'error'>('idle')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', onDoc)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  // El aviso de "copiado" se borra solo; al cerrar el menú se olvida también.
+  useEffect(() => {
+    if (status === 'idle') return
+    const id = setTimeout(() => setStatus('idle'), 2200)
+    return () => clearTimeout(id)
+  }, [status])
+  useEffect(() => {
+    if (!open) setStatus('idle')
+  }, [open])
+
+  async function buildText(): Promise<string> {
+    const nodes = await db.ideaNodes.toArray()
+    return mapsToText(maps, nodes)
+  }
+
+  async function download() {
+    downloadText(textFileName(batch ? undefined : maps[0]), await buildText())
+    setOpen(false)
+  }
+
+  async function copy() {
+    setStatus((await copyText(await buildText())) ? 'copied' : 'error')
+  }
+
+  if (maps.length === 0) return null
+  const label = t('Export as text', 'Exportar como texto')
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={label}
+        title={label}
+        className="flex size-9 items-center justify-center rounded-lg border border-line/10 glass-input text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
+      >
+        <DownloadIcon className="size-4.5" />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          aria-label={label}
+          className="absolute right-0 z-40 mt-1 w-60 rounded-xl border border-line/10 glass-strong p-2 shadow-2xl"
+          style={{ animation: 'menu-pop 0.14s ease-out both' }}
+        >
+          <p className="mb-1 px-2 pt-1 text-[0.625rem] font-semibold tracking-wide text-ink-faint uppercase">
+            {batch ? t('Export all maps', 'Exportar todos los mapas') : label}
+          </p>
+          <button
+            role="menuitem"
+            onClick={() => void download()}
+            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
+          >
+            <DownloadIcon className="size-4 shrink-0" />
+            {t('Download .txt', 'Descargar .txt')}
+          </button>
+          <button
+            role="menuitem"
+            onClick={() => void copy()}
+            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-ink-dim transition-colors hover:bg-ink/5 hover:text-ink"
+          >
+            <CopyIcon className="size-4 shrink-0" />
+            {status === 'copied'
+              ? t('Copied!', '¡Copiado!')
+              : status === 'error'
+                ? t("Couldn't copy", 'No se pudo copiar')
+                : t('Copy to clipboard', 'Copiar al portapapeles')}
+          </button>
+          <p className="mt-1 px-2 pb-1 text-xs text-ink-faint">
+            {t(
+              'An indented list with every branch, its stars and its notes.',
+              'Una lista indentada con todas las ramas, sus estrellas y sus notas.',
+            )}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

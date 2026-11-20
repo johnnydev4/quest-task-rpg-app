@@ -430,3 +430,24 @@ export function NoteIcon({ className }: { className?: string }) {
     </Icon>
   )
 }
+
+/** Descarga: exportar a un archivo. */
+export function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M12 4v10" />
+      <path d="M8 11l4 4 4-4" />
+      <path d="M5 18.5h14" />
+    </Icon>
+  )
+}
+
+/** Copiar al portapapeles. */
+export function CopyIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M9.5 3.5h8A1.5 1.5 0 0 1 19 5v8" />
+      <path d="M6.5 7.5h8A1.5 1.5 0 0 1 16 9v9.5A1.5 1.5 0 0 1 14.5 20h-8A1.5 1.5 0 0 1 5 18.5V9a1.5 1.5 0 0 1 1.5-1.5z" />
+    </Icon>
+  )
+}
